@@ -8,6 +8,7 @@ config luci_lpac 'config'
 	option debug_apdu '0'
 	option auto_notification '1'
 	option qmi_slot '0'
+	option qmi_device ''
 	option pcsc_reader ''
 
 config luci_lpac 'advanced'

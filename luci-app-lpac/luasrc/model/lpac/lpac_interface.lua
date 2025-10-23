@@ -20,17 +20,36 @@ local function build_env()
 
 	-- APDU driver configuration
 	local apdu_driver = get_config("apdu_driver", "pcsc")
-	env.LPAC_APDU = apdu_driver
 
 	-- APDU driver specific settings
 	if apdu_driver == "qmi" or apdu_driver == "qmi_qrtr" then
-		local qmi_slot = get_config("qmi_slot", "1")
+		-- For QMI, LPAC_APDU should be the device path (e.g., /dev/cdc-wdm0)
+		-- Try to auto-detect or use configured path
+		local qmi_device = get_config("qmi_device", "")
+		if qmi_device == "" then
+			-- Auto-detect: look for /dev/cdc-wdm0 first, then /dev/wwan0qmi0
+			if nixio.fs.stat("/dev/cdc-wdm0") then
+				qmi_device = "/dev/cdc-wdm0"
+			elseif nixio.fs.stat("/dev/wwan0qmi0") then
+				qmi_device = "/dev/wwan0qmi0"
+			else
+				-- Fallback: try to find any cdc-wdm device
+				qmi_device = "/dev/cdc-wdm0"  -- Default assumption
+			end
+		end
+		env.LPAC_APDU = qmi_device
+
+		local qmi_slot = get_config("qmi_slot", "0")
 		env.LPAC_APDU_SLOT = qmi_slot
 	elseif apdu_driver == "pcsc" then
+		env.LPAC_APDU = "pcsc"
 		local pcsc_reader = get_config("pcsc_reader", "")
 		if pcsc_reader ~= "" then
 			env.LPAC_APDU_PCSC_READER = pcsc_reader
 		end
+	else
+		-- For other drivers, pass as-is
+		env.LPAC_APDU = apdu_driver
 	end
 
 	-- HTTP driver configuration

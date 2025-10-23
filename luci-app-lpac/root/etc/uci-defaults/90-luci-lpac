@@ -32,6 +32,7 @@ if [ "$FIRST_INSTALL" = "1" ]; then
 	uci set luci-lpac.config.debug_apdu='0'
 	uci set luci-lpac.config.auto_notification='1'
 	uci set luci-lpac.config.qmi_slot='0'
+	uci set luci-lpac.config.qmi_device=''
 	uci set luci-lpac.config.pcsc_reader=''
 
 	uci set luci-lpac.advanced.log_level='info'
@@ -50,6 +51,7 @@ else
 	uci -q get luci-lpac.config.debug_apdu >/dev/null || uci set luci-lpac.config.debug_apdu='0'
 	uci -q get luci-lpac.config.auto_notification >/dev/null || uci set luci-lpac.config.auto_notification='1'
 	uci -q get luci-lpac.config.qmi_slot >/dev/null || uci set luci-lpac.config.qmi_slot='0'
+	uci -q get luci-lpac.config.qmi_device >/dev/null || uci set luci-lpac.config.qmi_device=''
 	uci -q get luci-lpac.config.pcsc_reader >/dev/null || uci set luci-lpac.config.pcsc_reader=''
 
 	uci -q get luci-lpac.advanced.log_level >/dev/null || uci set luci-lpac.advanced.log_level='info'
