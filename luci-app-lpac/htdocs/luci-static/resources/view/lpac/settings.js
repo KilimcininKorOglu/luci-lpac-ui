@@ -315,10 +315,10 @@ return view.extend({
 			E('p', {}, E('strong', {}, _('APDU Driver:'))),
 			E('p', {}, _('The APDU driver controls how lpac communicates with the eUICC chip. Common drivers include:')),
 			E('ul', {}, [
-				E('li', {}, E('strong', {}, 'auto: ') + _('Automatically detect the best driver')),
-				E('li', {}, E('strong', {}, 'stdio: ') + _('Standard input/output interface')),
-				E('li', {}, E('strong', {}, 'at: ') + _('AT command interface for modems')),
-				E('li', {}, E('strong', {}, 'qmi_qrtr: ') + _('Qualcomm MSM Interface'))
+				E('li', {}, [E('strong', {}, 'auto: '), _('Automatically detect the best driver')]),
+				E('li', {}, [E('strong', {}, 'stdio: '), _('Standard input/output interface')]),
+				E('li', {}, [E('strong', {}, 'at: '), _('AT command interface for modems')]),
+				E('li', {}, [E('strong', {}, 'qmi_qrtr: '), _('Qualcomm MSM Interface')])
 			]),
 			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('Default SM-DP+ Server:'))),
 			E('p', {}, _('Setting a default SM-DP+ server allows automatic profile discovery without manually entering the server address each time.')),
