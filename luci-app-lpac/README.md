@@ -1,29 +1,84 @@
 # luci-app-lpac
 
-LuCI web interface for managing eSIM profiles on OpenWrt using lpac.
+**Modern LuCI web interface for managing eSIM profiles on OpenWrt routers using lpac**
 
-## Description
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![OpenWrt](https://img.shields.io/badge/OpenWrt-23.05%2B-blue)](https://openwrt.org/)
+[![LuCI](https://img.shields.io/badge/LuCI-Modern%20(ng)-green)](https://github.com/openwrt/luci)
 
-luci-app-lpac provides a user-friendly web interface for managing eSIM (eUICC) profiles on OpenWrt routers. It leverages the powerful [lpac](https://github.com/estkme-group/lpac) command-line tool to provide full eSIM profile management capabilities through the LuCI web interface.
+## Overview
+
+luci-app-lpac provides a comprehensive web interface for managing eSIM (eUICC) profiles on OpenWrt routers. Built on top of the powerful [lpac](https://github.com/estkme-group/lpac) command-line tool, it brings professional eSIM management capabilities to your router's web interface.
+
+**Perfect for:**
+- LTE/5G routers with built-in eUICC support
+- Travel routers with eSIM capabilities
+- Multi-SIM failover setups
+- IoT devices with eSIM connectivity
 
 ## Features
 
-- **eUICC Information**: View chip details, EID, firmware version, and available memory
-- **Profile Management**: List, enable, disable, and delete eSIM profiles
-- **Profile Download**: Download new profiles via activation codes or manual entry
-- **Notification Management**: View and process profile notifications
-- **Settings**: Configure APDU/HTTP drivers, custom ISD-R AID, and other advanced options
-- **Multi-Interface Support**: PC/SC, QMI, MBIM, and AT command interfaces
+### Core Functionality
+
+- **📊 Dashboard**: Real-time overview of eUICC status, profiles, and notifications
+- **💳 Profile Management**: Full CRUD operations
+  - List, enable, disable, delete profiles
+  - Rename profiles with custom nicknames
+  - View detailed profile information
+- **📥 Profile Download**: Flexible installation methods
+  - Activation code (QR code) support
+  - Manual entry with SM-DP+ address
+  - Optional confirmation codes and IMEI
+- **🔔 Notification Management**: Handle eUICC notifications
+  - Process/remove individual or all notifications
+  - Support for install, enable, disable, delete operations
+- **⚙️ Settings**: Advanced configuration
+  - APDU driver selection (PC/SC, QMI, MBIM, AT)
+  - Profile discovery from SM-DS
+  - Factory reset with safety confirmation
+- **ℹ️ Chip Information**: Comprehensive eUICC details
+  - EID, firmware, memory status
+  - Platform and capability information
+
+### User Experience
+
+- Modern LuCI interface (LuCI ng for OpenWrt 23.05+)
+- Responsive design (desktop, tablet, mobile)
+- Real-time feedback and notifications
+- Confirmation dialogs for destructive operations
+- Color-coded status indicators
 
 ## Requirements
 
-- OpenWrt 23.05 or later
-- lpac package installed
-- Compatible eUICC hardware (card reader or built-in modem)
+### System Requirements
+
+- **OpenWrt**: 23.05 or later (for Modern LuCI support)
+- **lpac**: Version 2.0.0+ (2.3.0+ recommended)
+- **Dependencies**:
+  - `luci-base` (>= 23.05)
+  - `luci-lib-jsonc`
+  - `libuci-lua`
+
+### Hardware Requirements
+
+Compatible eUICC hardware (one of):
+- **PC/SC**: USB card reader with eUICC card
+- **QMI**: Qualcomm modem with eUICC support
+- **MBIM**: MBIM-compatible modem with eUICC
+- **AT**: AT command-based modem with eUICC
+
+### Optional Packages
+
+- `pcscd` - PC/SC daemon (for USB card readers)
+- `kmod-usb-serial` - USB serial support
+- `qmi-utils` - QMI modem utilities
+- `libmbim` - MBIM modem support
 
 ## Installation
 
 ### From Package Repository
+
+Once published to OpenWrt packages feed:
 
 ```bash
 opkg update
@@ -32,14 +87,33 @@ opkg install luci-app-lpac
 
 ### Manual Installation
 
-1. Build the package:
+1. Install lpac first:
 ```bash
-make package/luci-app-lpac/compile V=s
+opkg update
+opkg install lpac
 ```
 
-2. Install the built package:
+2. Build and install luci-app-lpac:
 ```bash
-opkg install luci-app-lpac_*.ipk
+# Clone repository
+git clone https://github.com/KilimcininKorOglu/luci-lpac-ui.git
+cd luci-lpac-ui/luci-app-lpac
+
+# Copy to OpenWrt buildroot
+cp -r ../luci-app-lpac /path/to/openwrt/package/
+
+# Build
+cd /path/to/openwrt
+make package/luci-app-lpac/compile V=s
+
+# Install
+opkg install bin/packages/*/luci/luci-app-lpac_*.ipk
+```
+
+3. Restart services:
+```bash
+/etc/init.d/rpcd restart
+rm -rf /tmp/luci-*
 ```
 
 ## Usage
@@ -141,8 +215,8 @@ GPL-3.0 - See LICENSE file for details
 
 ## Support
 
-- GitHub Issues: https://github.com/YOUR_USERNAME/luci-app-lpac/issues
-- OpenWrt Forum: https://forum.openwrt.org/
+- GitHub Issues: <https://github.com/YOUR_USERNAME/luci-app-lpac/issues>
+- OpenWrt Forum: <https://forum.openwrt.org/>
 
 ## Contributing
 
