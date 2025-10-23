@@ -452,17 +452,19 @@ end
 
 -- List available APDU drivers
 function M.list_apdu_drivers_safe()
-	local result = lpac.list_apdu_drivers()
-
-	if not util.is_success(result) then
-		return util.create_result(false, util.get_error_message(result), nil)
-	end
-
-	-- Extract LPAC_APDU array from result
-	local drivers = {}
-	if result.payload and result.payload.data and result.payload.data.LPAC_APDU then
-		drivers = result.payload.data.LPAC_APDU
-	end
+	-- lpac 'driver list' command is not available in older versions
+	-- Return hardcoded list of known APDU backends from lpac documentation
+	local drivers = {
+		"auto",      -- Auto-detect (default behavior)
+		"pcsc",      -- PC/SC smart card interface
+		"at",        -- AT command interface (ETSI)
+		"at_csim",   -- AT command interface (CSIM variant)
+		"qmi",       -- Qualcomm QMI protocol
+		"qmi_qrtr",  -- QMI over QRTR transport
+		"uqmi",      -- uqmi command-line interface
+		"mbim",      -- Mobile Broadband Interface Model
+		"stdio"      -- Standard I/O (for testing)
+	}
 
 	return util.create_result(true, "Success", {drivers = drivers})
 end
