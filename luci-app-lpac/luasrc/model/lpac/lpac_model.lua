@@ -17,11 +17,20 @@ local last_download_time = nil
 function M.get_system_info()
 	local sys = require "luci.sys"
 
+	-- Read app version from VERSION file
+	local version_file = "/usr/lib/lua/luci/model/lpac/VERSION"
+	local app_version = "1.0.0"  -- fallback
+	local f = io.open(version_file, "r")
+	if f then
+		app_version = f:read("*line") or "1.0.0"
+		f:close()
+	end
+
 	local info = {
 		openwrt_version = sys.exec("grep DISTRIB_RELEASE /etc/openwrt_release | cut -d= -f2 | tr -d \"'\""):gsub("\n", ""),
 		luci_version = require("luci.version").luciversion or "unknown",
 		lpac_version = lpac.get_version(),
-		app_version = "1.0.0"
+		app_version = app_version
 	}
 
 	return info

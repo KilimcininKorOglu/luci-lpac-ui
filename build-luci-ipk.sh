@@ -43,6 +43,12 @@ done
 
 VERSION="${BASE_VERSION}-${CURRENT_DATE}-${BUILD_NUMBER}"
 
+# Update VERSION file with current build version
+VERSION_FILE="$SOURCE_DIR/VERSION"
+echo "$VERSION" > "$VERSION_FILE"
+echo "📝 Updated VERSION file: $VERSION"
+
+echo ""
 echo "=== lpac LuCI IPK Builder ==="
 echo "Base Version: $BASE_VERSION"
 echo "Build Date: $CURRENT_DATE"
@@ -247,6 +253,11 @@ cp "$SOURCE_DIR/luasrc/controller/lpac.lua" \
 # Model layer (Business logic)
 echo "  → Model layer ($MODEL_COUNT modules)"
 cp "$SOURCE_DIR/luasrc/model/lpac"/*.lua \
+    "$BUILD_DIR/data/usr/lib/lua/luci/model/lpac/"
+
+# VERSION file
+echo "  → VERSION file"
+cp "$SOURCE_DIR/VERSION" \
     "$BUILD_DIR/data/usr/lib/lua/luci/model/lpac/"
 
 # JavaScript views (Modern LuCI)
