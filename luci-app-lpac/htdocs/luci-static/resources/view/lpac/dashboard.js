@@ -20,7 +20,7 @@ return view.extend({
 		var lpacCheckResponse = data[1];
 
 		var summary = (summaryResponse && summaryResponse.data) ? summaryResponse.data : {};
-		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
+		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
 
 		// Status badge helper
 		var createStatusBadge = function(status, text) {
