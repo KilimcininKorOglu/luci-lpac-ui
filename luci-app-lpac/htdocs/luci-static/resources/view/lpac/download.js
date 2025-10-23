@@ -17,7 +17,7 @@ return view.extend({
 
 	render: function(data) {
 		var lpacCheckResponse = data[0];
-		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
+		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
 
 		var container = E('div', { 'class': 'cbi-map' }, [
 			E('h2', {}, _('Download eSIM Profile')),

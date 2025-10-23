@@ -20,31 +20,29 @@ return view.extend({
 		var lpacCheckResponse = data[1];
 
 		var chipData = (chipResponse && chipResponse.data) ? chipResponse.data : {};
-		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
+		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
 
 		var content = [];
 
 		// lpac availability check
 		if (!lpacAvailable) {
-			content.push(E('div', { 'class': 'alert-message warning' }, [
-				E('h4', {}, _('lpac Not Installed')),
-				E('p', {}, _('The lpac binary is not installed or not executable. Please install lpac package first.'))
-			]));
 			return E('div', { 'class': 'cbi-map' }, [
 				E('h2', {}, _('eUICC Chip Information')),
-				content
+				E('div', { 'class': 'alert-message warning' }, [
+					E('h4', {}, _('lpac Not Installed')),
+					E('p', {}, _('The lpac binary is not installed or not executable. Please install lpac package first.'))
+				])
 			]);
 		}
 
 		// Error handling
 		if (!chipResponse || !chipResponse.success) {
-			content.push(E('div', { 'class': 'alert-message error' }, [
-				E('h4', {}, _('Failed to Get Chip Information')),
-				E('p', {}, chipResponse ? chipResponse.message : _('Unknown error occurred'))
-			]));
 			return E('div', { 'class': 'cbi-map' }, [
 				E('h2', {}, _('eUICC Chip Information')),
-				content
+				E('div', { 'class': 'alert-message error' }, [
+					E('h4', {}, _('Failed to Get Chip Information')),
+					E('p', {}, chipResponse ? chipResponse.message : _('Unknown error occurred'))
+				])
 			]);
 		}
 
@@ -213,12 +211,13 @@ return view.extend({
 			]));
 		}
 
-		return E('div', { 'class': 'cbi-map' }, [
+		var result = [
 			E('h2', {}, _('eUICC Chip Information')),
 			E('div', { 'class': 'cbi-section-descr' },
-				_('Detailed information about your eUICC chip hardware and capabilities')),
-			content
-		]);
+				_('Detailed information about your eUICC chip hardware and capabilities'))
+		];
+
+		return E('div', { 'class': 'cbi-map' }, result.concat(content));
 	},
 
 	handleSaveApply: null,

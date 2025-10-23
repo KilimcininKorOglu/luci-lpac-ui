@@ -22,7 +22,7 @@ return view.extend({
 
 		var profiles = (profilesResponse && profilesResponse.data && profilesResponse.data.profiles) ?
 			profilesResponse.data.profiles : [];
-		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
+		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
 
 		var container = E('div', { 'class': 'cbi-map' }, [
 			E('h2', {}, _('Profile Management')),
