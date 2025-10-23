@@ -52,13 +52,12 @@ return view.extend({
 
 		// lpac availability check
 		if (!lpacAvailable) {
-			content.push(E('div', { 'class': 'alert-message warning' }, [
-				E('h4', {}, _('lpac Not Installed')),
-				E('p', {}, _('The lpac binary is not installed or not executable. Please install lpac package first.'))
-			]));
 			return E('div', { 'class': 'cbi-map' }, [
 				E('h2', {}, _('eSIM Management Dashboard')),
-				content
+				E('div', { 'class': 'alert-message warning' }, [
+					E('h4', {}, _('lpac Not Installed')),
+					E('p', {}, _('The lpac binary is not installed or not executable. Please install lpac package first.'))
+				])
 			]);
 		}
 
@@ -166,12 +165,14 @@ return view.extend({
 			])
 		], '⚡'));
 
-		return E('div', { 'class': 'cbi-map' }, [
+		// Return with properly spread content array
+		var result = [
 			E('h2', {}, _('eSIM Management Dashboard')),
 			E('div', { 'class': 'cbi-section-descr' },
-				_('Overview of your eSIM/eUICC status and profiles')),
-			content
-		]);
+				_('Overview of your eSIM/eUICC status and profiles'))
+		];
+
+		return E('div', { 'class': 'cbi-map' }, result.concat(content));
 	},
 
 	handleSaveApply: null,
