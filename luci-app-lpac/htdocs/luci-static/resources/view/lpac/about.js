@@ -16,8 +16,7 @@ return view.extend({
 
 	render: function(data) {
 		// Parse JSON response from responseText
-		var systemInfoData = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
-		var info = (systemInfoData && systemInfoData.data) ? systemInfoData.data : {};
+		var info = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
 
 		return E('div', { 'class': 'cbi-map' }, [
 			E('h2', {}, _('About luci-app-lpac')),
