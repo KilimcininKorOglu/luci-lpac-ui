@@ -68,15 +68,13 @@ return view.extend({
 
 		content.push(createCard(_('eUICC Chip Status'), [
 			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('div', {}, [
-					E('strong', {}, _('Status: ')),
-					createStatusBadge(chipStatus, chipStatusText)
-				])
+			E('strong', {}, _('Status')),
+			E('div', { 'style': 'margin-top: 5px' }, createStatusBadge(chipStatus, chipStatusText))
 			]),
-			summary.eid ? E('div', {}, [
-				E('strong', {}, _('EID: ')),
-				E('code', {}, summary.eid)
-			]) : E('div', { 'class': 'text-muted' }, _('EID not available'))
+		summary.eid ? E('div', {}, [
+			E('strong', {}, _('EID')),
+			E('div', { 'style': 'margin-top: 5px' }, E('code', {}, summary.eid))
+		]) : E('div', { 'class': 'text-muted' }, _('EID not available'))
 		], '📱'));
 
 		// Profiles Summary Card
