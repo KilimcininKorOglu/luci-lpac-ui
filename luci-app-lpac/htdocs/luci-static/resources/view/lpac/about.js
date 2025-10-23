@@ -40,6 +40,10 @@ return view.extend({
 					E('tr', {}, [
 						E('td', { 'style': 'font-weight: bold' }, _('License')),
 						E('td', {}, 'GPL-3.0')
+				]),
+				E('tr', {}, [
+					E('td', { 'style': 'font-weight: bold' }, _('Developer')),
+					E('td', {}, 'Kilimcinin Kör Oğlu')
 					]),
 					E('tr', {}, [
 						E('td', { 'style': 'font-weight: bold' }, _('Repository')),
