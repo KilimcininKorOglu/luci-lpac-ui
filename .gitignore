@@ -1,0 +1,59 @@
+# Build directories
+build*/
+*/build*/
+build-gl-xe300/
+
+# SDK downloads
+*.tar.xz
+*.tar.gz
+*.zip
+openwrt-sdk*/
+
+# Cache and temp directories
+cache/
+tmp/
+.temp/
+
+# Build outputs
+*.ipk
+*.bin
+*.squashfs
+*.ubi
+
+# CMake build files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# Compiled binaries
+output/
+*.o
+*.a
+*.so
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.backup
+
+wget-log
+wget-log.*
+
+EasyLPAC/
+lpa-gtk/
+openeuicc/
+lpac/
