@@ -318,7 +318,17 @@ function action_download_profile()
 		imei = data.imei
 	}
 
-	local result = model.download_profile_safe(opts)
+	-- Wrap in pcall to catch any Lua errors
+	local success, result = pcall(function()
+		return model.download_profile_safe(opts)
+	end)
+
+	if not success then
+		-- Lua error occurred (exception)
+		send_json(util.create_result(false, "Internal error: " .. tostring(result), nil))
+		return
+	end
+
 	send_json(result)
 end
 
