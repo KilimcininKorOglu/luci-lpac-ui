@@ -117,10 +117,8 @@ return view.extend({
 
 		content.push(createCard(_('Notifications'), [
 			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('div', {}, [
-					E('strong', {}, _('Pending Notifications: ')),
-					notificationBadge
-				])
+			E('strong', {}, _('Pending Notifications')),
+			E('div', { 'style': 'margin-top: 5px' }, notificationBadge)
 			]),
 			notificationCount > 0 ? E('div', { 'class': 'text-warning' },
 				_('You have pending notifications that require attention.')) :
