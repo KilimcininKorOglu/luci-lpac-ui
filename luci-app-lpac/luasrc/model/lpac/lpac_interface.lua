@@ -170,12 +170,15 @@ function M.enable_profile(iccid, refresh)
 		}
 	end
 
-	-- Add refresh flag
-	if refresh == nil or refresh == true then
-		table.insert(args, "-r")
-	end
-
+	-- Add ICCID
 	table.insert(args, iccid)
+
+	-- Add refresh flag after ICCID (1 or 0, default is 1 if not specified)
+	-- lpac expects: lpac profile enable <ICCID> [1/0]
+	if refresh ~= nil and refresh == false then
+		table.insert(args, "0")
+	end
+	-- If refresh is true or nil, we omit it (lpac default is true)
 
 	return M.exec_lpac(args)
 end
@@ -197,12 +200,15 @@ function M.disable_profile(iccid, refresh)
 		}
 	end
 
-	-- Add refresh flag
-	if refresh == nil or refresh == true then
-		table.insert(args, "-r")
-	end
-
+	-- Add ICCID
 	table.insert(args, iccid)
+
+	-- Add refresh flag after ICCID (1 or 0, default is 1 if not specified)
+	-- lpac expects: lpac profile disable <ICCID> [1/0]
+	if refresh ~= nil and refresh == false then
+		table.insert(args, "0")
+	end
+	-- If refresh is true or nil, we omit it (lpac default is true)
 
 	return M.exec_lpac(args)
 end
