@@ -1595,9 +1595,9 @@ make package/luci-app-lpac/compile V=s
 
 **Week 2: Backend Development**
 
-- [ ] Implement lpac_interface.lua
-- [ ] Implement lpac_model.lua
-- [ ] Create controller with API endpoints
+- ✅ Implement lpac_interface.lua
+- ✅ Implement lpac_model.lua (includes lpac_util.lua)
+- ✅ Create controller with API endpoints
 - [ ] Write unit tests
 
 **Week 3: Frontend Development**
