@@ -644,7 +644,10 @@ function M.update_config(new_config)
 	local advanced_fields = {
 		log_level = true,
 		timeout = true,
-		download_cooldown = true
+		download_cooldown = true,
+		auto_manage_wwan = true,
+		wwan_interface = true,
+		auto_sim_power_cycle = true
 	}
 
 	-- Update UCI configuration with proper section mapping
