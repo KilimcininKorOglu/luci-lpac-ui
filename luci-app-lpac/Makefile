@@ -41,15 +41,15 @@ define Package/luci-app-lpac/install
 	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/lpac/*.js \
 		$(1)/www/luci-static/resources/view/lpac/
 
+	$(INSTALL_DIR) $(1)/www/luci-static/resources
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/*.css \
+		$(1)/www/luci-static/resources/
+
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./root/etc/config/lpac $(1)/etc/config/
 
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./root/etc/uci-defaults/* $(1)/etc/uci-defaults/
-
-	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
-	$(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/*.json \
-		$(1)/usr/share/rpcd/acl.d/
 endef
 
 $(eval $(call BuildPackage,luci-app-lpac))
