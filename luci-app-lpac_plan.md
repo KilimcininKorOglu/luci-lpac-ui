@@ -298,6 +298,40 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
 └─────────────────────────────────────────────────┘
 ```
 
+### Frontend-Backend Communication
+
+**Modern LuCI (LuCI ng) HTTP API Approach:**
+
+This application uses Modern LuCI's HTTP API architecture for frontend-backend communication:
+
+- **Frontend**: JavaScript views use `'require request'` with `request.get()` and `request.post()` methods
+- **Backend**: Lua controller defines HTTP endpoints using `call()` functions
+- **API Format**: RESTful-style endpoints at `/cgi-bin/luci/admin/services/lpac/api/*`
+- **Response Format**: JSON objects with `{success: bool, message: string, data: object}` structure
+
+**Note:** This application does NOT use ubus RPC communication (`rpc.declare()`). All frontend-backend communication goes through HTTP API endpoints defined in the controller.
+
+**Example API Call:**
+```javascript
+// Frontend (profiles.js)
+request.post('/cgi-bin/luci/admin/services/lpac/api/enable_profile', {
+    iccid: '89012345678901234567',
+    refresh: true
+})
+```
+
+```lua
+-- Backend (controller/lpac.lua)
+entry({"admin", "services", "lpac", "api", "enable_profile"},
+      call("action_enable_profile")).leaf = true
+
+function action_enable_profile()
+    local data = get_post_data()
+    local result = model.enable_profile_safe(data.iccid, data.refresh)
+    send_json(result)  -- Returns {success: true, message: "...", data: {...}}
+end
+```
+
 ### Directory Structure
 
 ```
@@ -570,43 +604,25 @@ return M
 
 #### 3. Frontend JavaScript (`htdocs/luci-static/resources/view/lpac/profiles.js`)
 
-**Purpose:** Modern client-side view with reactive UI
+**Purpose:** Modern client-side view with reactive UI using HTTP API endpoints
 
 ```javascript
 'use strict';
 'require view';
-'require rpc';
+'require request';
 'require form';
 'require ui';
-
-var callChipInfo = rpc.declare({
-    object: 'luci.lpac',
-    method: 'chip_info',
-    expect: { result: {} }
-});
-
-var callListProfiles = rpc.declare({
-    object: 'luci.lpac',
-    method: 'list_profiles',
-    expect: { result: [] }
-});
-
-var callEnableProfile = rpc.declare({
-    object: 'luci.lpac',
-    method: 'enable_profile',
-    params: ['iccid', 'refresh'],
-    expect: { result: {} }
-});
 
 return view.extend({
     load: function() {
         return Promise.all([
-            callListProfiles()
+            request.get('/cgi-bin/luci/admin/services/lpac/api/list_profiles')
         ]);
     },
 
     render: function(data) {
-        var profiles = data[0] || [];
+        var response = data[0];
+        var profiles = (response && response.success && response.data) ? response.data : [];
 
         var m, s, o;
 
@@ -629,7 +645,7 @@ return view.extend({
 
         profiles.forEach(function(profile) {
             var row = E('div', { 'class': 'tr' }, [
-                E('div', { 'class': 'td' }, profile.iccid.substr(0, 10) + '***'),
+                E('div', { 'class': 'td' }, profile.iccid_masked || profile.iccid.substr(0, 10) + '***'),
                 E('div', { 'class': 'td' }, profile.profileNickname || '-'),
                 E('div', { 'class': 'td' }, profile.serviceProviderName),
                 E('div', { 'class': 'td' }, [
@@ -637,13 +653,13 @@ return view.extend({
                         'class': profile.profileState === 'enabled'
                             ? 'badge badge-success'
                             : 'badge badge-secondary'
-                    }, _(profile.profileState))
+                    }, _(profile.profileState_formatted || profile.profileState))
                 ]),
                 E('div', { 'class': 'td' }, [
                     E('button', {
                         'class': 'btn cbi-button cbi-button-apply',
                         'click': ui.createHandlerFn(this, function() {
-                            return this.handleEnableProfile(profile.iccid);
+                            return this.handleToggleProfile(profile.iccid, profile.profileState);
                         })
                     }, profile.profileState === 'enabled' ? _('Disable') : _('Enable')),
                     E('button', {
@@ -665,19 +681,28 @@ return view.extend({
         ]);
     },
 
-    handleEnableProfile: function(iccid) {
-        ui.showModal(_('Enabling Profile'), [
+    handleToggleProfile: function(iccid, currentState) {
+        var action = currentState === 'enabled' ? 'disable' : 'enable';
+        var endpoint = '/cgi-bin/luci/admin/services/lpac/api/' + action + '_profile';
+
+        ui.showModal(_(currentState === 'enabled' ? 'Disabling Profile' : 'Enabling Profile'), [
             E('p', { 'class': 'spinning' }, _('Please wait...'))
         ]);
 
-        return callEnableProfile(iccid, true).then(function(result) {
+        return request.post(endpoint, {
+            iccid: iccid,
+            refresh: true
+        }).then(function(result) {
             ui.hideModal();
-            if (result.payload && result.payload.code === 0) {
-                ui.addNotification(null, E('p', _('Profile enabled successfully')));
+            if (result && result.success) {
+                ui.addNotification(null, E('p', _(result.message || 'Operation completed successfully')));
                 window.location.reload();
             } else {
-                ui.addNotification(null, E('p', _('Failed to enable profile')), 'error');
+                ui.addNotification(null, E('p', _(result.message || 'Operation failed')), 'error');
             }
+        }).catch(function(err) {
+            ui.hideModal();
+            ui.addNotification(null, E('p', _('Request failed: ' + err.message)), 'error');
         });
     },
 
@@ -698,35 +723,53 @@ return view.extend({
                 }, _('Delete'))
             ])
         ]);
+    },
+
+    doDeleteProfile: function(iccid) {
+        ui.showModal(_('Deleting Profile'), [
+            E('p', { 'class': 'spinning' }, _('Please wait...'))
+        ]);
+
+        return request.post('/cgi-bin/luci/admin/services/lpac/api/delete_profile', {
+            iccid: iccid,
+            confirmed: true
+        }).then(function(result) {
+            ui.hideModal();
+            if (result && result.success) {
+                ui.addNotification(null, E('p', _(result.message || 'Profile deleted successfully')));
+                window.location.reload();
+            } else {
+                ui.addNotification(null, E('p', _(result.message || 'Failed to delete profile')), 'error');
+            }
+        }).catch(function(err) {
+            ui.hideModal();
+            ui.addNotification(null, E('p', _('Request failed: ' + err.message)), 'error');
+        });
     }
 });
 ```
 
 #### 4. Frontend JavaScript - About Page (`htdocs/luci-static/resources/view/lpac/about.js`)
 
-**Purpose:** Display application information, versions, and credits
+**Purpose:** Display application information, versions, and credits using HTTP API
 
 ```javascript
 'use strict';
 'require view';
-'require rpc';
+'require request';
 'require ui';
-
-var callGetVersion = rpc.declare({
-    object: 'luci.lpac',
-    method: 'get_version',
-    expect: { result: {} }
-});
 
 return view.extend({
     load: function() {
         return Promise.all([
-            callGetVersion()
+            request.get('/cgi-bin/luci/admin/services/lpac/api/system_info')
         ]);
     },
 
     render: function(data) {
-        var versions = data[0] || {};
+        var response = data[0];
+        var versions = (response && response.success && response.data) ? response.data : {};
+        var info = versions || {};
 
         return E('div', { 'class': 'cbi-map' }, [
             E('h2', {}, _('About luci-app-lpac')),
@@ -741,11 +784,11 @@ return view.extend({
                     ]),
                     E('tr', {}, [
                         E('td', { 'style': 'font-weight: bold' }, _('Version')),
-                        E('td', {}, versions.luci_app_lpac || 'unknown')
+                        E('td', {}, info.app_version || 'unknown')
                     ]),
                     E('tr', {}, [
                         E('td', { 'style': 'font-weight: bold' }, _('lpac Version')),
-                        E('td', {}, versions.lpac || 'unknown')
+                        E('td', {}, info.lpac_version || 'unknown')
                     ]),
                     E('tr', {}, [
                         E('td', { 'style': 'font-weight: bold' }, _('License')),
@@ -767,11 +810,11 @@ return view.extend({
                 E('table', { 'class': 'table' }, [
                     E('tr', {}, [
                         E('td', { 'style': 'width: 30%; font-weight: bold' }, _('OpenWrt Version')),
-                        E('td', {}, versions.openwrt || 'unknown')
+                        E('td', {}, info.openwrt_version || 'unknown')
                     ]),
                     E('tr', {}, [
                         E('td', { 'style': 'font-weight: bold' }, _('LuCI Version')),
-                        E('td', {}, versions.luci || 'unknown')
+                        E('td', {}, info.luci_version || 'unknown')
                     ])
                 ])
             ]),
