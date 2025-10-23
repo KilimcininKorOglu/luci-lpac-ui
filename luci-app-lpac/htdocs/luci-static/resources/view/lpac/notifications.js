@@ -354,21 +354,33 @@ return view.extend({
 			E('h3', {}, '❓ ' + _('About Notifications')),
 			E('p', {}, _('Notifications are messages from SM-DP+ servers regarding profile operations:')),
 			E('ul', {}, [
-				E('li', {}, E('strong', {}, _('Install: ')) +
-					_('A new profile is available for download')),
-				E('li', {}, E('strong', {}, _('Enable: ')) +
-					_('Request to enable a profile')),
-				E('li', {}, E('strong', {}, _('Disable: ')) +
-					_('Request to disable a profile')),
-				E('li', {}, E('strong', {}, _('Delete: ')) +
-					_('Request to delete a profile'))
+				E('li', {}, [
+					E('strong', {}, _('Install: ')),
+					_('A new profile is available for download')
+				]),
+				E('li', {}, [
+					E('strong', {}, _('Enable: ')),
+					_('Request to enable a profile')
+				]),
+				E('li', {}, [
+					E('strong', {}, _('Disable: ')),
+					_('Request to disable a profile')
+				]),
+				E('li', {}, [
+					E('strong', {}, _('Delete: ')),
+					_('Request to delete a profile')
+				])
 			]),
 			E('p', {}, _('Actions:')),
 			E('ul', {}, [
-				E('li', {}, E('strong', {}, _('Process: ')) +
-					_('Execute the requested operation and optionally remove the notification')),
-				E('li', {}, E('strong', {}, _('Remove: ')) +
-					_('Delete the notification without processing'))
+				E('li', {}, [
+					E('strong', {}, _('Process: ')),
+					_('Execute the requested operation and optionally remove the notification')
+				]),
+				E('li', {}, [
+					E('strong', {}, _('Remove: ')),
+					_('Delete the notification without processing')
+				])
 			]),
 			E('p', {}, _('Processing notifications regularly helps keep your eUICC synchronized with SM-DP+ servers.'))
 		]);
