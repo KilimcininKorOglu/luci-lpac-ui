@@ -116,16 +116,31 @@ return view.extend({
 			}
 
 			if (info2.extCardResource) {
-				euiccRows.push(E('tr', {}, [
-					E('td', { 'style': 'font-weight: bold' }, _('Extended Card Resource')),
-					E('td', {}, info2.extCardResource)
-				]));
+				var extResource = info2.extCardResource;
+				var resourceText = [];
+				if (extResource.installedApplication !== undefined) {
+					resourceText.push(_('Apps: ') + extResource.installedApplication);
+				}
+				if (extResource.freeNonVolatileMemory !== undefined) {
+					var nvmKB = extResource.freeNonVolatileMemory / 1024;
+					resourceText.push(_('Free NVM: ') + nvmKB.toFixed(1) + ' MB');
+				}
+				if (extResource.freeVolatileMemory !== undefined) {
+					var vmKB = extResource.freeVolatileMemory / 1024;
+					resourceText.push(_('Free VM: ') + vmKB.toFixed(1) + ' KB');
+				}
+				if (resourceText.length > 0) {
+					euiccRows.push(E('tr', {}, [
+						E('td', { 'style': 'font-weight: bold' }, _('Extended Card Resource')),
+						E('td', {}, resourceText.join(', '))
+					]));
+				}
 			}
 
-			if (info2.uiccCapability) {
+			if (info2.uiccCapability && Array.isArray(info2.uiccCapability)) {
 				euiccRows.push(E('tr', {}, [
 					E('td', { 'style': 'font-weight: bold' }, _('UICC Capability')),
-					E('td', { 'style': 'word-break: break-all; max-width: 400px' }, info2.uiccCapability)
+					E('td', { 'style': 'word-break: break-all; max-width: 400px' }, info2.uiccCapability.join(', '))
 				]));
 			}
 
@@ -143,10 +158,10 @@ return view.extend({
 				]));
 			}
 
-			if (info2.rspCapability) {
+			if (info2.rspCapability && Array.isArray(info2.rspCapability)) {
 				euiccRows.push(E('tr', {}, [
 					E('td', { 'style': 'font-weight: bold' }, _('RSP Capability')),
-					E('td', {}, info2.rspCapability)
+					E('td', {}, info2.rspCapability.join(', '))
 				]));
 			}
 
