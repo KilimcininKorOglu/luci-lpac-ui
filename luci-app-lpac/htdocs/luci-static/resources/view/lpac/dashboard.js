@@ -76,7 +76,7 @@ return view.extend({
 			summary.eid ? E('div', { 'style': 'margin-bottom: 10px' }, [
 				E('strong', {}, _('EID')),
 				E('div', { 'style': 'margin-top: 5px' }, E('code', {}, summary.eid))
-			]) : E('div', { 'style': 'margin-bottom: 10px; class': 'text-muted' }, _('EID not available')),
+			]) : E('div', { 'style': 'margin-bottom: 10px', 'class': 'text-muted' }, _('EID not available')),
 			// Firmware Version
 			summary.firmware_version ? E('div', { 'style': 'margin-bottom: 10px' }, [
 				E('strong', {}, _('Firmware')),
