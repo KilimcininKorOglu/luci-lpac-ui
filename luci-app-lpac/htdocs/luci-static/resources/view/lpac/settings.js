@@ -66,8 +66,9 @@ return view.extend({
 			]);
 
 			request.post('/cgi-bin/luci/admin/network/lpac/api/update_config', newConfig)
-				.then(function(response) {
+				.then(function(xhr) {
 					ui.hideModal();
+					var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 					if (response && response.success) {
 						ui.addNotification(null,
 							E('p', {}, _('Settings saved successfully')), 'info');
