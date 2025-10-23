@@ -125,7 +125,7 @@ return view.extend({
 			if (info2.uiccCapability) {
 				euiccRows.push(E('tr', {}, [
 					E('td', { 'style': 'font-weight: bold' }, _('UICC Capability')),
-					E('td', {}, info2.uiccCapability)
+					E('td', { 'style': 'word-break: break-all; max-width: 400px' }, info2.uiccCapability)
 				]));
 			}
 
