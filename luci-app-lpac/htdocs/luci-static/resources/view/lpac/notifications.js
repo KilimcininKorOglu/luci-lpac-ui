@@ -20,8 +20,8 @@ return view.extend({
 		var notificationsResponse = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
 		var lpacCheckResponse = data[1] ? JSON.parse(data[1].responseText || '{}') : {};
 
-		var notifications = (notificationsResponse && notificationsResponse.data &&
-			notificationsResponse.data.notifications) ? notificationsResponse.data.notifications : [];
+		var notifications = (notificationsResponse && notificationsResponse.data && Array.isArray(notificationsResponse.data)) ?
+			notificationsResponse.data : [];
 		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data &&
 			lpacCheckResponse.data.installed) ? true : false;
 
@@ -294,8 +294,10 @@ return view.extend({
 			// Create notifications table
 			var tableRows = notifications.map(function(notification) {
 				var seqNumber = notification.seqNumber || notification.seq_number || _('Unknown');
-				var operation = notification.notificationOperation || notification.operation || _('Unknown');
-				var address = notification.notificationAddress || notification.address || _('N/A');
+				var operation = notification.profileManagementOperation_formatted ||
+				                notification.profileManagementOperation ||
+				                notification.operation || _('Unknown');
+				var address = notification.notificationAddress || _('N/A');
 
 				// Action buttons
 				var actionButtons = E('div', { 'style': 'display: flex; gap: 5px; flex-wrap: wrap' });
