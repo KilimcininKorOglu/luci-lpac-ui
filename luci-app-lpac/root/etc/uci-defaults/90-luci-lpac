@@ -24,7 +24,7 @@ uci -q delete luci-lpac.config.timeout 2>/dev/null
 # For UPGRADE: Keep existing values (don't touch!)
 if [ "$FIRST_INSTALL" = "1" ]; then
 	# First install - set defaults
-	uci set luci-lpac.config.apdu_driver='qmi'
+	uci set luci-lpac.config.apdu_driver='qmi_qrtr'
 	uci set luci-lpac.config.http_driver='curl'
 	uci set luci-lpac.config.custom_aid=''
 	uci set luci-lpac.config.es10x_mss='60'
@@ -43,7 +43,7 @@ if [ "$FIRST_INSTALL" = "1" ]; then
 	touch /etc/config/luci-lpac.user_configured
 else
 	# Upgrade - only fill in missing values, don't overwrite existing
-	uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='qmi'
+	uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='qmi_qrtr'
 	uci -q get luci-lpac.config.http_driver >/dev/null || uci set luci-lpac.config.http_driver='curl'
 	uci -q get luci-lpac.config.custom_aid >/dev/null || uci set luci-lpac.config.custom_aid=''
 	uci -q get luci-lpac.config.es10x_mss >/dev/null || uci set luci-lpac.config.es10x_mss='60'

@@ -22,23 +22,40 @@ local function build_env()
 	local apdu_driver = get_config("apdu_driver", "pcsc")
 
 	-- APDU driver specific settings
-	if apdu_driver == "qmi" or apdu_driver == "qmi_qrtr" then
-		-- For QMI, LPAC_APDU should be the device path (e.g., /dev/cdc-wdm0)
-		-- Try to auto-detect or use configured path
+	if apdu_driver == "qmi" then
+		-- For QMI mode, LPAC_APDU should be the device path (e.g., /dev/cdc-wdm0)
+		-- When wwan interface is active, cdc-wdm device might be locked
+		-- Try qmi_qrtr as fallback - it uses QRTR socket instead of device file
 		local qmi_device = get_config("qmi_device", "")
 		if qmi_device == "" then
-			-- Auto-detect: look for /dev/cdc-wdm0 first, then /dev/wwan0qmi0
-			if nixio.fs.stat("/dev/cdc-wdm0") then
+			-- Auto-detect: try multiple devices in order
+			local test_devices = {
+				"/dev/cdc-wdm0",
+				"/dev/cdc-wdm1",
+				"/dev/wwan0qmi0",
+				"/dev/mhi_QMI0"
+			}
+			for _, dev in ipairs(test_devices) do
+				local f = io.open(dev, "r")
+				if f then
+					f:close()
+					qmi_device = dev
+					break
+				end
+			end
+			-- If no device found, use default
+			if qmi_device == "" then
 				qmi_device = "/dev/cdc-wdm0"
-			elseif nixio.fs.stat("/dev/wwan0qmi0") then
-				qmi_device = "/dev/wwan0qmi0"
-			else
-				-- Fallback: try to find any cdc-wdm device
-				qmi_device = "/dev/cdc-wdm0"  -- Default assumption
 			end
 		end
 		env.LPAC_APDU = qmi_device
 
+		local qmi_slot = get_config("qmi_slot", "0")
+		env.LPAC_APDU_SLOT = qmi_slot
+	elseif apdu_driver == "qmi_qrtr" then
+		-- QRTR mode - doesn't use device files, uses kernel QRTR sockets
+		-- This works even when network interface is active!
+		env.LPAC_APDU = "qmi_qrtr"
 		local qmi_slot = get_config("qmi_slot", "0")
 		env.LPAC_APDU_SLOT = qmi_slot
 	elseif apdu_driver == "pcsc" then

@@ -1,6 +1,6 @@
 
 config luci_lpac 'config'
-	option apdu_driver 'qmi'
+	option apdu_driver 'qmi_qrtr'
 	option http_driver 'curl'
 	option custom_aid ''
 	option es10x_mss '60'
