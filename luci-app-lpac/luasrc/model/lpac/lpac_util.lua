@@ -228,6 +228,8 @@ function M.get_friendly_error(error_msg)
 			"Profile is already enabled.",
 		["profile already disabled"] =
 			"Profile is already disabled.",
+		["profile not in disabled state"] =
+			"Profile must be disabled before it can be deleted. Please disable it first.",
 
 		-- QMI errors
 		["QMI error"] =
@@ -271,6 +273,11 @@ end
 function M.get_error_message(result)
 	if not result or type(result) ~= "table" then
 		return "Invalid result"
+	end
+
+	-- Check data field first (most specific error info from lpac)
+	if result.payload and result.payload.data and type(result.payload.data) == "string" then
+		return M.get_friendly_error(result.payload.data)
 	end
 
 	if result.payload and result.payload.message then
