@@ -150,6 +150,7 @@
 	color: #555;
 	border-bottom: 2px solid #ddd;
 	padding: 14px 16px;
+	text-align: center;
 }
 
 .profiles-table tbody tr {
@@ -168,6 +169,7 @@
 .profiles-table tbody td {
 	padding: 16px;
 	vertical-align: middle;
+	text-align: center;
 }
 
 .profiles-table .profile-name {
