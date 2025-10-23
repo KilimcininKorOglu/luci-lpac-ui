@@ -293,7 +293,8 @@ return view.extend({
 
 			// Create notifications table
 			var tableRows = notifications.map(function(notification) {
-				var seqNumber = notification.seqNumber || notification.seq_number || _('Unknown');
+				var seqNumber = (notification.seqNumber !== undefined && notification.seqNumber !== null) ? notification.seqNumber : 
+			                (notification.seq_number !== undefined && notification.seq_number !== null) ? notification.seq_number : _('Unknown');
 				var operation = notification.profileManagementOperation_formatted ||
 				                notification.profileManagementOperation ||
 				                notification.operation || _('Unknown');
