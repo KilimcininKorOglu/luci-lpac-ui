@@ -119,14 +119,16 @@ return view.extend({
 			createStatusBadge('success', '0');
 
 		content.push(createCard(_('Notifications'), [
-			E('p', {}, [
-				_('Pending Notifications: '),
-				notificationBadge
+			E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('div', {}, [
+					E('strong', {}, _('Pending Notifications: ')),
+					notificationBadge
+				])
 			]),
-			notificationCount > 0 ? E('p', { 'class': 'text-warning' },
+			notificationCount > 0 ? E('div', { 'class': 'text-warning' },
 				_('You have pending notifications that require attention.')) :
-				E('p', { 'class': 'text-muted' }, _('No pending notifications.')),
-			E('p', { 'style': 'margin-top: 10px' }, [
+				E('div', { 'class': 'text-muted' }, _('No pending notifications.')),
+			E('div', { 'style': 'margin-top: 10px' }, [
 				E('a', {
 					'href': L.url('admin', 'network', 'lpac', 'notifications'),
 					'class': 'btn cbi-button'
