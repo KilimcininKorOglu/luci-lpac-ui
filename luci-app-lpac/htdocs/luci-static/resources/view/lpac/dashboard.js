@@ -81,30 +81,29 @@ return view.extend({
 
 		// Profiles Summary Card
 		content.push(createCard(_('Profile Summary'), [
-			E('table', { 'class': 'table' }, [
-				E('tr', {}, [
-					E('td', {}, _('Total Profiles:')),
-					E('td', { 'style': 'text-align: right; font-weight: bold' },
-						String(summary.profiles_total || 0))
-				]),
-				E('tr', {}, [
-					E('td', {}, [
-						createStatusBadge('success', '●'),
-						' ' + _('Enabled:')
-					]),
-					E('td', { 'style': 'text-align: right; font-weight: bold' },
-						String(summary.profiles_enabled || 0))
-				]),
-				E('tr', {}, [
-					E('td', {}, [
-						createStatusBadge('error', '●'),
-						' ' + _('Disabled:')
-					]),
-					E('td', { 'style': 'text-align: right; font-weight: bold' },
-						String(summary.profiles_disabled || 0))
+			E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('div', {}, [
+					E('strong', {}, _('Total Profiles: ')),
+					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_total || 0))
 				])
 			]),
-			E('p', { 'style': 'margin-top: 10px' }, [
+			E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('div', {}, [
+					createStatusBadge('success', '●'),
+					' ',
+					E('strong', {}, _('Enabled: ')),
+					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_enabled || 0))
+				])
+			]),
+			E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('div', {}, [
+					createStatusBadge('error', '●'),
+					' ',
+					E('strong', {}, _('Disabled: ')),
+					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_disabled || 0))
+				])
+			]),
+			E('div', { 'style': 'margin-top: 10px' }, [
 				E('a', {
 					'href': L.url('admin', 'network', 'lpac', 'profiles'),
 					'class': 'btn cbi-button'
