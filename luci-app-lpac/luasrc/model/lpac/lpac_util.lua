@@ -120,13 +120,17 @@ function M.validate_activation_code(code)
 	end
 
 	-- Check if it has at least SMDP and Matching ID
+	-- Format: LPA:1$SMDP_ADDRESS$MATCHING_ID or LPA:1$SMDP_ADDRESS$MATCHING_ID$CONFIRMATION_CODE
+	-- After splitting by $, we get parts: ["LPA:1", "SMDP_ADDRESS", "MATCHING_ID", ...]
+	-- So minimum is 3 parts (LPA:1, address, matching_id)
 	local parts = {}
 	for part in code:gmatch("[^$]+") do
 		table.insert(parts, part)
 	end
 
+	-- We need at least 3 parts: LPA:1, SMDP address, and Matching ID
 	if #parts < 3 then
-		return false, "Activation code must contain SM-DP+ address and matching ID"
+		return false, "Activation code must contain SM-DP+ address and matching ID (found " .. #parts .. " parts)"
 	end
 
 	return true
