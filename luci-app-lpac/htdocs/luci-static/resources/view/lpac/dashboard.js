@@ -67,14 +67,16 @@ return view.extend({
 		var chipStatusText = chipStatus === 'connected' ? _('Connected') : _('Disconnected');
 
 		content.push(createCard(_('eUICC Chip Status'), [
-			E('p', {}, [
-				_('Status: '),
-				createStatusBadge(chipStatus, chipStatusText)
+			E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('div', {}, [
+					E('strong', {}, _('Status: ')),
+					createStatusBadge(chipStatus, chipStatusText)
+				])
 			]),
-			summary.eid ? E('p', {}, [
+			summary.eid ? E('div', {}, [
 				E('strong', {}, _('EID: ')),
 				E('code', {}, summary.eid)
-			]) : E('p', { 'class': 'text-muted' }, _('EID not available'))
+			]) : E('div', { 'class': 'text-muted' }, _('EID not available'))
 		], '📱'));
 
 		// Profiles Summary Card
