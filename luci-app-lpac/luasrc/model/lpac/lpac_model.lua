@@ -469,6 +469,18 @@ function M.list_apdu_drivers_safe()
 	return util.create_result(true, "Success", {drivers = drivers})
 end
 
+-- List available HTTP drivers (hardcoded from lpac documentation)
+function M.list_http_drivers_safe()
+	-- lpac 'driver list' command is not available in older versions
+	-- Return hardcoded list of known HTTP backends from lpac documentation
+	local drivers = {
+		"curl",      -- cURL HTTP client (default)
+		"stdio"      -- Standard I/O (for testing)
+	}
+
+	return util.create_result(true, "Success", {drivers = drivers})
+end
+
 -- Check if lpac binary is available
 function M.check_lpac_available()
 	local available = fs.access("/usr/bin/lpac", "x")

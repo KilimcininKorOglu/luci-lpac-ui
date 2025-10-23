@@ -13,6 +13,7 @@ return view.extend({
 		return Promise.all([
 			request.get('/cgi-bin/luci/admin/network/lpac/api/get_config'),
 			request.get('/cgi-bin/luci/admin/network/lpac/api/list_apdu_drivers'),
+			request.get('/cgi-bin/luci/admin/network/lpac/api/list_http_drivers'),
 			request.get('/cgi-bin/luci/admin/network/lpac/api/check_lpac')
 		]);
 	},
@@ -20,12 +21,15 @@ return view.extend({
 	render: function(data) {
 		// Parse JSON responses from responseText
 		var configResponse = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
-		var driversResponse = data[1] ? JSON.parse(data[1].responseText || '{}') : {};
-		var lpacCheckResponse = data[2] ? JSON.parse(data[2].responseText || '{}') : {};
+		var apduDriversResponse = data[1] ? JSON.parse(data[1].responseText || '{}') : {};
+		var httpDriversResponse = data[2] ? JSON.parse(data[2].responseText || '{}') : {};
+		var lpacCheckResponse = data[3] ? JSON.parse(data[3].responseText || '{}') : {};
 
 		var config = (configResponse && configResponse.data) ? configResponse.data : {};
-		var drivers = (driversResponse && driversResponse.data && driversResponse.data.drivers) ?
-			driversResponse.data.drivers : [];
+		var apduDrivers = (apduDriversResponse && apduDriversResponse.data && apduDriversResponse.data.drivers) ?
+			apduDriversResponse.data.drivers : [];
+		var httpDrivers = (httpDriversResponse && httpDriversResponse.data && httpDriversResponse.data.drivers) ?
+			httpDriversResponse.data.drivers : [];
 		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data &&
 			lpacCheckResponse.data.installed) ? true : false;
 
@@ -46,12 +50,14 @@ return view.extend({
 
 		// Form elements
 		var apduDriverSelect;
+		var httpDriverSelect;
 		var defaultSmdpInput;
 
 		// Helper: Save configuration
 		var saveConfig = function() {
 			var newConfig = {
 				apdu_driver: apduDriverSelect.value,
+				http_driver: httpDriverSelect.value,
 				default_smdp: defaultSmdpInput.value.trim()
 			};
 
@@ -84,7 +90,7 @@ return view.extend({
 		]);
 
 		// APDU Driver field
-		var driverOptions = drivers.map(function(driver) {
+		var apduDriverOptions = apduDrivers.map(function(driver) {
 			return E('option', {
 				'value': driver,
 				'selected': driver === config.apdu_driver ? 'selected' : null
@@ -92,8 +98,8 @@ return view.extend({
 		});
 
 		// If no drivers or current driver not in list, add "auto" option
-		if (drivers.length === 0 || (!config.apdu_driver || drivers.indexOf(config.apdu_driver) === -1)) {
-			driverOptions.unshift(E('option', {
+		if (apduDrivers.length === 0 || (!config.apdu_driver || apduDrivers.indexOf(config.apdu_driver) === -1)) {
+			apduDriverOptions.unshift(E('option', {
 				'value': 'auto',
 				'selected': !config.apdu_driver || config.apdu_driver === 'auto' ? 'selected' : null
 			}, _('Auto-detect')));
@@ -102,9 +108,26 @@ return view.extend({
 		settingsSection.appendChild(E('div', { 'class': 'cbi-value' }, [
 			E('label', { 'class': 'cbi-value-title' }, _('APDU Driver')),
 			E('div', { 'class': 'cbi-value-field' }, [
-				apduDriverSelect = E('select', { 'class': 'cbi-input-select' }, driverOptions),
+				apduDriverSelect = E('select', { 'class': 'cbi-input-select' }, apduDriverOptions),
 				E('div', { 'class': 'cbi-value-description' },
 					_('Select the APDU interface driver for communicating with the eUICC chip'))
+			])
+		]));
+
+		// HTTP Driver field
+		var httpDriverOptions = httpDrivers.map(function(driver) {
+			return E('option', {
+				'value': driver,
+				'selected': driver === config.http_driver ? 'selected' : null
+			}, driver);
+		});
+
+		settingsSection.appendChild(E('div', { 'class': 'cbi-value' }, [
+			E('label', { 'class': 'cbi-value-title' }, _('HTTP Driver')),
+			E('div', { 'class': 'cbi-value-field' }, [
+				httpDriverSelect = E('select', { 'class': 'cbi-input-select' }, httpDriverOptions),
+				E('div', { 'class': 'cbi-value-description' },
+					_('Select the HTTP interface driver for network communication'))
 			])
 		]));
 

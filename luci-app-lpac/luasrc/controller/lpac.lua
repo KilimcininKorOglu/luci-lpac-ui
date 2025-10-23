@@ -112,6 +112,9 @@ function index()
 	entry({"admin", "network", "lpac", "api", "list_apdu_drivers"},
 		call("action_list_apdu_drivers")).leaf = true
 
+	entry({"admin", "network", "lpac", "api", "list_http_drivers"},
+		call("action_list_http_drivers")).leaf = true
+
 	entry({"admin", "network", "lpac", "api", "check_lpac"},
 		call("action_check_lpac")).leaf = true
 
@@ -439,6 +442,15 @@ end
 function action_list_apdu_drivers()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.list_apdu_drivers_safe()
+	send_json(result)
+end
+
+-- List available HTTP drivers
+-- Returns array of available HTTP interface drivers
+-- @return JSON response with drivers array
+function action_list_http_drivers()
+	local model = require "luci.model.lpac.lpac_model"
+	local result = model.list_http_drivers_safe()
 	send_json(result)
 end
 
