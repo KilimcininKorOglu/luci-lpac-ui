@@ -109,6 +109,23 @@ return view.extend({
 			]));
 		}
 
+		// Installed Apps row (Extended Card Resource)
+		if (summary.installed_apps !== null && summary.installed_apps !== undefined) {
+			chipRows.push(E('tr', {}, [
+				E('td', {}, _('Installed Apps')),
+				E('td', {}, String(summary.installed_apps))
+			]));
+		}
+
+		// Free NVM row (Extended Card Resource)
+		if (summary.free_nvm !== null && summary.free_nvm !== undefined) {
+			var nvmMB = (summary.free_nvm / 1024).toFixed(1);
+			chipRows.push(E('tr', {}, [
+				E('td', {}, _('Free Storage')),
+				E('td', {}, nvmMB + ' MB')
+			]));
+		}
+
 		chipSection.appendChild(E('table', { 'class': 'table' }, [
 			E('tbody', {}, chipRows)
 		]));

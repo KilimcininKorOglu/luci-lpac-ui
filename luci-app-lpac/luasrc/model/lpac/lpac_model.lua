@@ -425,7 +425,10 @@ function M.get_dashboard_summary()
 		profiles_disabled = 0,
 		notifications_pending = 0,
 		free_memory = nil,
-		firmware_version = nil
+		firmware_version = nil,
+		installed_apps = nil,
+		free_nvm = nil,
+		free_vm = nil
 	}
 
 	-- Get chip info
@@ -435,6 +438,14 @@ function M.get_dashboard_summary()
 		summary.eid = chip_result.payload.data.eidValue
 		summary.free_memory = chip_result.payload.data.freeNvMemory
 		summary.firmware_version = chip_result.payload.data.euiccFirmwareVer
+
+		-- Extended Card Resource data
+		if chip_result.payload.data.extCardResource then
+			local extResource = chip_result.payload.data.extCardResource
+			summary.installed_apps = extResource.installedApplication
+			summary.free_nvm = extResource.freeNonVolatileMemory
+			summary.free_vm = extResource.freeVolatileMemory
+		end
 	end
 
 	-- Get profiles
