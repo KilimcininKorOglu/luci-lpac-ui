@@ -199,6 +199,7 @@ code {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+
 	.cbi-input-text,
 	.cbi-input-select {
 		max-width: 100%;
