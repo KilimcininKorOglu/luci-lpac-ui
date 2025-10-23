@@ -11,6 +11,7 @@
 luci-app-lpac provides a comprehensive web interface for managing eSIM (eUICC) profiles on OpenWrt routers. Built on top of the powerful [lpac](https://github.com/estkme-group/lpac) command-line tool, it brings professional eSIM management capabilities to your router's web interface.
 
 **Perfect for:**
+
 - LTE/5G routers with built-in eUICC support
 - Travel routers with eSIM capabilities
 - Multi-SIM failover setups
@@ -62,6 +63,7 @@ luci-app-lpac provides a comprehensive web interface for managing eSIM (eUICC) p
 ### Hardware Requirements
 
 Compatible eUICC hardware (one of):
+
 - **PC/SC**: USB card reader with eUICC card
 - **QMI**: Qualcomm modem with eUICC support
 - **MBIM**: MBIM-compatible modem with eUICC
@@ -88,12 +90,14 @@ opkg install luci-app-lpac
 ### Manual Installation
 
 1. Install lpac first:
+
 ```bash
 opkg update
 opkg install lpac
 ```
 
 2. Build and install luci-app-lpac:
+
 ```bash
 # Clone repository
 git clone https://github.com/KilimcininKorOglu/luci-lpac-ui.git
@@ -111,6 +115,7 @@ opkg install bin/packages/*/luci/luci-app-lpac_*.ipk
 ```
 
 3. Restart services:
+
 ```bash
 /etc/init.d/rpcd restart
 rm -rf /tmp/luci-*
