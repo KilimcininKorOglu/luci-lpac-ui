@@ -48,12 +48,12 @@ return view.extend({
 		}
 
 		// EID Section
-		if (chipData.eid) {
+		if (chipData.eidValue) {
 			content.push(E('div', { 'class': 'cbi-section' }, [
 				E('h3', {}, '📱 ' + _('eUICC Identifier (EID)')),
 				E('div', { 'class': 'cbi-value' }, [
 					E('code', { 'style': 'font-size: 14px; padding: 8px; background: #f5f5f5; display: block' },
-						chipData.eid)
+						chipData.eidValue)
 				])
 			]));
 		}
@@ -90,8 +90,8 @@ return view.extend({
 		}
 
 		// euiccInfo2 Section
-		if (chipData.euiccInfo2) {
-			var info2 = chipData.euiccInfo2;
+		if (chipData.EUICCInfo2) {
+			var info2 = chipData.EUICCInfo2;
 			var euiccRows = [];
 
 			if (info2.profileVersion) {
