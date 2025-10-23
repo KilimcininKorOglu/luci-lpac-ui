@@ -145,24 +145,6 @@ return view.extend({
 			], '💾'));
 		}
 
-		// Quick Actions Card
-		content.push(createCard(_('Quick Actions'), [
-			E('div', { 'style': 'display: flex; flex-wrap: wrap; gap: 10px' }, [
-				E('a', {
-					'href': L.url('admin', 'network', 'lpac', 'download'),
-					'class': 'btn cbi-button-action'
-				}, _('Download Profile')),
-				E('a', {
-					'href': L.url('admin', 'network', 'lpac', 'chip'),
-					'class': 'btn cbi-button'
-				}, _('Chip Info')),
-				E('a', {
-					'href': L.url('admin', 'network', 'lpac', 'settings'),
-					'class': 'btn cbi-button'
-				}, _('Settings'))
-			])
-		], '⚡'));
-
 		// Return with properly spread content array
 		var result = [
 			E('h2', {}, _('eSIM Management Dashboard')),
