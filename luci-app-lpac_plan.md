@@ -1606,6 +1606,7 @@ make package/luci-app-lpac/compile V=s
 
 **Week 3: Frontend Development**
 
+- [ ] Fix controller to use view() instead of template()
 - [ ] Implement dashboard.js
 - [ ] Implement profiles.js
 - [ ] Implement download.js
