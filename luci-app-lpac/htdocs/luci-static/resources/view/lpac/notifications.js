@@ -21,7 +21,7 @@ return view.extend({
 
 		var notifications = (notificationsResponse && notificationsResponse.data &&
 			notificationsResponse.data.notifications) ? notificationsResponse.data.notifications : [];
-		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.data &&
+		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data &&
 			lpacCheckResponse.data.installed) ? true : false;
 
 		var container = E('div', { 'class': 'cbi-map' }, [

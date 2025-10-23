@@ -25,7 +25,7 @@ return view.extend({
 		var config = (configResponse && configResponse.data) ? configResponse.data : {};
 		var drivers = (driversResponse && driversResponse.data && driversResponse.data.drivers) ?
 			driversResponse.data.drivers : [];
-		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.data &&
+		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data &&
 			lpacCheckResponse.data.installed) ? true : false;
 
 		var container = E('div', { 'class': 'cbi-map' }, [
