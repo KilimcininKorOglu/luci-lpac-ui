@@ -62,6 +62,9 @@ return view.extend({
 		var logLevelSelect;
 		var timeoutInput;
 		var downloadCooldownInput;
+		var autoManageWwanCheckbox;
+		var wwanInterfaceInput;
+		var autoSimPowerCycleCheckbox;
 
 		// Helper: Save configuration
 		var saveConfig = function() {
@@ -78,7 +81,10 @@ return view.extend({
 				debug_apdu: debugApduCheckbox.checked ? '1' : '0',
 				log_level: logLevelSelect.value,
 				timeout: parseInt(timeoutInput.value) || 120,
-				download_cooldown: parseInt(downloadCooldownInput.value) || 60
+				download_cooldown: parseInt(downloadCooldownInput.value) || 60,
+				auto_manage_wwan: autoManageWwanCheckbox.checked ? '1' : '0',
+				wwan_interface: wwanInterfaceInput.value.trim(),
+				auto_sim_power_cycle: autoSimPowerCycleCheckbox.checked ? '1' : '0'
 			};
 
 			ui.showModal(_('Saving Settings'), [
@@ -352,6 +358,53 @@ return view.extend({
 			])
 		]));
 
+		// Auto Manage WWAN field
+		advancedSettingsSection.appendChild(E('div', { 'class': 'cbi-value' }, [
+			E('label', { 'class': 'cbi-value-title' }, _('Auto Manage WWAN')),
+			E('div', { 'class': 'cbi-value-field' }, [
+				E('label', {}, [
+					autoManageWwanCheckbox = E('input', {
+						'type': 'checkbox',
+						'checked': config.auto_manage_wwan === '1' ? 'checked' : null
+					}),
+					' ' + _('Automatically stop/restart WWAN interface during eSIM operations')
+				]),
+				E('div', { 'class': 'cbi-value-description' },
+					_('Prevents QMI device lock conflicts by stopping the network interface temporarily'))
+			])
+		]));
+
+		// WWAN Interface field
+		advancedSettingsSection.appendChild(E('div', { 'class': 'cbi-value' }, [
+			E('label', { 'class': 'cbi-value-title' }, _('WWAN Interface')),
+			E('div', { 'class': 'cbi-value-field' }, [
+				wwanInterfaceInput = E('input', {
+					'type': 'text',
+					'class': 'cbi-input-text',
+					'value': config.wwan_interface || 'wwan',
+					'placeholder': 'wwan'
+				}),
+				E('div', { 'class': 'cbi-value-description' },
+					_('Network interface name to manage (e.g., wwan, wwan0, usb0)'))
+			])
+		]));
+
+		// Auto SIM Power Cycle field
+		advancedSettingsSection.appendChild(E('div', { 'class': 'cbi-value' }, [
+			E('label', { 'class': 'cbi-value-title' }, _('Auto SIM Power Cycle')),
+			E('div', { 'class': 'cbi-value-field' }, [
+				E('label', {}, [
+					autoSimPowerCycleCheckbox = E('input', {
+						'type': 'checkbox',
+						'checked': config.auto_sim_power_cycle === '1' ? 'checked' : null
+					}),
+					' ' + _('Automatically power cycle SIM after profile operations')
+				]),
+				E('div', { 'class': 'cbi-value-description' },
+					_('Helps modem recognize newly activated/downloaded eSIM profiles (QMI only)'))
+			])
+		]));
+
 		container.appendChild(advancedSettingsSection);
 
 		// Save button section
@@ -596,7 +649,13 @@ return view.extend({
 			E('p', {}, E('strong', {}, _('Timeout:'))),
 			E('p', {}, _('Maximum time in seconds to wait for operations to complete. Increase for slow connections.')),
 			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('Download Cooldown:'))),
-			E('p', {}, _('Wait time in seconds between consecutive profile downloads to prevent server rate limiting.'))
+			E('p', {}, _('Wait time in seconds between consecutive profile downloads to prevent server rate limiting.')),
+			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('Auto Manage WWAN:'))),
+			E('p', {}, _('Automatically stops and restarts the WWAN network interface during eSIM operations to prevent QMI device lock conflicts. When enabled, lpac can access the modem even when network interface is configured.')),
+			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('WWAN Interface:'))),
+			E('p', {}, _('Specifies which network interface to manage (e.g., wwan, wwan0, usb0). Different systems may use different interface names for cellular modems.')),
+			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('Auto SIM Power Cycle:'))),
+			E('p', {}, _('Automatically power cycles the SIM card after profile operations. This helps the modem recognize newly activated, downloaded, or disabled eSIM profiles. Only works with QMI mode.'))
 		]));
 
 		// Advanced Operations help

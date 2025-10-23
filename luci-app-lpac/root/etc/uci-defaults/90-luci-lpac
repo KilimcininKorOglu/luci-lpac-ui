@@ -39,6 +39,7 @@ if [ "$FIRST_INSTALL" = "1" ]; then
 	uci set luci-lpac.advanced.timeout='120'
 	uci set luci-lpac.advanced.download_cooldown='60'
 	uci set luci-lpac.advanced.auto_manage_wwan='1'
+	uci set luci-lpac.advanced.wwan_interface='wwan'
 	uci set luci-lpac.advanced.auto_sim_power_cycle='1'
 
 	# Mark as configured
@@ -60,6 +61,7 @@ else
 	uci -q get luci-lpac.advanced.timeout >/dev/null || uci set luci-lpac.advanced.timeout='120'
 	uci -q get luci-lpac.advanced.download_cooldown >/dev/null || uci set luci-lpac.advanced.download_cooldown='60'
 	uci -q get luci-lpac.advanced.auto_manage_wwan >/dev/null || uci set luci-lpac.advanced.auto_manage_wwan='1'
+	uci -q get luci-lpac.advanced.wwan_interface >/dev/null || uci set luci-lpac.advanced.wwan_interface='wwan'
 	uci -q get luci-lpac.advanced.auto_sim_power_cycle >/dev/null || uci set luci-lpac.advanced.auto_sim_power_cycle='1'
 fi
 

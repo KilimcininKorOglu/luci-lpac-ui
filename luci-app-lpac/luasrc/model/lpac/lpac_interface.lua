@@ -544,14 +544,16 @@ function M.stop_wwan_interface()
 		return false  -- Auto-management disabled
 	end
 
-	-- Check if wwan interface exists and is up
-	local result = os.execute("ifstatus wwan >/dev/null 2>&1")
+	local interface_name = get_advanced_config("wwan_interface", "wwan")
+
+	-- Check if interface exists and is up
+	local result = os.execute(string.format("ifstatus %s >/dev/null 2>&1", interface_name))
 	if result ~= 0 then
 		return false  -- Interface doesn't exist
 	end
 
 	-- Stop the interface
-	os.execute("ifdown wwan >/dev/null 2>&1")
+	os.execute(string.format("ifdown %s >/dev/null 2>&1", interface_name))
 	nixio.nanosleep(2, 0)  -- Wait 2 seconds
 
 	return true
@@ -565,8 +567,10 @@ function M.restart_wwan_interface()
 		return false  -- Auto-management disabled
 	end
 
+	local interface_name = get_advanced_config("wwan_interface", "wwan")
+
 	-- Start the interface
-	os.execute("ifup wwan >/dev/null 2>&1")
+	os.execute(string.format("ifup %s >/dev/null 2>&1", interface_name))
 
 	return true
 end
