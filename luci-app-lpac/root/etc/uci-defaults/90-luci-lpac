@@ -3,6 +3,16 @@
 # Initialize UCI configuration section if not exists
 uci -q get luci-lpac.config >/dev/null || uci set luci-lpac.config=luci_lpac
 
+# Initialize advanced configuration section if not exists
+uci -q get luci-lpac.advanced >/dev/null || uci set luci-lpac.advanced=luci_lpac
+
+# === MIGRATION: Clean up misplaced fields from older versions ===
+# Remove download_cooldown, log_level, timeout from config section if they exist there
+# (they should be in advanced section only)
+uci -q delete luci-lpac.config.download_cooldown 2>/dev/null
+uci -q delete luci-lpac.config.log_level 2>/dev/null
+uci -q delete luci-lpac.config.timeout 2>/dev/null
+
 # Set default values only if not already set (preserves user settings)
 uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='qmi'
 uci -q get luci-lpac.config.http_driver >/dev/null || uci set luci-lpac.config.http_driver='curl'
@@ -13,9 +23,6 @@ uci -q get luci-lpac.config.debug_apdu >/dev/null || uci set luci-lpac.config.de
 uci -q get luci-lpac.config.auto_notification >/dev/null || uci set luci-lpac.config.auto_notification='1'
 uci -q get luci-lpac.config.qmi_slot >/dev/null || uci set luci-lpac.config.qmi_slot='0'
 uci -q get luci-lpac.config.pcsc_reader >/dev/null || uci set luci-lpac.config.pcsc_reader=''
-
-# Initialize advanced configuration section if not exists
-uci -q get luci-lpac.advanced >/dev/null || uci set luci-lpac.advanced=luci_lpac
 
 # Set advanced default values only if not already set
 uci -q get luci-lpac.advanced.log_level >/dev/null || uci set luci-lpac.advanced.log_level='info'
