@@ -87,28 +87,62 @@ function M.exec_lpac(args, custom_env)
 	-- Build command
 	local env_str = env_to_string(env)
 	local args_str = table.concat(args, " ")
-	local cmd = string.format("%s /usr/bin/lpac %s 2>&1", env_str, args_str)
+
+	-- Use a temporary file to capture output
+	local tmpfile = "/tmp/lpac-output-" .. os.time() .. "-" .. math.random(10000, 99999) .. ".txt"
+	local cmd = string.format("%s /usr/bin/lpac %s > %s 2>&1", env_str, args_str, tmpfile)
 
 	-- Log command for debugging
-	local log_cmd = string.format("echo '[lpac-luci] %s' >> /tmp/lpac-debug.log", cmd)
+	local log_cmd = string.format("echo '[lpac-luci] %s' >> /tmp/lpac-debug.log", cmd:gsub(tmpfile, "<tmpfile>"))
 	os.execute(log_cmd)
 
-	-- Execute command
-	local output = util.exec(cmd)
+	-- Execute command and wait for completion
+	-- os.execute waits for the command to complete, no timeout
+	local exit_code = os.execute(cmd)
 
-	-- Log output for debugging
-	local log_output = string.format("echo '[lpac-luci OUTPUT] %s' >> /tmp/lpac-debug.log", output:gsub("'", "'\\''"))
-	os.execute(log_output)
-
-	-- lpac returns multiple JSON lines, we need the last one
-	local last_line = output:match("([^\n]*)\n?$")
-	if not last_line or last_line == "" then
-		-- If no last line, try the whole output
-		last_line = output
+	-- Read output from temporary file
+	local output = ""
+	local f = io.open(tmpfile, "r")
+	if f then
+		output = f:read("*all")
+		f:close()
+		-- Clean up temporary file
+		os.remove(tmpfile)
+	else
+		-- Failed to read output file
+		os.remove(tmpfile)
+		return {
+			type = "lpa",
+			payload = {
+				code = -1,
+				message = "Failed to read lpac output",
+				raw_output = ""
+			}
+		}
 	end
 
-	-- Try to parse JSON output from last line
-	local result = json.parse(last_line)
+	-- Log output for debugging
+	local log_output = string.format("echo '[lpac-luci OUTPUT] %s' >> /tmp/lpac-debug.log", output:gsub("'", "'\\''"):gsub("\n", "\\n"))
+	os.execute(log_output)
+
+	-- lpac returns multiple JSON lines, we need the last one with type="lpa"
+	-- Parse all lines and find the final result
+	local result = nil
+	for line in output:gmatch("[^\r\n]+") do
+		local parsed = json.parse(line)
+		if parsed and parsed.type == "lpa" then
+			-- This is the final result line
+			result = parsed
+		end
+	end
+
+	-- If no valid result found, try parsing the last line
+	if not result then
+		local last_line = output:match("([^\n]*)\n?$")
+		if last_line and last_line ~= "" then
+			result = json.parse(last_line)
+		end
+	end
 
 	-- If JSON parsing fails, return error
 	if not result then
