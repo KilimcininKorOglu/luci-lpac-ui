@@ -5,11 +5,13 @@
 ### Pre-Build Fixes Applied
 
 **1. Makefile Corrections** (Commit: b253ec9)
+
 - ✅ Removed rpcd ACL installation (HTTP API architecture, not ubus RPC)
 - ✅ Added CSS file installation (lpac.css)
 - ✅ Removed empty luasrc/view directories
 
 **2. Source File Verification**
+
 - ✅ All Lua controller files present: `luasrc/controller/lpac.lua`
 - ✅ All Lua model files present: `luasrc/model/lpac/{lpac_interface,lpac_model,lpac_util}.lua`
 - ✅ All JavaScript views present: 7 files in `htdocs/luci-static/resources/view/lpac/`
@@ -56,17 +58,20 @@ luci-app-lpac/
 To test this package in an OpenWrt build environment:
 
 1. **Copy Package to OpenWrt Feeds**
+
    ```bash
    cp -r luci-app-lpac/ /path/to/openwrt/package/feeds/luci/
    ```
 
 2. **Update Package Index**
+
    ```bash
    ./scripts/feeds update luci
    ./scripts/feeds install luci-app-lpac
    ```
 
 3. **Configure Package**
+
    ```bash
    make menuconfig
    # Navigate to: LuCI > 3. Applications > luci-app-lpac
@@ -74,11 +79,13 @@ To test this package in an OpenWrt build environment:
    ```
 
 4. **Build Package**
+
    ```bash
    make package/feeds/luci/luci-app-lpac/compile V=s
    ```
 
 5. **Check Build Output**
+
    ```bash
    ls -lh bin/packages/*/luci/luci-app-lpac*.ipk
    ```
@@ -88,11 +95,13 @@ To test this package in an OpenWrt build environment:
 After building the package:
 
 1. **Install on OpenWrt Router**
+
    ```bash
    opkg install luci-app-lpac_1.0.0-1_all.ipk
    ```
 
 2. **Verify File Installation**
+
    ```bash
    # Check Lua files
    ls -la /usr/lib/lua/luci/controller/lpac.lua
@@ -120,6 +129,7 @@ After building the package:
    - Verify lpac version is detected
 
 2. **API Endpoints Test**
+
    ```bash
    # Test system_info endpoint
    curl http://router/cgi-bin/luci/admin/network/lpac/api/system_info
@@ -139,11 +149,13 @@ After building the package:
 ## Package Dependencies
 
 As defined in Makefile line 22:
+
 ```makefile
 DEPENDS:=+luci-base +lpac +luci-lib-jsonc
 ```
 
 Required packages:
+
 - `luci-base` - Core LuCI framework
 - `lpac` - lpac eSIM management CLI tool
 - `luci-lib-jsonc` - JSON library for Lua
