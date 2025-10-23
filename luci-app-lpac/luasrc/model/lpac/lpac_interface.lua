@@ -89,11 +89,26 @@ function M.exec_lpac(args, custom_env)
 	local args_str = table.concat(args, " ")
 	local cmd = string.format("%s /usr/bin/lpac %s 2>&1", env_str, args_str)
 
+	-- Log command for debugging
+	local log_cmd = string.format("echo '[lpac-luci] %s' >> /tmp/lpac-debug.log", cmd)
+	os.execute(log_cmd)
+
 	-- Execute command
 	local output = util.exec(cmd)
 
-	-- Try to parse JSON output
-	local result = json.parse(output)
+	-- Log output for debugging
+	local log_output = string.format("echo '[lpac-luci OUTPUT] %s' >> /tmp/lpac-debug.log", output:gsub("'", "'\\''"))
+	os.execute(log_output)
+
+	-- lpac returns multiple JSON lines, we need the last one
+	local last_line = output:match("([^\n]*)\n?$")
+	if not last_line or last_line == "" then
+		-- If no last line, try the whole output
+		last_line = output
+	end
+
+	-- Try to parse JSON output from last line
+	local result = json.parse(last_line)
 
 	-- If JSON parsing fails, return error
 	if not result then
