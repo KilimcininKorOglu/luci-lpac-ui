@@ -4,6 +4,57 @@
 
 local M = {}
 
+-- Error message constants
+-- Centralized error messages for consistent user feedback
+M.ERROR_MESSAGES = {
+	-- Generic errors
+	UNKNOWN_ERROR = "An unknown error occurred",
+	OPERATION_FAILED = "Operation failed",
+
+	-- lpac binary errors
+	LPAC_NOT_FOUND = "lpac binary not found or not executable",
+	LPAC_EXECUTION_FAILED = "Failed to execute lpac command",
+
+	-- Profile errors
+	PROFILE_NOT_FOUND = "Profile not found",
+	PROFILE_ALREADY_ENABLED = "Profile is already enabled",
+	PROFILE_ALREADY_DISABLED = "Profile is already disabled",
+	INVALID_ICCID = "Invalid ICCID format",
+
+	-- Chip errors
+	CHIP_NOT_CONNECTED = "eUICC chip is not connected",
+	CHIP_DATA_UNAVAILABLE = "No chip data returned",
+	CHIP_INFO_FAILED = "Failed to retrieve chip information",
+
+	-- Download errors
+	DOWNLOAD_FAILED = "Profile download failed",
+	INVALID_ACTIVATION_CODE = "Invalid activation code format",
+	SMDP_ADDRESS_REQUIRED = "SM-DP+ address is required",
+	INVALID_DOWNLOAD_OPTIONS = "Invalid download options",
+
+	-- Notification errors
+	NOTIFICATION_NOT_FOUND = "Notification not found",
+	NOTIFICATION_PROCESS_FAILED = "Failed to process notification",
+	SEQUENCE_NUMBER_REQUIRED = "Sequence number is required",
+	INVALID_SEQUENCE_NUMBER = "Invalid sequence number",
+	MATCHING_ID_REQUIRED = "Matching ID is required",
+
+	-- Configuration errors
+	CONFIG_LOAD_FAILED = "Failed to load configuration",
+	CONFIG_SAVE_FAILED = "Failed to save configuration",
+	INVALID_CONFIG_VALUE = "Invalid configuration value",
+
+	-- Validation errors
+	CONFIRMATION_REQUIRED = "Confirmation is required",
+	DELETION_REQUIRES_CONFIRMATION = "Deletion requires confirmation",
+	NICKNAME_EMPTY = "Nickname cannot be empty",
+	FACTORY_RESET_INVALID_CONFIRMATION = "Invalid confirmation code. Type 'RESET' to confirm",
+
+	-- Permission errors
+	PERMISSION_DENIED = "Permission denied",
+	UNAUTHORIZED_OPERATION = "Unauthorized operation"
+}
+
 -- Mask ICCID for privacy (show first 4 and last 3 digits)
 -- Example: 8901170000123456890 -> 8901***890
 function M.mask_iccid(iccid)

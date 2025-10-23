@@ -37,7 +37,7 @@ function M.get_chip_info_formatted()
 
 	local data = result.payload.data
 	if not data then
-		return util.create_result(false, "No chip data returned", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.CHIP_DATA_UNAVAILABLE, nil)
 	end
 
 	-- Format memory values
@@ -109,7 +109,7 @@ function M.get_profile_by_iccid(iccid)
 		end
 	end
 
-	return util.create_result(false, "Profile not found", nil)
+	return util.create_result(false, util.ERROR_MESSAGES.PROFILE_NOT_FOUND, nil)
 end
 
 -- Enable profile with validation
@@ -152,7 +152,7 @@ end
 function M.delete_profile_safe(iccid, confirmed)
 	-- Check confirmation
 	if not confirmed then
-		return util.create_result(false, "Deletion requires confirmation", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.DELETION_REQUIRES_CONFIRMATION, nil)
 	end
 
 	-- Validate ICCID
@@ -182,7 +182,7 @@ function M.set_nickname_safe(iccid, nickname)
 	-- Sanitize nickname
 	nickname = util.sanitize_nickname(nickname)
 	if util.is_empty(nickname) then
-		return util.create_result(false, "Nickname cannot be empty", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.NICKNAME_EMPTY, nil)
 	end
 
 	-- Execute operation
@@ -209,7 +209,7 @@ function M.download_profile_safe(opts)
 
 	-- Validate options
 	if not opts or type(opts) ~= "table" then
-		return util.create_result(false, "Invalid download options", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.INVALID_DOWNLOAD_OPTIONS, nil)
 	end
 
 	-- Validate activation code or manual entry
@@ -221,7 +221,7 @@ function M.download_profile_safe(opts)
 	else
 		-- Validate manual entry
 		if util.is_empty(opts.smdp) then
-			return util.create_result(false, "SM-DP+ address is required", nil)
+			return util.create_result(false, util.ERROR_MESSAGES.SMDP_ADDRESS_REQUIRED, nil)
 		end
 
 		local valid, err = util.validate_smdp_address(opts.smdp)
@@ -230,7 +230,7 @@ function M.download_profile_safe(opts)
 		end
 
 		if util.is_empty(opts.matching_id) then
-			return util.create_result(false, "Matching ID is required", nil)
+			return util.create_result(false, util.ERROR_MESSAGES.MATCHING_ID_REQUIRED, nil)
 		end
 
 		valid, err = util.validate_matching_id(opts.matching_id)
@@ -295,12 +295,12 @@ end
 function M.process_notification_safe(seq_number, remove)
 	-- Validate sequence number
 	if not seq_number then
-		return util.create_result(false, "Sequence number is required", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.SEQUENCE_NUMBER_REQUIRED, nil)
 	end
 
 	seq_number = tonumber(seq_number)
 	if not seq_number then
-		return util.create_result(false, "Invalid sequence number", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.INVALID_SEQUENCE_NUMBER, nil)
 	end
 
 	-- Execute operation
@@ -317,12 +317,12 @@ end
 function M.remove_notification_safe(seq_number)
 	-- Validate sequence number
 	if not seq_number then
-		return util.create_result(false, "Sequence number is required", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.SEQUENCE_NUMBER_REQUIRED, nil)
 	end
 
 	seq_number = tonumber(seq_number)
 	if not seq_number then
-		return util.create_result(false, "Invalid sequence number", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.INVALID_SEQUENCE_NUMBER, nil)
 	end
 
 	-- Execute operation
@@ -394,7 +394,7 @@ end
 function M.factory_reset_safe(confirmed)
 	-- Require explicit confirmation
 	if not confirmed or confirmed ~= "CONFIRM_FACTORY_RESET" then
-		return util.create_result(false, "Factory reset requires explicit confirmation", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.FACTORY_RESET_INVALID_CONFIRMATION, nil)
 	end
 
 	local result = lpac.factory_reset()
@@ -466,7 +466,7 @@ function M.check_lpac_available()
 	local available = fs.access("/usr/bin/lpac", "x")
 
 	if not available then
-		return util.create_result(false, "lpac binary not found or not executable", {
+		return util.create_result(false, util.ERROR_MESSAGES.LPAC_NOT_FOUND, {
 			installed = false,
 			path = "/usr/bin/lpac"
 		})
@@ -501,7 +501,7 @@ end
 -- Update configuration
 function M.update_config(new_config)
 	if not new_config or type(new_config) ~= "table" then
-		return util.create_result(false, "Invalid configuration", nil)
+		return util.create_result(false, util.ERROR_MESSAGES.INVALID_CONFIG_VALUE, nil)
 	end
 
 	-- Update UCI configuration
