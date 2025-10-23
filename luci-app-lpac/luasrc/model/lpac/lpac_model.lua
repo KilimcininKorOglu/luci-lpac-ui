@@ -458,7 +458,13 @@ function M.list_apdu_drivers_safe()
 		return util.create_result(false, util.get_error_message(result), nil)
 	end
 
-	return util.create_result(true, "Success", result.payload.data)
+	-- Extract LPAC_APDU array from result
+	local drivers = {}
+	if result.payload and result.payload.data and result.payload.data.LPAC_APDU then
+		drivers = result.payload.data.LPAC_APDU
+	end
+
+	return util.create_result(true, "Success", {drivers = drivers})
 end
 
 -- Check if lpac binary is available

@@ -388,7 +388,7 @@ end
 
 -- List available APDU drivers
 function M.list_apdu_drivers()
-	return M.exec_lpac({"driver", "apdu", "list"})
+	return M.exec_lpac({"driver", "list"})
 end
 
 -- List available HTTP drivers
