@@ -344,8 +344,12 @@ return view.extend({
 				E('li', {}, [E('strong', {}, 'at: '), _('AT command interface for modems')]),
 				E('li', {}, [E('strong', {}, 'qmi_qrtr: '), _('Qualcomm MSM Interface')])
 			]),
+			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('HTTP Driver:'))),
+			E('p', {}, _('The HTTP driver handles network communication with SM-DP+ servers for profile downloads and management operations.')),
 			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('Default SM-DP+ Server:'))),
 			E('p', {}, _('Setting a default SM-DP+ server allows automatic profile discovery without manually entering the server address each time.')),
+			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('Profile Discovery:'))),
+			E('p', {}, _('Discover available profiles from the SM-DS server. This searches for downloadable eSIM profiles associated with your eUICC.')),
 			E('p', { 'style': 'margin-top: 10px' }, E('strong', {}, _('Factory Reset:'))),
 			E('p', {}, _('Factory reset permanently erases all eSIM profiles and returns the eUICC to its original state. Use this only if absolutely necessary.'))
 		]);
