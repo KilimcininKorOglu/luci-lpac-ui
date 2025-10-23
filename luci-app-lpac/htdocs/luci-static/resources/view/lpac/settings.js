@@ -275,7 +275,7 @@ return view.extend({
 															E('button', {
 																'class': 'btn cbi-button-action',
 																'click': function() {
-																	window.location.href = L.url('admin', 'services', 'lpac', 'dashboard');
+																	window.location.href = L.url('admin', 'network', 'lpac', 'dashboard');
 																}
 															}, _('Go to Dashboard'))
 														])
