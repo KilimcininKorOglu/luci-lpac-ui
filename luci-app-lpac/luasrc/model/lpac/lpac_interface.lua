@@ -87,36 +87,29 @@ function M.exec_lpac(args, custom_env)
 	-- Build command
 	local env_str = env_to_string(env)
 	local args_str = table.concat(args, " ")
-
-	-- Use a simple temporary file name (no random component for easier debugging)
-	local tmpfile = "/tmp/lpac-output.txt"
-	local cmd = string.format("%s /usr/bin/lpac %s > %s 2>&1", env_str, args_str, tmpfile)
+	local cmd = string.format("%s/usr/bin/lpac %s 2>&1", env_str, args_str)
 
 	-- Log command for debugging
-	local log_cmd = string.format("echo '[lpac-luci CMD] %s' >> /tmp/lpac-debug.log", cmd:gsub(tmpfile, "<tmpfile>"))
+	local log_cmd = string.format("echo '[lpac-luci] Executing: lpac %s' >> /tmp/lpac-debug.log", args_str)
 	os.execute(log_cmd)
 
-	-- Execute command and wait for completion
-	-- os.execute waits for the command to complete, no timeout
-	local exit_code = os.execute(cmd)
-
-	-- Log exit code
-	os.execute(string.format("echo '[lpac-luci EXIT] Exit code: %s' >> /tmp/lpac-debug.log", tostring(exit_code)))
-
-	-- Wait a moment for file system to sync
-	os.execute("sleep 0.1")
-
-	-- Read output from temporary file
-	local output = ""
-	local read_cmd = string.format("cat %s 2>&1", tmpfile)
-	local handle = io.popen(read_cmd)
-	if handle then
-		output = handle:read("*all")
-		handle:close()
+	-- Execute command directly with io.popen (no timeout, waits for completion)
+	local handle = io.popen(cmd)
+	if not handle then
+		os.execute("echo '[lpac-luci ERROR] Failed to execute lpac command' >> /tmp/lpac-debug.log")
+		return {
+			type = "lpa",
+			payload = {
+				code = -1,
+				message = "Failed to execute lpac command",
+				raw_output = ""
+			}
+		}
 	end
 
-	-- Clean up temporary file
-	os.remove(tmpfile)
+	-- Read all output
+	local output = handle:read("*all")
+	handle:close()
 
 	-- Check if we got any output
 	if not output or output == "" then
@@ -131,8 +124,8 @@ function M.exec_lpac(args, custom_env)
 		}
 	end
 
-	-- Log output for debugging
-	local log_output = string.format("echo '[lpac-luci OUTPUT] %s' >> /tmp/lpac-debug.log", output:gsub("'", "'\\''"):gsub("\n", "\\n"))
+	-- Log output for debugging (first 200 chars)
+	local log_output = string.format("echo '[lpac-luci] Output (truncated): %s' >> /tmp/lpac-debug.log", output:sub(1, 200):gsub("'", "'\\''"):gsub("\n", " "))
 	os.execute(log_output)
 
 	-- lpac returns multiple JSON lines, we need the last one with type="lpa"
