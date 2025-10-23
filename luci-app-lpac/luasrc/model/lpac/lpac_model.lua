@@ -424,7 +424,8 @@ function M.get_dashboard_summary()
 		profiles_enabled = 0,
 		profiles_disabled = 0,
 		notifications_pending = 0,
-		free_memory = nil
+		free_memory = nil,
+		firmware_version = nil
 	}
 
 	-- Get chip info
@@ -433,6 +434,7 @@ function M.get_dashboard_summary()
 		summary.chip_status = "connected"
 		summary.eid = chip_result.payload.data.eidValue
 		summary.free_memory = chip_result.payload.data.freeNvMemory
+		summary.firmware_version = chip_result.payload.data.euiccFirmwareVer
 	end
 
 	-- Get profiles
