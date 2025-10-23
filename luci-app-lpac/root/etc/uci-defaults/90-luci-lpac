@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# Initialize UCI configuration if not exists
+uci -q get lpac.config || {
+	uci set lpac.config=lpac
+	uci set lpac.config.apdu_driver='pcsc'
+	uci set lpac.config.http_driver='curl'
+	uci set lpac.config.custom_aid=''
+	uci set lpac.config.es10x_mss='60'
+	uci set lpac.config.debug_http='0'
+	uci set lpac.config.debug_apdu='0'
+	uci set lpac.config.auto_notification='1'
+	uci set lpac.config.qmi_slot='1'
+	uci set lpac.config.pcsc_reader=''
+	uci commit lpac
+}
+
+# Initialize advanced configuration if not exists
+uci -q get lpac.advanced || {
+	uci set lpac.advanced=lpac
+	uci set lpac.advanced.log_level='info'
+	uci set lpac.advanced.timeout='120'
+	uci commit lpac
+}
+
+# Restart rpcd to load new ACLs
+/etc/init.d/rpcd restart
+
+# Clear LuCI cache
+rm -rf /tmp/luci-*
+
+exit 0
