@@ -524,17 +524,18 @@ end
 -- Get configuration
 function M.get_config()
 	local config = {
-		apdu_driver = uci:get("luci-lpac", "config", "apdu_driver") or "pcsc",
+		apdu_driver = uci:get("luci-lpac", "config", "apdu_driver") or "qmi",
 		http_driver = uci:get("luci-lpac", "config", "http_driver") or "curl",
 		custom_aid = uci:get("luci-lpac", "config", "custom_aid") or "",
 		es10x_mss = uci:get("luci-lpac", "config", "es10x_mss") or "60",
 		debug_http = uci:get("luci-lpac", "config", "debug_http") or "0",
 		debug_apdu = uci:get("luci-lpac", "config", "debug_apdu") or "0",
 		auto_notification = uci:get("luci-lpac", "config", "auto_notification") or "1",
-		qmi_slot = uci:get("luci-lpac", "config", "qmi_slot") or "1",
+		qmi_slot = uci:get("luci-lpac", "config", "qmi_slot") or "0",
 		pcsc_reader = uci:get("luci-lpac", "config", "pcsc_reader") or "",
 		log_level = uci:get("luci-lpac", "advanced", "log_level") or "info",
-		timeout = uci:get("luci-lpac", "advanced", "timeout") or "120"
+		timeout = uci:get("luci-lpac", "advanced", "timeout") or "120",
+		download_cooldown = uci:get("luci-lpac", "advanced", "download_cooldown") or "60"
 	}
 
 	return util.create_result(true, "Success", config)
@@ -546,19 +547,53 @@ function M.update_config(new_config)
 		return util.create_result(false, util.ERROR_MESSAGES.INVALID_CONFIG_VALUE, nil)
 	end
 
-	-- Update UCI configuration
+	-- Advanced section fields (stored in luci-lpac.advanced)
+	local advanced_fields = {
+		log_level = true,
+		timeout = true,
+		download_cooldown = true
+	}
+
+	-- Update UCI configuration with proper section mapping
 	for key, value in pairs(new_config) do
-		if key == "log_level" or key == "timeout" then
-			uci:set("luci-lpac", "advanced", key, tostring(value))
-		else
-			uci:set("luci-lpac", "config", key, tostring(value))
+		local section = advanced_fields[key] and "advanced" or "config"
+		local str_value = tostring(value)
+
+		-- Set the UCI value
+		local success = pcall(function()
+			uci:set("luci-lpac", section, key, str_value)
+		end)
+
+		if not success then
+			util.log("ERROR", "Failed to set UCI value: luci-lpac." .. section .. "." .. key .. " = " .. str_value)
+			return util.create_result(false, "Failed to update configuration: " .. key, nil)
 		end
+
+		util.log("DEBUG", "Set UCI: luci-lpac." .. section .. "." .. key .. " = " .. str_value)
 	end
 
-	-- Commit changes
-	uci:commit("luci-lpac")
+	-- Commit changes with error handling
+	local commit_success = pcall(function()
+		uci:commit("luci-lpac")
+	end)
 
-	return util.create_result(true, "Configuration updated successfully", nil)
+	if not commit_success then
+		util.log("ERROR", "Failed to commit UCI changes")
+		return util.create_result(false, "Failed to commit configuration changes", nil)
+	end
+
+	util.log("INFO", "Configuration updated and committed successfully")
+
+	-- Verify the changes were actually written (debugging aid)
+	local verification = {}
+	for key, _ in pairs(new_config) do
+		local section = advanced_fields[key] and "advanced" or "config"
+		local actual_value = uci:get("luci-lpac", section, key)
+		verification[key] = actual_value
+		util.log("DEBUG", "Verified UCI: luci-lpac." .. section .. "." .. key .. " = " .. tostring(actual_value))
+	end
+
+	return util.create_result(true, "Configuration updated successfully", verification)
 end
 
 return M
