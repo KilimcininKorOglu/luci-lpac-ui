@@ -15,7 +15,6 @@ tmp/
 .temp/
 
 # Build outputs
-*.ipk
 *.bin
 *.squashfs
 *.ubi
