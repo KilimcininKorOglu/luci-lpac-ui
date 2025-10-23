@@ -80,32 +80,24 @@ return view.extend({
 		// Profiles Summary Card
 		content.push(createCard(_('Profile Summary'), [
 			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('div', {}, [
-					E('strong', {}, _('Total Profiles: ')),
-					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_total || 0))
-				])
+				E('strong', {}, _('Total Profiles')),
+				E('div', { 'style': 'margin-top: 5px; font-weight: bold' }, String(summary.profiles_total || 0))
 			]),
 			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('div', {}, [
+				E('strong', {}, _('Enabled')),
+				E('div', { 'style': 'margin-top: 5px' }, [
 					createStatusBadge('success', '●'),
 					' ',
-					E('strong', {}, _('Enabled: ')),
 					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_enabled || 0))
 				])
 			]),
 			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('div', {}, [
+				E('strong', {}, _('Disabled')),
+				E('div', { 'style': 'margin-top: 5px' }, [
 					createStatusBadge('error', '●'),
 					' ',
-					E('strong', {}, _('Disabled: ')),
 					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_disabled || 0))
 				])
-			]),
-			E('div', { 'style': 'margin-top: 10px' }, [
-				E('a', {
-					'href': L.url('admin', 'network', 'lpac', 'profiles'),
-					'class': 'btn cbi-button'
-				}, _('Manage Profiles'))
 			])
 		], '📋'));
 
