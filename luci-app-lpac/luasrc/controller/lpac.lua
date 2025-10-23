@@ -1,6 +1,18 @@
--- lpac.lua - LuCI Controller for lpac
--- Copyright (C) 2025
--- Licensed under GPL-3.0
+--[[
+LuCI Controller for lpac eSIM Management
+
+This controller provides HTTP API endpoints for managing eSIM profiles
+on OpenWrt routers using the lpac command-line tool.
+
+Architecture:
+- Uses Modern LuCI (LuCI ng) with view() for frontend pages
+- HTTP API endpoints via call() functions (NOT ubus RPC)
+- JSON request/response format
+- Delegates business logic to luci.model.lpac modules
+
+Copyright (C) 2025
+Licensed under GPL-3.0
+--]]
 
 module("luci.controller.lpac", package.seeall)
 
@@ -151,7 +163,8 @@ function action_chip_info()
 	send_json(result)
 end
 
--- Get EID
+-- Get EID (eUICC Identifier)
+-- @return JSON response with EID or error message
 function action_get_eid()
 	local lpac = require "luci.model.lpac.lpac_interface"
 	local util = require "luci.model.lpac.lpac_util"
