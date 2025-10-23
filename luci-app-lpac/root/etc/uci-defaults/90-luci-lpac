@@ -1,28 +1,29 @@
 #!/bin/sh
 
-# Initialize UCI configuration if not exists
-uci -q get luci-lpac.config || {
-	uci set luci-lpac.config=luci_lpac
-	uci set luci-lpac.config.apdu_driver='pcsc'
-	uci set luci-lpac.config.http_driver='curl'
-	uci set luci-lpac.config.custom_aid=''
-	uci set luci-lpac.config.es10x_mss='60'
-	uci set luci-lpac.config.debug_http='0'
-	uci set luci-lpac.config.debug_apdu='0'
-	uci set luci-lpac.config.auto_notification='1'
-	uci set luci-lpac.config.qmi_slot='1'
-	uci set luci-lpac.config.pcsc_reader=''
-	uci commit luci-lpac
-}
+# Initialize UCI configuration section if not exists
+uci -q get luci-lpac.config >/dev/null || uci set luci-lpac.config=luci_lpac
 
-# Initialize advanced configuration if not exists
-uci -q get luci-lpac.advanced || {
-	uci set luci-lpac.advanced=luci_lpac
-	uci set luci-lpac.advanced.log_level='info'
-	uci set luci-lpac.advanced.timeout='120'
-	uci set luci-lpac.advanced.download_cooldown='60'
-	uci commit luci-lpac
-}
+# Set default values only if not already set (preserves user settings)
+uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='pcsc'
+uci -q get luci-lpac.config.http_driver >/dev/null || uci set luci-lpac.config.http_driver='curl'
+uci -q get luci-lpac.config.custom_aid >/dev/null || uci set luci-lpac.config.custom_aid=''
+uci -q get luci-lpac.config.es10x_mss >/dev/null || uci set luci-lpac.config.es10x_mss='60'
+uci -q get luci-lpac.config.debug_http >/dev/null || uci set luci-lpac.config.debug_http='0'
+uci -q get luci-lpac.config.debug_apdu >/dev/null || uci set luci-lpac.config.debug_apdu='0'
+uci -q get luci-lpac.config.auto_notification >/dev/null || uci set luci-lpac.config.auto_notification='1'
+uci -q get luci-lpac.config.qmi_slot >/dev/null || uci set luci-lpac.config.qmi_slot='1'
+uci -q get luci-lpac.config.pcsc_reader >/dev/null || uci set luci-lpac.config.pcsc_reader=''
+
+# Initialize advanced configuration section if not exists
+uci -q get luci-lpac.advanced >/dev/null || uci set luci-lpac.advanced=luci_lpac
+
+# Set advanced default values only if not already set
+uci -q get luci-lpac.advanced.log_level >/dev/null || uci set luci-lpac.advanced.log_level='info'
+uci -q get luci-lpac.advanced.timeout >/dev/null || uci set luci-lpac.advanced.timeout='120'
+uci -q get luci-lpac.advanced.download_cooldown >/dev/null || uci set luci-lpac.advanced.download_cooldown='60'
+
+# Commit changes
+uci commit luci-lpac
 
 # Clear LuCI cache
 rm -rf /tmp/luci-*
