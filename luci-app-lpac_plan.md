@@ -1,8 +1,9 @@
-# LuCI-lpac-ui - Detailed Implementation Plan
+# LuCI-app-lpac - Detailed Implementation Plan
 
 ## Project Overview
 
-**Project Name:** luci-lpac-ui
+**Project Name:** luci-app-lpac
+**Package Name:** luci-app-lpac
 **Purpose:** Web-based LuCI interface for lpac eSIM management on OpenWrt
 **Target OpenWrt Version:** 23.05 and above
 **Language:** English (initial release)
@@ -10,7 +11,7 @@
 
 ## Executive Summary
 
-luci-lpac-ui will provide a user-friendly web interface for managing eSIM profiles on OpenWrt routers using the lpac command-line tool. This will enable users to:
+luci-app-lpac will provide a user-friendly web interface for managing eSIM profiles on OpenWrt routers using the lpac command-line tool. This will enable users to:
 - View eUICC chip information
 - List, enable, disable, and delete eSIM profiles
 - Download new profiles via activation codes
@@ -280,7 +281,7 @@ luci-lpac-ui will provide a user-friendly web interface for managing eSIM profil
 ### Directory Structure
 
 ```
-luci-lpac-ui/
+luci-app-lpac/
 ├── Makefile                          # OpenWrt package Makefile
 ├── README.md                         # Project documentation
 ├── LICENSE                           # GPL-3.0 license
