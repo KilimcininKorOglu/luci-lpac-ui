@@ -128,8 +128,9 @@ return view.extend({
 							]);
 
 							request.post('/cgi-bin/luci/admin/network/lpac/api/download_profile', options)
-								.then(function(response) {
+								.then(function(xhr) {
 									ui.hideModal();
+									var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 									if (response && response.success) {
 										ui.showModal(_('Success'), [
 											E('div', { 'class': 'alert-message success' }, [

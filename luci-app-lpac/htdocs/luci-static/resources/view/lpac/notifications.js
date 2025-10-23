@@ -92,8 +92,9 @@ return view.extend({
 							request.post('/cgi-bin/luci/admin/network/lpac/api/process_notification', {
 								seq_number: seqNumber,
 								remove: removeAfter
-							}).then(function(response) {
+							}).then(function(xhr) {
 								ui.hideModal();
+								var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 								if (response && response.success) {
 									ui.addNotification(null,
 										E('p', {}, _('Notification processed successfully')), 'info');
@@ -142,8 +143,9 @@ return view.extend({
 
 							request.post('/cgi-bin/luci/admin/network/lpac/api/remove_notification', {
 								seq_number: seqNumber
-							}).then(function(response) {
+							}).then(function(xhr) {
 								ui.hideModal();
+								var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 								if (response && response.success) {
 									ui.addNotification(null,
 										E('p', {}, _('Notification removed successfully')), 'info');

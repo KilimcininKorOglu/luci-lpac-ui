@@ -93,8 +93,9 @@ return view.extend({
 							request.post('/cgi-bin/luci/admin/network/lpac/api/enable_profile', {
 								iccid: iccid,
 								refresh: true
-							}).then(function(response) {
+							}).then(function(xhr) {
 								ui.hideModal();
+								var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 								if (response && response.success) {
 									ui.addNotification(null,
 										E('p', {}, _('Profile enabled successfully')), 'info');
@@ -145,8 +146,9 @@ return view.extend({
 							request.post('/cgi-bin/luci/admin/network/lpac/api/disable_profile', {
 								iccid: iccid,
 								refresh: true
-							}).then(function(response) {
+							}).then(function(xhr) {
 								ui.hideModal();
+								var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 								if (response && response.success) {
 									ui.addNotification(null,
 										E('p', {}, _('Profile disabled successfully')), 'info');
@@ -200,8 +202,9 @@ return view.extend({
 							request.post('/cgi-bin/luci/admin/network/lpac/api/delete_profile', {
 								iccid: iccid,
 								confirmed: true
-							}).then(function(response) {
+							}).then(function(xhr) {
 								ui.hideModal();
+								var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 								if (response && response.success) {
 									ui.addNotification(null,
 										E('p', {}, _('Profile deleted successfully')), 'info');
@@ -268,8 +271,9 @@ return view.extend({
 							request.post('/cgi-bin/luci/admin/network/lpac/api/set_nickname', {
 								iccid: iccid,
 								nickname: newNickname
-							}).then(function(response) {
+							}).then(function(xhr) {
 								ui.hideModal();
+								var response = xhr ? JSON.parse(xhr.responseText || '{}') : {};
 								if (response && response.success) {
 									ui.addNotification(null,
 										E('p', {}, _('Nickname updated successfully')), 'info');
