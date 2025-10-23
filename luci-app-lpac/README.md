@@ -114,10 +114,9 @@ make package/luci-app-lpac/compile V=s
 opkg install bin/packages/*/luci/luci-app-lpac_*.ipk
 ```
 
-3. Restart services:
+3. Clear LuCI cache:
 
 ```bash
-/etc/init.d/rpcd restart
 rm -rf /tmp/luci-*
 ```
 
