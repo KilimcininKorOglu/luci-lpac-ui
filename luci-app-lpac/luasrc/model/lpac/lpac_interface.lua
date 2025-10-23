@@ -86,7 +86,13 @@ function M.exec_lpac(args, custom_env)
 
 	-- Build command
 	local env_str = env_to_string(env)
-	local args_str = table.concat(args, " ")
+	-- Escape each argument to handle special characters like $ in activation codes
+	local escaped_args = {}
+	for i, arg in ipairs(args) do
+		-- Wrap each argument in single quotes and escape any existing single quotes
+		escaped_args[i] = "'" .. arg:gsub("'", "'\\''") .. "'"
+	end
+	local args_str = table.concat(escaped_args, " ")
 	local cmd = string.format("%s/usr/bin/lpac %s 2>&1", env_str, args_str)
 
 	-- Log command for debugging
