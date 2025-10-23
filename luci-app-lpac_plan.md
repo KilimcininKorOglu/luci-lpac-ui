@@ -312,6 +312,7 @@ This application uses Modern LuCI's HTTP API architecture for frontend-backend c
 **Note:** This application does NOT use ubus RPC communication (`rpc.declare()`). All frontend-backend communication goes through HTTP API endpoints defined in the controller.
 
 **Example API Call:**
+
 ```javascript
 // Frontend (profiles.js)
 request.post('/cgi-bin/luci/admin/services/lpac/api/enable_profile', {
@@ -1629,7 +1630,7 @@ make package/luci-app-lpac/compile V=s
 
 ### Milestone 1: MVP (Weeks 1-4)
 
-**Week 1: Project Setup**
+### Week 1: Project Setup
 
 - ✅ Create project structure (directories and subdirectories)
 - ✅ Set up development environment
@@ -1639,7 +1640,7 @@ make package/luci-app-lpac/compile V=s
 - ✅ Create RPC ACL configuration
 - ✅ Write uci-defaults post-install script
 
-**Week 2: Backend Development**
+### Week 2: Backend Development
 
 - ✅ Implement lpac_interface.lua (lpac CLI wrapper, 362 lines)
 - ✅ Implement lpac_util.lua (utility functions, 350+ lines)
@@ -1647,7 +1648,7 @@ make package/luci-app-lpac/compile V=s
 - ✅ Create controller with API endpoints (17 RESTful APIs, 390+ lines)
 - ✅ Fix .gitignore to allow model/lpac/ directory
 
-**Week 3: Frontend Development**
+### Week 3: Frontend Development
 
 - [ ] Fix controller to use view() instead of template()
 - [ ] Implement dashboard.js
@@ -1659,7 +1660,7 @@ make package/luci-app-lpac/compile V=s
 - [ ] Implement about.js
 - [ ] Add CSS styling
 
-**Week 4: Polish and Refinement**
+### Week 4: Polish and Refinement
 
 - [ ] Bug fixes
 - [ ] UI/UX improvements
