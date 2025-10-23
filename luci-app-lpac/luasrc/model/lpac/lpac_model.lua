@@ -198,7 +198,7 @@ end
 -- Download profile with comprehensive validation and cooldown
 function M.download_profile_safe(opts)
 	-- Check cooldown
-	local cooldown_seconds = tonumber(uci:get("lpac", "advanced", "download_cooldown")) or 60
+	local cooldown_seconds = tonumber(uci:get("luci-lpac", "advanced", "download_cooldown")) or 60
 	local can_proceed, remaining = util.check_cooldown(last_download_time, cooldown_seconds)
 
 	if not can_proceed then
@@ -258,7 +258,7 @@ function M.download_profile_safe(opts)
 	end
 
 	-- Auto-process notifications if enabled
-	local auto_notification = uci:get("lpac", "config", "auto_notification")
+	local auto_notification = uci:get("luci-lpac", "config", "auto_notification")
 	if auto_notification == "1" then
 		M.process_all_notifications_safe()
 	end
@@ -482,17 +482,17 @@ end
 -- Get configuration
 function M.get_config()
 	local config = {
-		apdu_driver = uci:get("lpac", "config", "apdu_driver") or "pcsc",
-		http_driver = uci:get("lpac", "config", "http_driver") or "curl",
-		custom_aid = uci:get("lpac", "config", "custom_aid") or "",
-		es10x_mss = uci:get("lpac", "config", "es10x_mss") or "60",
-		debug_http = uci:get("lpac", "config", "debug_http") or "0",
-		debug_apdu = uci:get("lpac", "config", "debug_apdu") or "0",
-		auto_notification = uci:get("lpac", "config", "auto_notification") or "1",
-		qmi_slot = uci:get("lpac", "config", "qmi_slot") or "1",
-		pcsc_reader = uci:get("lpac", "config", "pcsc_reader") or "",
-		log_level = uci:get("lpac", "advanced", "log_level") or "info",
-		timeout = uci:get("lpac", "advanced", "timeout") or "120"
+		apdu_driver = uci:get("luci-lpac", "config", "apdu_driver") or "pcsc",
+		http_driver = uci:get("luci-lpac", "config", "http_driver") or "curl",
+		custom_aid = uci:get("luci-lpac", "config", "custom_aid") or "",
+		es10x_mss = uci:get("luci-lpac", "config", "es10x_mss") or "60",
+		debug_http = uci:get("luci-lpac", "config", "debug_http") or "0",
+		debug_apdu = uci:get("luci-lpac", "config", "debug_apdu") or "0",
+		auto_notification = uci:get("luci-lpac", "config", "auto_notification") or "1",
+		qmi_slot = uci:get("luci-lpac", "config", "qmi_slot") or "1",
+		pcsc_reader = uci:get("luci-lpac", "config", "pcsc_reader") or "",
+		log_level = uci:get("luci-lpac", "advanced", "log_level") or "info",
+		timeout = uci:get("luci-lpac", "advanced", "timeout") or "120"
 	}
 
 	return util.create_result(true, "Success", config)
@@ -507,14 +507,14 @@ function M.update_config(new_config)
 	-- Update UCI configuration
 	for key, value in pairs(new_config) do
 		if key == "log_level" or key == "timeout" then
-			uci:set("lpac", "advanced", key, tostring(value))
+			uci:set("luci-lpac", "advanced", key, tostring(value))
 		else
-			uci:set("lpac", "config", key, tostring(value))
+			uci:set("luci-lpac", "config", key, tostring(value))
 		end
 	end
 
 	-- Commit changes
-	uci:commit("lpac")
+	uci:commit("luci-lpac")
 
 	return util.create_result(true, "Configuration updated successfully", nil)
 end

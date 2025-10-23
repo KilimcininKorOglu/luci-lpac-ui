@@ -232,12 +232,14 @@ mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/controller"
 mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/model/lpac"
 mkdir -p "$BUILD_DIR/data/www/luci-static/resources/view/lpac"
 mkdir -p "$BUILD_DIR/data/www/luci-static/resources"
+mkdir -p "$BUILD_DIR/data/etc/config"
 mkdir -p "$BUILD_DIR/data/etc/uci-defaults"
 
 # Copy LuCI files
 echo "📄 Copying LuCI files..."
 
 # Controller (HTTP API)
+mkdir -p "$BUILD_DIR/data/etc/config"
 echo "  → Controller (HTTP API - $ENDPOINT_COUNT endpoints)"
 cp "$SOURCE_DIR/luasrc/controller/lpac.lua" \
     "$BUILD_DIR/data/usr/lib/lua/luci/controller/"
@@ -257,7 +259,10 @@ echo "  → Custom CSS ($CSS_COUNT files)"
 cp "$SOURCE_DIR/htdocs/luci-static/resources/"*.css \
     "$BUILD_DIR/data/www/luci-static/resources/"
 
-# Note: UCI config file is provided by lpac package, not copied here
+# UCI configuration file (luci-lpac config, independent from lpac package)
+echo "  → UCI configuration"
+cp "$SOURCE_DIR/root/etc/config/luci-lpac" \
+    "$BUILD_DIR/data/etc/config/"
 
 # UCI defaults (post-install automation)
 echo "  → UCI defaults"
@@ -328,7 +333,8 @@ echo "   • 1 Controller (HTTP API with $ENDPOINT_COUNT endpoints)"
 echo "   • $MODEL_COUNT Model modules"
 echo "   • $VIEW_COUNT JavaScript views (Modern LuCI)"
 echo "   • $CSS_COUNT CSS files (custom styling)"
-echo "   • UCI defaults script (config provided by lpac package)"
+echo "   • UCI config file (/etc/config/luci-lpac)"
+echo "   • UCI defaults script (post-install setup)"
 echo ""
 echo "🚀 Install with:"
 echo "   opkg update"

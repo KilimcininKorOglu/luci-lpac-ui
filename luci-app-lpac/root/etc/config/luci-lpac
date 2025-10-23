@@ -1,0 +1,16 @@
+
+config luci_lpac 'config'
+	option apdu_driver 'pcsc'
+	option http_driver 'curl'
+	option custom_aid ''
+	option es10x_mss '60'
+	option debug_http '0'
+	option debug_apdu '0'
+	option auto_notification '1'
+	option qmi_slot '1'
+	option pcsc_reader ''
+
+config luci_lpac 'advanced'
+	option log_level 'info'
+	option timeout '120'
+	option download_cooldown '60'

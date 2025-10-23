@@ -1,26 +1,27 @@
 #!/bin/sh
 
 # Initialize UCI configuration if not exists
-uci -q get lpac.config || {
-	uci set lpac.config=lpac
-	uci set lpac.config.apdu_driver='pcsc'
-	uci set lpac.config.http_driver='curl'
-	uci set lpac.config.custom_aid=''
-	uci set lpac.config.es10x_mss='60'
-	uci set lpac.config.debug_http='0'
-	uci set lpac.config.debug_apdu='0'
-	uci set lpac.config.auto_notification='1'
-	uci set lpac.config.qmi_slot='1'
-	uci set lpac.config.pcsc_reader=''
-	uci commit lpac
+uci -q get luci-lpac.config || {
+	uci set luci-lpac.config=luci_lpac
+	uci set luci-lpac.config.apdu_driver='pcsc'
+	uci set luci-lpac.config.http_driver='curl'
+	uci set luci-lpac.config.custom_aid=''
+	uci set luci-lpac.config.es10x_mss='60'
+	uci set luci-lpac.config.debug_http='0'
+	uci set luci-lpac.config.debug_apdu='0'
+	uci set luci-lpac.config.auto_notification='1'
+	uci set luci-lpac.config.qmi_slot='1'
+	uci set luci-lpac.config.pcsc_reader=''
+	uci commit luci-lpac
 }
 
 # Initialize advanced configuration if not exists
-uci -q get lpac.advanced || {
-	uci set lpac.advanced=lpac
-	uci set lpac.advanced.log_level='info'
-	uci set lpac.advanced.timeout='120'
-	uci commit lpac
+uci -q get luci-lpac.advanced || {
+	uci set luci-lpac.advanced=luci_lpac
+	uci set luci-lpac.advanced.log_level='info'
+	uci set luci-lpac.advanced.timeout='120'
+	uci set luci-lpac.advanced.download_cooldown='60'
+	uci commit luci-lpac
 }
 
 # Clear LuCI cache
