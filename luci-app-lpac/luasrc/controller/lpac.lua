@@ -12,31 +12,31 @@ function index()
 
 	-- View pages
 	entry({"admin", "services", "lpac", "dashboard"},
-		template("lpac/dashboard"),
+		view("lpac/dashboard"),
 		_("Dashboard"), 1)
 
 	entry({"admin", "services", "lpac", "chip"},
-		template("lpac/chip"),
+		view("lpac/chip"),
 		_("Chip Info"), 2)
 
 	entry({"admin", "services", "lpac", "profiles"},
-		template("lpac/profiles"),
+		view("lpac/profiles"),
 		_("Profiles"), 3)
 
 	entry({"admin", "services", "lpac", "download"},
-		template("lpac/download"),
+		view("lpac/download"),
 		_("Download"), 4)
 
 	entry({"admin", "services", "lpac", "notifications"},
-		template("lpac/notifications"),
+		view("lpac/notifications"),
 		_("Notifications"), 5)
 
 	entry({"admin", "services", "lpac", "settings"},
-		template("lpac/settings"),
+		view("lpac/settings"),
 		_("Settings"), 6)
 
 	entry({"admin", "services", "lpac", "about"},
-		template("lpac/about"),
+		view("lpac/about"),
 		_("About"), 7)
 
 	-- API endpoints
