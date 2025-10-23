@@ -88,34 +88,44 @@ function M.exec_lpac(args, custom_env)
 	local env_str = env_to_string(env)
 	local args_str = table.concat(args, " ")
 
-	-- Use a temporary file to capture output
-	local tmpfile = "/tmp/lpac-output-" .. os.time() .. "-" .. math.random(10000, 99999) .. ".txt"
+	-- Use a simple temporary file name (no random component for easier debugging)
+	local tmpfile = "/tmp/lpac-output.txt"
 	local cmd = string.format("%s /usr/bin/lpac %s > %s 2>&1", env_str, args_str, tmpfile)
 
 	-- Log command for debugging
-	local log_cmd = string.format("echo '[lpac-luci] %s' >> /tmp/lpac-debug.log", cmd:gsub(tmpfile, "<tmpfile>"))
+	local log_cmd = string.format("echo '[lpac-luci CMD] %s' >> /tmp/lpac-debug.log", cmd:gsub(tmpfile, "<tmpfile>"))
 	os.execute(log_cmd)
 
 	-- Execute command and wait for completion
 	-- os.execute waits for the command to complete, no timeout
 	local exit_code = os.execute(cmd)
 
+	-- Log exit code
+	os.execute(string.format("echo '[lpac-luci EXIT] Exit code: %s' >> /tmp/lpac-debug.log", tostring(exit_code)))
+
+	-- Wait a moment for file system to sync
+	os.execute("sleep 0.1")
+
 	-- Read output from temporary file
 	local output = ""
-	local f = io.open(tmpfile, "r")
-	if f then
-		output = f:read("*all")
-		f:close()
-		-- Clean up temporary file
-		os.remove(tmpfile)
-	else
-		-- Failed to read output file
-		os.remove(tmpfile)
+	local read_cmd = string.format("cat %s 2>&1", tmpfile)
+	local handle = io.popen(read_cmd)
+	if handle then
+		output = handle:read("*all")
+		handle:close()
+	end
+
+	-- Clean up temporary file
+	os.remove(tmpfile)
+
+	-- Check if we got any output
+	if not output or output == "" then
+		os.execute("echo '[lpac-luci ERROR] No output from lpac' >> /tmp/lpac-debug.log")
 		return {
 			type = "lpa",
 			payload = {
 				code = -1,
-				message = "Failed to read lpac output",
+				message = "No output from lpac command",
 				raw_output = ""
 			}
 		}
