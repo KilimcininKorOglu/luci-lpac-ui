@@ -123,6 +123,7 @@ function index()
 end
 
 -- Helper function to send JSON response
+-- @param data table Data to serialize and send as JSON
 local function send_json(data)
 	local http = require "luci.http"
 	http.prepare_content("application/json")
@@ -130,6 +131,8 @@ local function send_json(data)
 end
 
 -- Helper function to get POST data
+-- Parses JSON request body from HTTP POST request
+-- @return table|nil Parsed JSON data or nil if no content
 local function get_post_data()
 	local http = require "luci.http"
 	local json = require "luci.jsonc"
@@ -142,14 +145,18 @@ local function get_post_data()
 	return json.parse(content)
 end
 
--- System information
+-- Get system information
+-- Returns application version, lpac version, and system details
+-- @return JSON response with system information
 function action_system_info()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.get_system_info()
 	send_json(result)
 end
 
--- Dashboard summary
+-- Get dashboard summary
+-- Returns overview of eUICC status, profiles, and notifications
+-- @return JSON response with dashboard data
 function action_dashboard_summary()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.get_dashboard_summary()
@@ -157,6 +164,8 @@ function action_dashboard_summary()
 end
 
 -- Get chip information
+-- Returns detailed eUICC chip information and capabilities
+-- @return JSON response with formatted chip data
 function action_chip_info()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.get_chip_info_formatted()
@@ -177,7 +186,9 @@ function action_get_eid()
 	end
 end
 
--- List profiles
+-- List all eSIM profiles
+-- Returns array of profiles with state, nickname, provider info
+-- @return JSON response with profiles array
 function action_list_profiles()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.list_profiles_enhanced()
@@ -185,6 +196,8 @@ function action_list_profiles()
 end
 
 -- Get single profile by ICCID
+-- Query parameter: iccid (string) - Profile ICCID
+-- @return JSON response with profile details or error
 function action_get_profile()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -201,6 +214,9 @@ function action_get_profile()
 end
 
 -- Enable profile
+-- POST data: {iccid: string, refresh: boolean?}
+-- Activates the specified profile on the eUICC
+-- @return JSON response with success/failure status
 function action_enable_profile()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -218,6 +234,9 @@ function action_enable_profile()
 end
 
 -- Disable profile
+-- POST data: {iccid: string, refresh: boolean?}
+-- Deactivates the specified profile on the eUICC
+-- @return JSON response with success/failure status
 function action_disable_profile()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -235,6 +254,9 @@ function action_disable_profile()
 end
 
 -- Delete profile
+-- POST data: {iccid: string, confirmed: boolean}
+-- Permanently removes the profile from the eUICC
+-- @return JSON response with success/failure status
 function action_delete_profile()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -252,6 +274,9 @@ function action_delete_profile()
 end
 
 -- Set profile nickname
+-- POST data: {iccid: string, nickname: string}
+-- Updates the custom nickname for a profile
+-- @return JSON response with success/failure status
 function action_set_nickname()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -268,6 +293,9 @@ function action_set_nickname()
 end
 
 -- Download profile
+-- POST data: {activation_code?: string, smdp?: string, matching_id?: string, confirmation_code?: string, imei?: string}
+-- Downloads and installs an eSIM profile using activation code or manual parameters
+-- @return JSON response with success status and profile ICCID
 function action_download_profile()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -292,6 +320,8 @@ function action_download_profile()
 end
 
 -- List notifications
+-- Returns array of pending eUICC notifications from SM-DP+ servers
+-- @return JSON response with notifications array
 function action_list_notifications()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.list_notifications_enhanced()
@@ -299,6 +329,9 @@ function action_list_notifications()
 end
 
 -- Process notification
+-- POST data: {seq_number: number, remove?: boolean}
+-- Processes a pending notification (install/enable/disable/delete)
+-- @return JSON response with processing result
 function action_process_notification()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -316,6 +349,9 @@ function action_process_notification()
 end
 
 -- Remove notification
+-- POST data: {seq_number: number}
+-- Removes a pending notification without processing it
+-- @return JSON response with success/failure status
 function action_remove_notification()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -332,6 +368,8 @@ function action_remove_notification()
 end
 
 -- Process all notifications
+-- Processes all pending notifications in batch
+-- @return JSON response with results for each notification
 function action_process_all_notifications()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.process_all_notifications_safe()
@@ -339,6 +377,8 @@ function action_process_all_notifications()
 end
 
 -- Remove all notifications
+-- Removes all pending notifications without processing
+-- @return JSON response with success/failure status
 function action_remove_all_notifications()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.remove_all_notifications_safe()
@@ -346,6 +386,8 @@ function action_remove_all_notifications()
 end
 
 -- Discover profiles from SM-DS
+-- Queries the SM-DS server for available profiles
+-- @return JSON response with discovered profiles array
 function action_discover_profiles()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.discover_profiles_safe()
@@ -353,6 +395,9 @@ function action_discover_profiles()
 end
 
 -- Set default SM-DP+ address
+-- POST data: {address: string}
+-- Configures the default SM-DP+ server for profile discovery
+-- @return JSON response with success/failure status
 function action_set_default_smdp()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -369,6 +414,10 @@ function action_set_default_smdp()
 end
 
 -- Factory reset
+-- POST data: {confirmation: string}
+-- Permanently deletes all profiles and resets eUICC to factory state
+-- Requires confirmation="RESET" for safety
+-- @return JSON response with success/failure status
 function action_factory_reset()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
@@ -385,6 +434,8 @@ function action_factory_reset()
 end
 
 -- List available APDU drivers
+-- Returns array of available APDU interface drivers
+-- @return JSON response with drivers array
 function action_list_apdu_drivers()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.list_apdu_drivers_safe()
@@ -392,6 +443,8 @@ function action_list_apdu_drivers()
 end
 
 -- Check if lpac is available
+-- Verifies lpac binary installation and execution
+-- @return JSON response with installed status and version
 function action_check_lpac()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.check_lpac_available()
@@ -399,6 +452,8 @@ function action_check_lpac()
 end
 
 -- Get configuration
+-- Returns current UCI configuration (APDU driver, default SM-DP+)
+-- @return JSON response with configuration object
 function action_get_config()
 	local model = require "luci.model.lpac.lpac_model"
 	local result = model.get_config()
@@ -406,6 +461,9 @@ function action_get_config()
 end
 
 -- Update configuration
+-- POST data: {apdu_driver?: string, default_smdp?: string}
+-- Updates UCI configuration with new settings
+-- @return JSON response with success/failure status
 function action_update_config()
 	local http = require "luci.http"
 	local model = require "luci.model.lpac.lpac_model"
