@@ -11,7 +11,7 @@ local M = {}
 
 -- Get UCI configuration values
 local function get_config(option, default)
-	return uci:get("lpac", "config", option) or default
+	return uci:get("luci-lpac", "config", option) or default
 end
 
 -- Build environment variables for lpac execution
