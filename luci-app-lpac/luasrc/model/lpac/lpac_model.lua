@@ -356,24 +356,89 @@ end
 
 -- Process all notifications
 function M.process_all_notifications_safe()
-	local result = lpac.process_all_notifications()
+	-- First, list all notifications
+	local list_result = lpac.list_notifications()
 
-	if not util.is_success(result) then
-		return util.create_result(false, util.get_error_message(result), nil)
+	if not util.is_success(list_result) then
+		return util.create_result(false, util.get_error_message(list_result), nil)
 	end
 
-	return util.create_result(true, "All notifications processed successfully", result.payload.data)
+	local notifications = list_result.payload.data or {}
+
+	-- If no notifications, return success
+	if #notifications == 0 then
+		return util.create_result(true, "No notifications to process", nil)
+	end
+
+	-- Process each notification individually
+	local processed = 0
+	local failed = 0
+
+	for _, notif in ipairs(notifications) do
+		local seq_number = notif.seqNumber or notif.seq_number
+		if seq_number then
+			-- Process this notification (and remove it after processing)
+			local result = lpac.process_notification(seq_number, true)
+			if util.is_success(result) then
+				processed = processed + 1
+			else
+				failed = failed + 1
+			end
+		end
+	end
+
+	if failed > 0 then
+		return util.create_result(false,
+			string.format("Processed %d, failed %d notifications", processed, failed),
+			{processed = processed, failed = failed})
+	end
+
+	return util.create_result(true,
+		string.format("All %d notifications processed successfully", processed),
+		{processed = processed})
 end
 
 -- Remove all notifications
 function M.remove_all_notifications_safe()
-	local result = lpac.remove_all_notifications()
+	-- First, list all notifications
+	local list_result = lpac.list_notifications()
 
-	if not util.is_success(result) then
-		return util.create_result(false, util.get_error_message(result), nil)
+	if not util.is_success(list_result) then
+		return util.create_result(false, util.get_error_message(list_result), nil)
 	end
 
-	return util.create_result(true, "All notifications removed successfully", result.payload.data)
+	local notifications = list_result.payload.data or {}
+
+	-- If no notifications, return success
+	if #notifications == 0 then
+		return util.create_result(true, "No notifications to remove", nil)
+	end
+
+	-- Remove each notification individually
+	local removed = 0
+	local failed = 0
+
+	for _, notif in ipairs(notifications) do
+		local seq_number = notif.seqNumber or notif.seq_number
+		if seq_number then
+			local result = lpac.remove_notification(seq_number)
+			if util.is_success(result) then
+				removed = removed + 1
+			else
+				failed = failed + 1
+			end
+		end
+	end
+
+	if failed > 0 then
+		return util.create_result(false,
+			string.format("Removed %d, failed %d notifications", removed, failed),
+			{removed = removed, failed = failed})
+	end
+
+	return util.create_result(true,
+		string.format("All %d notifications removed successfully", removed),
+		{removed = removed})
 end
 
 -- Discover profiles from SM-DS
