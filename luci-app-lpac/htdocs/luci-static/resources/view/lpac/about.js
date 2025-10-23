@@ -43,7 +43,12 @@ return view.extend({
 				]),
 				E('tr', {}, [
 					E('td', { 'style': 'font-weight: bold' }, _('Developer')),
-					E('td', {}, 'Kilimcinin Kör Oğlu')
+					E('td', {}, [
+					'Kilimcinin Kör Oğlu - ',
+					E('a', { 'href': 'https://github.com/KilimcininKorOglu', 'target': '_blank' }, 'GitHub'),
+					' | ',
+					E('a', { 'href': 'https://x.com/KorOglan', 'target': '_blank' }, 'X')
+				])
 					]),
 					E('tr', {}, [
 						E('td', { 'style': 'font-weight: bold' }, _('Repository')),
