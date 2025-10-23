@@ -206,11 +206,15 @@ end
 
 -- Download profile with comprehensive validation and cooldown
 function M.download_profile_safe(opts)
+	-- DEBUG: Log function entry
+	util.log("DEBUG", "[download_profile_safe] Function called")
+
 	-- Check cooldown
 	local cooldown_seconds = tonumber(uci:get("luci-lpac", "advanced", "download_cooldown")) or 60
 	local can_proceed, remaining = util.check_cooldown(last_download_time, cooldown_seconds)
 
 	if not can_proceed then
+		util.log("DEBUG", "[download_profile_safe] Cooldown check failed")
 		return util.create_result(false,
 			string.format("Please wait %d seconds before downloading another profile", remaining),
 			nil)
@@ -218,15 +222,21 @@ function M.download_profile_safe(opts)
 
 	-- Validate options
 	if not opts or type(opts) ~= "table" then
+		util.log("DEBUG", "[download_profile_safe] Invalid opts type")
 		return util.create_result(false, util.ERROR_MESSAGES.INVALID_DOWNLOAD_OPTIONS, nil)
 	end
 
+	util.log("DEBUG", "[download_profile_safe] opts.activation_code = " .. tostring(opts.activation_code))
+
 	-- Validate activation code or manual entry
 	if opts.activation_code and not util.is_empty(opts.activation_code) then
+		util.log("DEBUG", "[download_profile_safe] Validating activation code: " .. opts.activation_code)
 		local valid, err = util.validate_activation_code(opts.activation_code)
 		if not valid then
+			util.log("DEBUG", "[download_profile_safe] Validation failed: " .. tostring(err))
 			return util.create_result(false, err, nil)
 		end
+		util.log("DEBUG", "[download_profile_safe] Validation passed")
 	else
 		-- Validate manual entry
 		if util.is_empty(opts.smdp) then

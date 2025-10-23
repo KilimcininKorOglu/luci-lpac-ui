@@ -461,14 +461,19 @@ function M.create_result(success, message, data)
 	}
 end
 
--- Logging function (stub for now - can be enhanced later with syslog)
+-- Logging function with syslog support
 -- @param level string Log level (DEBUG, INFO, ERROR)
 -- @param message string Log message
 function M.log(level, message)
-	-- For now, do nothing (stub)
-	-- Future enhancement: use nixio.syslog() for proper logging
-	-- Example: require("nixio.syslog").openlog("luci-lpac")
-	--          require("nixio.syslog").syslog("info", message)
+	-- Use nixio.syslog for logging
+	local ok, syslog = pcall(require, "nixio.syslog")
+	if ok and syslog then
+		pcall(function()
+			syslog.openlog("luci-lpac", "pid", "daemon")
+			local priority = (level == "ERROR" and "err") or (level == "INFO" and "info") or "debug"
+			syslog.syslog(priority, "[" .. level .. "] " .. tostring(message))
+		end)
+	end
 end
 
 return M
