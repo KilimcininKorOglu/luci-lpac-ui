@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# IMEI Changer LuCI IPK Builder Script
-# Builds complete IPK package from luci-imeichanger source
+# lpac LuCI IPK Builder Script
+# Builds complete IPK package from luci-app-lpac source
+# Modern LuCI (HTTP API) architecture - No RPCD/ACL required
 
 set -e
 
@@ -9,46 +10,109 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 
-# Get version from core module (dynamic path)
-CORE_MODULE="$PROJECT_DIR/auto-imei-changer/modules/core.sh"
+# Get version from Makefile
+MAKEFILE="$PROJECT_DIR/luci-app-lpac/Makefile"
 
-# Verify core module exists
-if [ ! -f "$CORE_MODULE" ]; then
-    echo "❌ Error: Core module not found at: $CORE_MODULE"
-    echo "💡 Expected structure: [project]/auto-imei-changer/modules/core.sh"
+# Verify Makefile exists
+if [ ! -f "$MAKEFILE" ]; then
+    echo "❌ Error: Makefile not found at: $MAKEFILE"
+    echo "💡 Expected structure: [project]/luci-app-lpac/Makefile"
     exit 1
 fi
 
-BASE_VERSION=$(grep '^VERSION=' "$CORE_MODULE" | cut -d'"' -f2)
+BASE_VERSION=$(grep '^PKG_VERSION:=' "$MAKEFILE" | cut -d'=' -f2)
 
 # Verify version was found
 if [ -z "$BASE_VERSION" ]; then
-    echo "❌ Error: Could not extract version from core module"
-    echo "📍 Core module: $CORE_MODULE"
+    echo "❌ Error: Could not extract version from Makefile"
+    echo "📍 Makefile: $MAKEFILE"
     exit 1
 fi
 
 # Generate dynamic date and build number
 CURRENT_DATE=$(date +%Y%m%d)
-SOURCE_DIR="$PROJECT_DIR/luci-imeichanger"
+SOURCE_DIR="$PROJECT_DIR/luci-app-lpac"
 BUILD_DIR="$PROJECT_DIR/build-luci-ipk"
 
 # Check for existing builds today and increment build number
 BUILD_NUMBER=1
 ARCHIVE_DIR="$PROJECT_DIR/ipk_archive/$BASE_VERSION"
-while [ -f "$ARCHIVE_DIR/luci-app-auto-imei-changer_${BASE_VERSION}-${CURRENT_DATE}-${BUILD_NUMBER}_all.ipk" ]; do
+while [ -f "$ARCHIVE_DIR/luci-app-lpac_${BASE_VERSION}-${CURRENT_DATE}-${BUILD_NUMBER}_all.ipk" ]; do
     BUILD_NUMBER=$((BUILD_NUMBER + 1))
 done
 
 VERSION="${BASE_VERSION}-${CURRENT_DATE}-${BUILD_NUMBER}"
 
-echo "=== IMEI Changer LuCI IPK Builder ==="
+echo "=== lpac LuCI IPK Builder ==="
 echo "Base Version: $BASE_VERSION"
 echo "Build Date: $CURRENT_DATE"
 echo "Build Number: $BUILD_NUMBER"
 echo "Full Version: $VERSION"
 echo "Source: $SOURCE_DIR"
 echo "Build:  $BUILD_DIR"
+echo
+
+# Verify source files exist
+echo "🔍 Verifying source files..."
+MISSING_FILES=0
+
+# Check controller
+if [ ! -f "$SOURCE_DIR/luasrc/controller/lpac.lua" ]; then
+    echo "  ❌ Missing: luasrc/controller/lpac.lua"
+    MISSING_FILES=$((MISSING_FILES + 1))
+else
+    echo "  ✅ Controller found"
+fi
+
+# Check model files
+for file in lpac_interface.lua lpac_model.lua lpac_util.lua; do
+    if [ ! -f "$SOURCE_DIR/luasrc/model/lpac/$file" ]; then
+        echo "  ❌ Missing: luasrc/model/lpac/$file"
+        MISSING_FILES=$((MISSING_FILES + 1))
+    fi
+done
+echo "  ✅ Model files found (3)"
+
+# Check views
+VIEW_COUNT=$(find "$SOURCE_DIR/htdocs/luci-static/resources/view/lpac" -name "*.js" 2>/dev/null | wc -l)
+if [ "$VIEW_COUNT" -ne 7 ]; then
+    echo "  ❌ Expected 7 view files, found: $VIEW_COUNT"
+    MISSING_FILES=$((MISSING_FILES + 1))
+else
+    echo "  ✅ View files found ($VIEW_COUNT)"
+fi
+
+# Check CSS
+if [ ! -f "$SOURCE_DIR/htdocs/luci-static/resources/lpac.css" ]; then
+    echo "  ❌ Missing: htdocs/luci-static/resources/lpac.css"
+    MISSING_FILES=$((MISSING_FILES + 1))
+else
+    echo "  ✅ CSS file found"
+fi
+
+# Check UCI config
+if [ ! -f "$SOURCE_DIR/root/etc/config/lpac" ]; then
+    echo "  ❌ Missing: root/etc/config/lpac"
+    MISSING_FILES=$((MISSING_FILES + 1))
+else
+    echo "  ✅ UCI config found"
+fi
+
+# Check uci-defaults
+if [ ! -f "$SOURCE_DIR/root/etc/uci-defaults/90-luci-lpac" ]; then
+    echo "  ❌ Missing: root/etc/uci-defaults/90-luci-lpac"
+    MISSING_FILES=$((MISSING_FILES + 1))
+else
+    echo "  ✅ UCI defaults found"
+fi
+
+if [ $MISSING_FILES -gt 0 ]; then
+    echo ""
+    echo "❌ Build aborted: $MISSING_FILES required file(s) missing"
+    exit 1
+fi
+
+echo "  ✅ All source files verified"
 echo
 
 # Clean and create build directory
@@ -64,47 +128,68 @@ echo "2.0" >"$BUILD_DIR/debian-binary"
 echo "📋 Creating control files..."
 mkdir -p "$BUILD_DIR/control"
 
-# Control file
+# Control file - Modern LuCI dependencies (NO rpcd)
 cat >"$BUILD_DIR/control/control" <<EOF
-Package: luci-app-auto-imei-changer
+Package: luci-app-lpac
 Version: $VERSION
-Depends: luci-base, luci-lib-json, luci-lib-jsonc, auto-imei-changer (>= $BASE_VERSION)
+Depends: luci-base, lpac, luci-lib-jsonc
 Section: luci
 Architecture: all
-Installed-Size: 125760
-Maintainer: Hermes The Cat <k@keremgok.tr>
-Description: LuCI Web Interface for OpenWrt IMEI Changer v$BASE_VERSION
- Professional web interface for OpenWrt IMEI Changer with complete JSON API
- integration, streamlined IMEI management, and modern responsive design. 
- Features 18 core commands with structured JSON responses, enhanced UX with 
- Use/Update/Delete buttons.
+Installed-Size: 130048
+Maintainer: Your Name <your.email@example.com>
+Description: LuCI Web Interface for lpac eSIM Management v$BASE_VERSION
+ Modern web interface for lpac eSIM profile management with HTTP API
+ integration and responsive design. Supports OpenWrt 23.05+ with Modern
+ LuCI framework.
+ .
+ Features:
+  - Dashboard with system overview
+  - eUICC chip information display
+  - Profile management (list, enable, disable, delete, rename)
+  - Profile download (activation code or manual entry)
+  - Notification management
+  - Configuration settings
+  - HTTP API with 27 endpoints
+  - No RPCD/ACL required (Modern LuCI HTTP API)
 EOF
 
-# Post-install script
+# Post-install script - Optimized for Modern LuCI
 cat >"$BUILD_DIR/control/postinst" <<'EOF'
 #!/bin/sh
 [ "${IPKG_NO_SCRIPT}" = "1" ] && exit 0
 [ -s ${IPKG_INSTROOT}/lib/functions.sh ] || exit 0
 . ${IPKG_INSTROOT}/lib/functions.sh
 
-# Ensure correct script permissions
-chmod +x /usr/sbin/imei-changer 2>/dev/null
-chmod +x /etc/auto-imei-changer/imei.sh 2>/dev/null
-
-# Create required directories
-mkdir -p /etc/auto-imei-changer
-mkdir -p /var/log
+# Ensure lpac binary is executable
+if [ -f /usr/bin/lpac ]; then
+    chmod +x /usr/bin/lpac 2>/dev/null || true
+    echo "✓ lpac binary found and executable"
+else
+    echo "⚠ Warning: lpac binary not found at /usr/bin/lpac"
+    echo "  Install lpac package for full functionality"
+fi
 
 # Clear LuCI cache
-rm -rf /tmp/luci-*
+rm -rf /tmp/luci-* 2>/dev/null || true
 
-# Restart services
-/etc/init.d/rpcd restart 2>/dev/null || true
+# Restart web server to load new LuCI modules
 /etc/init.d/uhttpd restart 2>/dev/null || true
 
-echo "IMEI Changer LuCI UI with UCI Configuration installed successfully!"
-echo "Access via: Network -> IMEI Manager (Dashboard)"
-echo "Configure via: Network -> IMEI Configuration (Settings & Webhook)"
+echo ""
+echo "✅ luci-app-lpac installed successfully!"
+echo ""
+echo "Access via: Network → eSIM Management"
+echo ""
+echo "Available pages:"
+echo "  • Dashboard - System overview"
+echo "  • Chip Info - eUICC hardware details"
+echo "  • Profiles - Manage eSIM profiles"
+echo "  • Download - Download new profiles"
+echo "  • Notifications - Process pending notifications"
+echo "  • Settings - Configuration and advanced operations"
+echo "  • About - System information"
+echo ""
+
 default_postinst $0 $@
 EOF
 
@@ -114,7 +199,10 @@ cat >"$BUILD_DIR/control/prerm" <<'EOF'
 [ -s ${IPKG_INSTROOT}/lib/functions.sh ] || exit 0
 . ${IPKG_INSTROOT}/lib/functions.sh
 
-echo "IMEI Changer LuCI interface removed."
+echo "lpac LuCI interface removed."
+
+# Clear LuCI cache
+rm -rf /tmp/luci-* 2>/dev/null || true
 
 default_prerm $0 $@
 EOF
@@ -123,59 +211,50 @@ EOF
 chmod +x "$BUILD_DIR/control/postinst"
 chmod +x "$BUILD_DIR/control/prerm"
 
-# Create data directory structure
+# Create data directory structure (Modern LuCI paths)
 echo "📁 Creating data structure..."
-mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/controller/network"
-mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/view/network"
-mkdir -p "$BUILD_DIR/data/usr/share/rpcd/acl.d"
+mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/controller"
+mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/model/lpac"
+mkdir -p "$BUILD_DIR/data/www/luci-static/resources/view/lpac"
+mkdir -p "$BUILD_DIR/data/www/luci-static/resources"
+mkdir -p "$BUILD_DIR/data/etc/config"
+mkdir -p "$BUILD_DIR/data/etc/uci-defaults"
 
 # Copy LuCI files
 echo "📄 Copying LuCI files..."
 
-# Controllers
-echo "  → Controllers"
-cp "$SOURCE_DIR/luasrc/controller/network/imei.lua" \
-    "$BUILD_DIR/data/usr/lib/lua/luci/controller/network/"
-if [ -f "$SOURCE_DIR/luasrc/controller/network/imei_config.lua" ]; then
-    cp "$SOURCE_DIR/luasrc/controller/network/imei_config.lua" \
-       "$BUILD_DIR/data/usr/lib/lua/luci/controller/network/"
-fi
+# Controller (HTTP API)
+echo "  → Controller (HTTP API - 27 endpoints)"
+cp "$SOURCE_DIR/luasrc/controller/lpac.lua" \
+    "$BUILD_DIR/data/usr/lib/lua/luci/controller/"
 
-# Views (with automatic line ending conversion)
-echo "  → Views (*.htm)"
-cp "$SOURCE_DIR/luasrc/view/network"/*.htm \
-    "$BUILD_DIR/data/usr/lib/lua/luci/view/network/"
+# Model layer (Business logic)
+echo "  → Model layer (3 modules)"
+cp "$SOURCE_DIR/luasrc/model/lpac"/*.lua \
+    "$BUILD_DIR/data/usr/lib/lua/luci/model/lpac/"
 
-# Additional view templates for settings/help
-if [ -d "$SOURCE_DIR/luasrc/view/auto-imei-changer" ]; then
-    mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/view/auto-imei-changer"
-    cp "$SOURCE_DIR/luasrc/view/auto-imei-changer"/*.htm \
-       "$BUILD_DIR/data/usr/lib/lua/luci/view/auto-imei-changer/" 2>/dev/null || true
-fi
+# JavaScript views (Modern LuCI)
+echo "  → JavaScript views (7 files)"
+cp "$SOURCE_DIR/htdocs/luci-static/resources/view/lpac"/*.js \
+    "$BUILD_DIR/data/www/luci-static/resources/view/lpac/"
 
-# Convert line endings for template files (Unix format required for LuCI)
-echo "  → Converting line endings (dos2unix)"
-if command -v dos2unix >/dev/null 2>&1; then
-    dos2unix "$BUILD_DIR/data/usr/lib/lua/luci/view/network"/*.htm 2>/dev/null || true
-    dos2unix "$BUILD_DIR/data/usr/lib/lua/luci/view/auto-imei-changer"/*.htm 2>/dev/null || true
-    dos2unix "$BUILD_DIR/data/usr/lib/lua/luci/controller/network/imei.lua" 2>/dev/null || true
-    dos2unix "$BUILD_DIR/data/usr/lib/lua/luci/controller/network/imei_config.lua" 2>/dev/null || true
-    dos2unix "$PROJECT_DIR/auto-imei-changer/imei.sh" 2>/dev/null || true
-    dos2unix "$PROJECT_DIR/auto-imei-changer/modules"/*.sh 2>/dev/null || true
-else
-    echo "  ⚠️  Warning: dos2unix not found, skipping line ending conversion"
-fi
+# CSS styling
+echo "  → Custom CSS"
+cp "$SOURCE_DIR/htdocs/luci-static/resources/lpac.css" \
+    "$BUILD_DIR/data/www/luci-static/resources/"
 
-# ACL permissions
-echo "  → ACL permissions"
-cp "$SOURCE_DIR/root/usr/share/rpcd/acl.d/luci-app-imeichanger.json" \
-    "$BUILD_DIR/data/usr/share/rpcd/acl.d/"
+# UCI configuration
+echo "  → UCI configuration"
+cp "$SOURCE_DIR/root/etc/config/lpac" \
+    "$BUILD_DIR/data/etc/config/"
 
-# CBI models
-echo "  → CBI models"
-mkdir -p "$BUILD_DIR/data/usr/lib/lua/luci/model/cbi/auto-imei-changer"
-cp "$SOURCE_DIR/luasrc/model/cbi/auto-imei-changer"/*.lua \
-   "$BUILD_DIR/data/usr/lib/lua/luci/model/cbi/auto-imei-changer/"
+# UCI defaults (post-install automation)
+echo "  → UCI defaults"
+cp "$SOURCE_DIR/root/etc/uci-defaults/90-luci-lpac" \
+    "$BUILD_DIR/data/etc/uci-defaults/"
+
+# Set correct permissions
+chmod 755 "$BUILD_DIR/data/etc/uci-defaults/90-luci-lpac"
 
 # Create archives
 echo "🗜️  Creating tar archives..."
@@ -189,10 +268,10 @@ tar czf data.tar.gz -C data .
 
 # Create final IPK
 echo "📦 Creating IPK package..."
-IPK_NAME="luci-app-auto-imei-changer_${VERSION}_all.ipk"
+IPK_NAME="luci-app-lpac_${VERSION}_all.ipk"
 tar -czf "$IPK_NAME" debian-binary control.tar.gz data.tar.gz
 
-# Create organized archive directory structure (already defined above)
+# Create organized archive directory structure
 echo "📁 Creating archive directory: ipk_archive/$BASE_VERSION"
 mkdir -p "$ARCHIVE_DIR"
 
@@ -200,11 +279,13 @@ mkdir -p "$ARCHIVE_DIR"
 mv "$IPK_NAME" "$ARCHIVE_DIR/"
 
 # Create latest copy in main archive folder
-cp "$ARCHIVE_DIR/$IPK_NAME" "$PROJECT_DIR/ipk_archive/luci-app-auto-imei-changer_latest.ipk"
+mkdir -p "$PROJECT_DIR/ipk_archive"
+cp "$ARCHIVE_DIR/$IPK_NAME" "$PROJECT_DIR/ipk_archive/luci-app-lpac_latest.ipk"
 
 # List existing IPK files in this version
+echo ""
 echo "📦 IPK files for version $BASE_VERSION:"
-ls -la "$ARCHIVE_DIR"/*.ipk 2>/dev/null || echo "  This is the first build for version $BASE_VERSION"
+ls -lh "$ARCHIVE_DIR"/*.ipk 2>/dev/null || echo "  This is the first build for version $BASE_VERSION"
 
 # Show archive structure
 echo ""
@@ -218,17 +299,30 @@ if [ -d "$PROJECT_DIR/ipk_archive" ]; then
         fi
     done
 fi
+echo "  └── luci-app-lpac_latest.ipk (symlink)"
 
 # Cleanup intermediate files (keep IPK files)
 cd "$PROJECT_DIR"
 rm -rf "$BUILD_DIR"
 
-echo
-echo "✅ OpenWrt IMEI Changer IPK package created successfully!"
+echo ""
+echo "✅ luci-app-lpac IPK package created successfully!"
 echo "📍 Location: $ARCHIVE_DIR/$IPK_NAME"
 echo "📏 Size: $(du -h "$ARCHIVE_DIR/$IPK_NAME" | cut -f1)"
-echo "📦 Latest copy: ipk_archive/luci-app-auto-imei-changer_latest.ipk"
-echo
-echo "🚀 Install with: opkg install ipk_archive/$BASE_VERSION/$IPK_NAME"
-echo "📱 Access via: Network → IMEI Manager"
-echo
+echo "📦 Latest copy: ipk_archive/luci-app-lpac_latest.ipk"
+echo ""
+echo "🔧 Architecture: Modern LuCI (HTTP API, No RPCD)"
+echo "📋 Contents:"
+echo "   • 1 Controller (HTTP API with 27 endpoints)"
+echo "   • 3 Model modules (interface, model, util)"
+echo "   • 7 JavaScript views (Modern LuCI)"
+echo "   • 1 CSS file (custom styling)"
+echo "   • UCI configuration + defaults"
+echo ""
+echo "🚀 Install with:"
+echo "   opkg update"
+echo "   opkg install lpac  # Install dependency first"
+echo "   opkg install $ARCHIVE_DIR/$IPK_NAME"
+echo ""
+echo "📱 Access via: Network → eSIM Management"
+echo ""
