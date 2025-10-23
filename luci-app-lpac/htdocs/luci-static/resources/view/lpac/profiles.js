@@ -21,8 +21,8 @@ return view.extend({
 		var profilesResponse = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
 		var lpacCheckResponse = data[1] ? JSON.parse(data[1].responseText || '{}') : {};
 
-		var profiles = (profilesResponse && profilesResponse.data && profilesResponse.data.profiles) ?
-			profilesResponse.data.profiles : [];
+		var profiles = (profilesResponse && profilesResponse.data && Array.isArray(profilesResponse.data)) ?
+			profilesResponse.data : [];
 		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
 
 		var container = E('div', { 'class': 'cbi-map' }, [
