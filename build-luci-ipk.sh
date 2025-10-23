@@ -157,7 +157,7 @@ Depends: luci-base, lpac, luci-lib-jsonc
 Section: luci
 Architecture: all
 Installed-Size: 130048
-Maintainer: Your Name <your.email@example.com>
+Maintainer:  kilimcinin kör oğlu <koroglan@hermestech.uk>
 Description: LuCI Web Interface for lpac eSIM Management v$BASE_VERSION
  Modern web interface for lpac eSIM profile management with HTTP API
  integration and responsive design. Supports OpenWrt 23.05+ with Modern
