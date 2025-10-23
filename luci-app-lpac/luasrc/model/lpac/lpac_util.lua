@@ -461,4 +461,14 @@ function M.create_result(success, message, data)
 	}
 end
 
+-- Logging function (stub for now - can be enhanced later with syslog)
+-- @param level string Log level (DEBUG, INFO, ERROR)
+-- @param message string Log message
+function M.log(level, message)
+	-- For now, do nothing (stub)
+	-- Future enhancement: use nixio.syslog() for proper logging
+	-- Example: require("nixio.syslog").openlog("luci-lpac")
+	--          require("nixio.syslog").syslog("info", message)
+end
+
 return M
