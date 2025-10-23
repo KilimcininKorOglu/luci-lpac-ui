@@ -144,10 +144,10 @@ rm -rf /tmp/luci-*
 
 ## Configuration
 
-Configuration is stored in `/etc/config/lpac`:
+Configuration is stored in `/etc/config/luci-lpac`:
 
 ```
-config lpac 'config'
+config luci_lpac 'config'
     option apdu_driver 'pcsc'
     option http_driver 'curl'
     option auto_notification '1'
@@ -198,13 +198,13 @@ make package/luci-app-lpac/compile V=s
 luci-app-lpac/
 ├── Makefile                 # OpenWrt package definition
 ├── luasrc/                  # Lua backend
-│   ├── controller/          # LuCI controllers
+│   ├── controller/          # LuCI controllers (HTTP API)
 │   └── model/lpac/          # lpac interface layer
 ├── htdocs/                  # JavaScript frontend
 │   └── luci-static/resources/view/lpac/
 └── root/                    # Configuration files
-    ├── etc/config/lpac      # UCI configuration
-    └── usr/share/rpcd/acl.d/  # RPC ACL
+    ├── etc/config/luci-lpac # UCI configuration
+    └── etc/uci-defaults/    # Post-install setup
 ```
 
 ## License
