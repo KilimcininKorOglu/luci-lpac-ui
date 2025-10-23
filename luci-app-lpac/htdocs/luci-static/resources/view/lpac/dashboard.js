@@ -10,8 +10,8 @@
 return view.extend({
 	load: function() {
 		return Promise.all([
-			request.get('/cgi-bin/luci/admin/services/lpac/api/dashboard_summary'),
-			request.get('/cgi-bin/luci/admin/services/lpac/api/check_lpac')
+			request.get('/cgi-bin/luci/admin/network/lpac/api/dashboard_summary'),
+			request.get('/cgi-bin/luci/admin/network/lpac/api/check_lpac')
 		]);
 	},
 

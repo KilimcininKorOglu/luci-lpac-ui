@@ -11,8 +11,8 @@
 return view.extend({
 	load: function() {
 		return Promise.all([
-			request.get('/cgi-bin/luci/admin/services/lpac/api/list_profiles'),
-			request.get('/cgi-bin/luci/admin/services/lpac/api/check_lpac')
+			request.get('/cgi-bin/luci/admin/network/lpac/api/list_profiles'),
+			request.get('/cgi-bin/luci/admin/network/lpac/api/check_lpac')
 		]);
 	},
 
@@ -89,7 +89,7 @@ return view.extend({
 								E('p', { 'class': 'spinning' }, _('Please wait...'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/enable_profile', {
+							request.post('/cgi-bin/luci/admin/network/lpac/api/enable_profile', {
 								iccid: iccid,
 								refresh: true
 							}).then(function(response) {
@@ -141,7 +141,7 @@ return view.extend({
 								E('p', { 'class': 'spinning' }, _('Please wait...'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/disable_profile', {
+							request.post('/cgi-bin/luci/admin/network/lpac/api/disable_profile', {
 								iccid: iccid,
 								refresh: true
 							}).then(function(response) {
@@ -196,7 +196,7 @@ return view.extend({
 								E('p', { 'class': 'spinning' }, _('Please wait...'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/delete_profile', {
+							request.post('/cgi-bin/luci/admin/network/lpac/api/delete_profile', {
 								iccid: iccid,
 								confirmed: true
 							}).then(function(response) {
@@ -264,7 +264,7 @@ return view.extend({
 								E('p', { 'class': 'spinning' }, _('Please wait...'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/set_nickname', {
+							request.post('/cgi-bin/luci/admin/network/lpac/api/set_nickname', {
 								iccid: iccid,
 								nickname: newNickname
 							}).then(function(response) {

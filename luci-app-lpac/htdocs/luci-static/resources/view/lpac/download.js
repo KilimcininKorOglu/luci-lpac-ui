@@ -11,7 +11,7 @@
 return view.extend({
 	load: function() {
 		return Promise.all([
-			request.get('/cgi-bin/luci/admin/services/lpac/api/check_lpac')
+			request.get('/cgi-bin/luci/admin/network/lpac/api/check_lpac')
 		]);
 	},
 
@@ -126,7 +126,7 @@ return view.extend({
 								E('p', {}, _('Do not close this page or disconnect the eUICC.'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/download_profile', options)
+							request.post('/cgi-bin/luci/admin/network/lpac/api/download_profile', options)
 								.then(function(response) {
 									ui.hideModal();
 									if (response && response.success) {

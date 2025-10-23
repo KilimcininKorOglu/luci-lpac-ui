@@ -11,9 +11,9 @@
 return view.extend({
 	load: function() {
 		return Promise.all([
-			request.get('/cgi-bin/luci/admin/services/lpac/api/get_config'),
-			request.get('/cgi-bin/luci/admin/services/lpac/api/list_apdu_drivers'),
-			request.get('/cgi-bin/luci/admin/services/lpac/api/check_lpac')
+			request.get('/cgi-bin/luci/admin/network/lpac/api/get_config'),
+			request.get('/cgi-bin/luci/admin/network/lpac/api/list_apdu_drivers'),
+			request.get('/cgi-bin/luci/admin/network/lpac/api/check_lpac')
 		]);
 	},
 
@@ -58,7 +58,7 @@ return view.extend({
 				E('p', { 'class': 'spinning' }, _('Please wait...'))
 			]);
 
-			request.post('/cgi-bin/luci/admin/services/lpac/api/update_config', newConfig)
+			request.post('/cgi-bin/luci/admin/network/lpac/api/update_config', newConfig)
 				.then(function(response) {
 					ui.hideModal();
 					if (response && response.success) {
@@ -167,7 +167,7 @@ return view.extend({
 											E('p', { 'class': 'spinning' }, _('Please wait...'))
 										]);
 
-										request.post('/cgi-bin/luci/admin/services/lpac/api/discover_profiles', {})
+										request.post('/cgi-bin/luci/admin/network/lpac/api/discover_profiles', {})
 											.then(function(response) {
 												ui.hideModal();
 												if (response && response.success) {
@@ -260,7 +260,7 @@ return view.extend({
 											E('p', {}, _('Do not disconnect the eUICC during this operation.'))
 										]);
 
-										request.post('/cgi-bin/luci/admin/services/lpac/api/factory_reset', {
+										request.post('/cgi-bin/luci/admin/network/lpac/api/factory_reset', {
 											confirmation: confirmation
 										})
 											.then(function(response) {

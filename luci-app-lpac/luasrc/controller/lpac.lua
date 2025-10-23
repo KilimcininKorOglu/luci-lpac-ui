@@ -6,107 +6,107 @@ module("luci.controller.lpac", package.seeall)
 
 function index()
 	-- Main menu entry
-	entry({"admin", "services", "lpac"},
-		alias("admin", "services", "lpac", "dashboard"),
+	entry({"admin", "network", "lpac"},
+		alias("admin", "network", "lpac", "dashboard"),
 		_("eSIM Management"), 60)
 
 	-- View pages
-	entry({"admin", "services", "lpac", "dashboard"},
+	entry({"admin", "network", "lpac", "dashboard"},
 		view("lpac/dashboard"),
 		_("Dashboard"), 1)
 
-	entry({"admin", "services", "lpac", "chip"},
+	entry({"admin", "network", "lpac", "chip"},
 		view("lpac/chip"),
 		_("Chip Info"), 2)
 
-	entry({"admin", "services", "lpac", "profiles"},
+	entry({"admin", "network", "lpac", "profiles"},
 		view("lpac/profiles"),
 		_("Profiles"), 3)
 
-	entry({"admin", "services", "lpac", "download"},
+	entry({"admin", "network", "lpac", "download"},
 		view("lpac/download"),
 		_("Download"), 4)
 
-	entry({"admin", "services", "lpac", "notifications"},
+	entry({"admin", "network", "lpac", "notifications"},
 		view("lpac/notifications"),
 		_("Notifications"), 5)
 
-	entry({"admin", "services", "lpac", "settings"},
+	entry({"admin", "network", "lpac", "settings"},
 		view("lpac/settings"),
 		_("Settings"), 6)
 
-	entry({"admin", "services", "lpac", "about"},
+	entry({"admin", "network", "lpac", "about"},
 		view("lpac/about"),
 		_("About"), 7)
 
 	-- API endpoints
-	entry({"admin", "services", "lpac", "api", "system_info"},
+	entry({"admin", "network", "lpac", "api", "system_info"},
 		call("action_system_info")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "dashboard_summary"},
+	entry({"admin", "network", "lpac", "api", "dashboard_summary"},
 		call("action_dashboard_summary")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "chip_info"},
+	entry({"admin", "network", "lpac", "api", "chip_info"},
 		call("action_chip_info")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "get_eid"},
+	entry({"admin", "network", "lpac", "api", "get_eid"},
 		call("action_get_eid")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "list_profiles"},
+	entry({"admin", "network", "lpac", "api", "list_profiles"},
 		call("action_list_profiles")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "get_profile"},
+	entry({"admin", "network", "lpac", "api", "get_profile"},
 		call("action_get_profile")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "enable_profile"},
+	entry({"admin", "network", "lpac", "api", "enable_profile"},
 		call("action_enable_profile")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "disable_profile"},
+	entry({"admin", "network", "lpac", "api", "disable_profile"},
 		call("action_disable_profile")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "delete_profile"},
+	entry({"admin", "network", "lpac", "api", "delete_profile"},
 		call("action_delete_profile")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "set_nickname"},
+	entry({"admin", "network", "lpac", "api", "set_nickname"},
 		call("action_set_nickname")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "download_profile"},
+	entry({"admin", "network", "lpac", "api", "download_profile"},
 		call("action_download_profile")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "list_notifications"},
+	entry({"admin", "network", "lpac", "api", "list_notifications"},
 		call("action_list_notifications")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "process_notification"},
+	entry({"admin", "network", "lpac", "api", "process_notification"},
 		call("action_process_notification")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "remove_notification"},
+	entry({"admin", "network", "lpac", "api", "remove_notification"},
 		call("action_remove_notification")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "process_all_notifications"},
+	entry({"admin", "network", "lpac", "api", "process_all_notifications"},
 		call("action_process_all_notifications")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "remove_all_notifications"},
+	entry({"admin", "network", "lpac", "api", "remove_all_notifications"},
 		call("action_remove_all_notifications")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "discover_profiles"},
+	entry({"admin", "network", "lpac", "api", "discover_profiles"},
 		call("action_discover_profiles")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "set_default_smdp"},
+	entry({"admin", "network", "lpac", "api", "set_default_smdp"},
 		call("action_set_default_smdp")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "factory_reset"},
+	entry({"admin", "network", "lpac", "api", "factory_reset"},
 		call("action_factory_reset")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "list_apdu_drivers"},
+	entry({"admin", "network", "lpac", "api", "list_apdu_drivers"},
 		call("action_list_apdu_drivers")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "check_lpac"},
+	entry({"admin", "network", "lpac", "api", "check_lpac"},
 		call("action_check_lpac")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "get_config"},
+	entry({"admin", "network", "lpac", "api", "get_config"},
 		call("action_get_config")).leaf = true
 
-	entry({"admin", "services", "lpac", "api", "update_config"},
+	entry({"admin", "network", "lpac", "api", "update_config"},
 		call("action_update_config")).leaf = true
 end
 

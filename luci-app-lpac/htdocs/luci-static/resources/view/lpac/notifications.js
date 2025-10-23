@@ -10,8 +10,8 @@
 return view.extend({
 	load: function() {
 		return Promise.all([
-			request.get('/cgi-bin/luci/admin/services/lpac/api/list_notifications'),
-			request.get('/cgi-bin/luci/admin/services/lpac/api/check_lpac')
+			request.get('/cgi-bin/luci/admin/network/lpac/api/list_notifications'),
+			request.get('/cgi-bin/luci/admin/network/lpac/api/check_lpac')
 		]);
 	},
 
@@ -88,7 +88,7 @@ return view.extend({
 								E('p', { 'class': 'spinning' }, _('Please wait...'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/process_notification', {
+							request.post('/cgi-bin/luci/admin/network/lpac/api/process_notification', {
 								seq_number: seqNumber,
 								remove: removeAfter
 							}).then(function(response) {
@@ -139,7 +139,7 @@ return view.extend({
 								E('p', { 'class': 'spinning' }, _('Please wait...'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/remove_notification', {
+							request.post('/cgi-bin/luci/admin/network/lpac/api/remove_notification', {
 								seq_number: seqNumber
 							}).then(function(response) {
 								ui.hideModal();
@@ -190,7 +190,7 @@ return view.extend({
 								E('p', {}, _('Processing ') + notifications.length + _(' notification(s)'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/process_all_notifications', {})
+							request.post('/cgi-bin/luci/admin/network/lpac/api/process_all_notifications', {})
 								.then(function(response) {
 									ui.hideModal();
 									if (response && response.success) {
@@ -240,7 +240,7 @@ return view.extend({
 								E('p', { 'class': 'spinning' }, _('Please wait...'))
 							]);
 
-							request.post('/cgi-bin/luci/admin/services/lpac/api/remove_all_notifications', {})
+							request.post('/cgi-bin/luci/admin/network/lpac/api/remove_all_notifications', {})
 								.then(function(response) {
 									ui.hideModal();
 									if (response && response.success) {

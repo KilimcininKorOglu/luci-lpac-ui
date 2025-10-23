@@ -119,7 +119,7 @@ rm -rf /tmp/luci-*
 ## Usage
 
 1. Access LuCI web interface
-2. Navigate to **Services > eSIM Management**
+2. Navigate to **Network > eSIM Management**
 3. Configure your eUICC interface in Settings
 4. Start managing your eSIM profiles
 
