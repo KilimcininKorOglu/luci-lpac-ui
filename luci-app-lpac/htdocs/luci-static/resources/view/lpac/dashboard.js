@@ -144,19 +144,11 @@ return view.extend({
 			]),
 			E('tr', {}, [
 				E('td', {}, _('Enabled')),
-				E('td', {}, [
-					createStatusBadge('success', '●'),
-					' ',
-					E('strong', {}, String(summary.profiles_enabled || 0))
-				])
+				E('td', {}, E('strong', {}, String(summary.profiles_enabled || 0)))
 			]),
 			E('tr', {}, [
 				E('td', {}, _('Disabled')),
-				E('td', {}, [
-					createStatusBadge('error', '●'),
-					' ',
-					E('strong', {}, String(summary.profiles_disabled || 0))
-				])
+				E('td', {}, E('strong', {}, String(summary.profiles_disabled || 0)))
 			])
 		];
 
