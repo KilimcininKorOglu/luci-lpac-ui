@@ -23,9 +23,6 @@ uci -q get lpac.advanced || {
 	uci commit lpac
 }
 
-# Restart rpcd to load new ACLs
-/etc/init.d/rpcd restart
-
 # Clear LuCI cache
 rm -rf /tmp/luci-*
 
