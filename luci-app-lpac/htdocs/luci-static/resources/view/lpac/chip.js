@@ -16,8 +16,9 @@ return view.extend({
 	},
 
 	render: function(data) {
-		var chipResponse = data[0];
-		var lpacCheckResponse = data[1];
+		// Parse JSON responses from responseText
+		var chipResponse = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
+		var lpacCheckResponse = data[1] ? JSON.parse(data[1].responseText || '{}') : {};
 
 		var chipData = (chipResponse && chipResponse.data) ? chipResponse.data : {};
 		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;

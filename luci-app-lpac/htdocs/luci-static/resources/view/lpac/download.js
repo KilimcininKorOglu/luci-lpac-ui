@@ -16,7 +16,8 @@ return view.extend({
 	},
 
 	render: function(data) {
-		var lpacCheckResponse = data[0];
+		// Parse JSON response from responseText
+		var lpacCheckResponse = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
 		var lpacAvailable = (lpacCheckResponse && lpacCheckResponse.success && lpacCheckResponse.data && lpacCheckResponse.data.installed) ? true : false;
 
 		var container = E('div', { 'class': 'cbi-map' }, [

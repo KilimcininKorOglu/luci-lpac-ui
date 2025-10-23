@@ -18,9 +18,10 @@ return view.extend({
 	},
 
 	render: function(data) {
-		var configResponse = data[0];
-		var driversResponse = data[1];
-		var lpacCheckResponse = data[2];
+		// Parse JSON responses from responseText
+		var configResponse = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
+		var driversResponse = data[1] ? JSON.parse(data[1].responseText || '{}') : {};
+		var lpacCheckResponse = data[2] ? JSON.parse(data[2].responseText || '{}') : {};
 
 		var config = (configResponse && configResponse.data) ? configResponse.data : {};
 		var drivers = (driversResponse && driversResponse.data && driversResponse.data.drivers) ?

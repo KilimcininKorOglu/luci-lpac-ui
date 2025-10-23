@@ -14,10 +14,10 @@ return view.extend({
 		]);
 	},
 
-	render: function(data) {
-		var response = data[0];
+		// Parse JSON response from responseText
+		var systemInfoData = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
 		var info = (response && response.data) ? response.data : {};
-
+		var info = (systemInfoData && systemInfoData.data) ? systemInfoData.data : {};
 		return E('div', { 'class': 'cbi-map' }, [
 			E('h2', {}, _('About luci-app-lpac')),
 

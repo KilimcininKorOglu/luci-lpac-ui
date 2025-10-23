@@ -17,8 +17,9 @@ return view.extend({
 	},
 
 	render: function(data) {
-		var profilesResponse = data[0];
-		var lpacCheckResponse = data[1];
+		// Parse JSON responses from responseText
+		var profilesResponse = data[0] ? JSON.parse(data[0].responseText || '{}') : {};
+		var lpacCheckResponse = data[1] ? JSON.parse(data[1].responseText || '{}') : {};
 
 		var profiles = (profilesResponse && profilesResponse.data && profilesResponse.data.profiles) ?
 			profilesResponse.data.profiles : [];
