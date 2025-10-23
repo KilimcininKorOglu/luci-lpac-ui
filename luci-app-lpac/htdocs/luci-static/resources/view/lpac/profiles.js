@@ -358,17 +358,16 @@ return view.extend({
 				return E('tr', {}, [
 					E('td', { 'style': 'width: 10%; text-align: center' }, createStatusBadge(enabled)),
 					E('td', { 'style': 'width: 25%' }, [
-						E('strong', {}, nickname),
-						E('br'),
-						E('small', { 'class': 'text-muted' }, provider)
+						E('div', { 'class': 'profile-name' }, nickname),
+						E('div', { 'class': 'profile-provider' }, provider)
 					]),
-					E('td', { 'style': 'width: 30%' }, E('code', { 'style': 'font-size: 11px' }, iccid)),
+					E('td', { 'style': 'width: 30%' }, E('code', { 'class': 'profile-iccid' }, iccid)),
 					E('td', { 'style': 'width: 15%' }, profile.profileClass || _('N/A')),
 					E('td', { 'style': 'width: 20%' }, actionButtons)
 				]);
 			});
 
-			var table = E('table', { 'class': 'table' }, [
+			var table = E('table', { 'class': 'table profiles-table' }, [
 				E('thead', {}, [
 					E('tr', {}, [
 						E('th', { 'style': 'text-align: center' }, _('Status')),
