@@ -36,7 +36,7 @@ BUILD_DIR="$PROJECT_DIR/build-luci-ipk"
 
 # Check for existing builds today and increment build number
 BUILD_NUMBER=1
-ARCHIVE_DIR="$PROJECT_DIR/ipk_archive/$BASE_VERSION"
+ARCHIVE_DIR="$PROJECT_DIR/luci_ipk_archive/$BASE_VERSION"
 while [ -f "$ARCHIVE_DIR/luci-app-lpac_${BASE_VERSION}-${CURRENT_DATE}-${BUILD_NUMBER}_all.ipk" ]; do
     BUILD_NUMBER=$((BUILD_NUMBER + 1))
 done
@@ -283,15 +283,15 @@ IPK_NAME="luci-app-lpac_${VERSION}_all.ipk"
 tar -czf "$IPK_NAME" debian-binary control.tar.gz data.tar.gz
 
 # Create organized archive directory structure
-echo "📁 Creating archive directory: ipk_archive/$BASE_VERSION"
+echo "📁 Creating archive directory: luci_ipk_archive/$BASE_VERSION"
 mkdir -p "$ARCHIVE_DIR"
 
 # Move IPK to organized archive directory
 mv "$IPK_NAME" "$ARCHIVE_DIR/"
 
 # Create latest copy in main archive folder
-mkdir -p "$PROJECT_DIR/ipk_archive"
-cp "$ARCHIVE_DIR/$IPK_NAME" "$PROJECT_DIR/ipk_archive/luci-app-lpac_latest.ipk"
+mkdir -p "$PROJECT_DIR/luci_ipk_archive"
+cp "$ARCHIVE_DIR/$IPK_NAME" "$PROJECT_DIR/luci_ipk_archive/luci-app-lpac_latest.ipk"
 
 # List existing IPK files in this version
 echo ""
@@ -301,10 +301,10 @@ ls -lh "$ARCHIVE_DIR"/*.ipk 2>/dev/null || echo "  This is the first build for v
 # Show archive structure
 echo ""
 echo "📂 Archive Structure:"
-echo "  ipk_archive/"
+echo "  luci_ipk_archive/"
 echo "  ├── $BASE_VERSION/ (current)"
-if [ -d "$PROJECT_DIR/ipk_archive" ]; then
-    for dir in "$PROJECT_DIR/ipk_archive"/*/; do
+if [ -d "$PROJECT_DIR/luci_ipk_archive" ]; then
+    for dir in "$PROJECT_DIR/luci_ipk_archive"/*/; do
         if [ -d "$dir" ] && [ "$(basename "$dir")" != "$BASE_VERSION" ]; then
             echo "  ├── $(basename "$dir")/"
         fi
@@ -320,7 +320,7 @@ echo ""
 echo "✅ luci-app-lpac IPK package created successfully!"
 echo "📍 Location: $ARCHIVE_DIR/$IPK_NAME"
 echo "📏 Size: $(du -h "$ARCHIVE_DIR/$IPK_NAME" | cut -f1)"
-echo "📦 Latest copy: ipk_archive/luci-app-lpac_latest.ipk"
+echo "📦 Latest copy: luci_ipk_archive/luci-app-lpac_latest.ipk"
 echo ""
 echo "🔧 Architecture: Modern LuCI (HTTP API, No RPCD)"
 echo "📋 Contents:"
