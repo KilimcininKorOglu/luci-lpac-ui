@@ -67,15 +67,39 @@ return view.extend({
 		var chipStatusText = chipStatus === 'connected' ? _('Connected') : _('Disconnected');
 
 		content.push(createCard(_('eUICC Chip Status'), [
+			// Status
 			E('div', { 'style': 'margin-bottom: 10px' }, [
-			E('strong', {}, _('Status')),
-			E('div', { 'style': 'margin-top: 5px' }, createStatusBadge(chipStatus, chipStatusText))
+				E('strong', {}, _('Status')),
+				E('div', { 'style': 'margin-top: 5px' }, createStatusBadge(chipStatus, chipStatusText))
 			]),
-		summary.eid ? E('div', {}, [
-			E('strong', {}, _('EID')),
-			E('div', { 'style': 'margin-top: 5px' }, E('code', {}, summary.eid))
-		]) : E('div', { 'class': 'text-muted' }, _('EID not available'))
-		], '📱'));
+			// EID
+			summary.eid ? E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('strong', {}, _('EID')),
+				E('div', { 'style': 'margin-top: 5px' }, E('code', {}, summary.eid))
+			]) : E('div', { 'style': 'margin-bottom: 10px; class': 'text-muted' }, _('EID not available')),
+			// Firmware Version
+			summary.firmware_version ? E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('strong', {}, _('Firmware')),
+				E('div', { 'style': 'margin-top: 5px' }, summary.firmware_version)
+			]) : null,
+			// Free Memory
+			(summary.free_memory !== null && summary.free_memory !== undefined) ? E('div', { 'style': 'margin-bottom: 10px' }, [
+				E('strong', {}, _('Free Memory')),
+				E('div', { 'style': 'margin-top: 5px' }, [
+					summary.free_memory < 1024 ?
+						summary.free_memory + ' KB' :
+						(summary.free_memory / 1024).toFixed(1) + ' MB'
+				])
+			]) : null,
+			// Profiles Count
+			(summary.profiles_total !== null && summary.profiles_total !== undefined) ? E('div', {}, [
+				E('strong', {}, _('Profiles')),
+				E('div', { 'style': 'margin-top: 5px' }, [
+					String(summary.profiles_enabled || 0) + '/' + String(summary.profiles_total || 0) + ' ',
+					_('active')
+				])
+			]) : null
+		].filter(function(item) { return item !== null; }), '📱'));
 
 		// Profiles Summary Card
 		content.push(createCard(_('Profile Summary'), [
