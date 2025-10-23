@@ -4,14 +4,14 @@
 uci -q get luci-lpac.config >/dev/null || uci set luci-lpac.config=luci_lpac
 
 # Set default values only if not already set (preserves user settings)
-uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='auto'
+uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='qmi'
 uci -q get luci-lpac.config.http_driver >/dev/null || uci set luci-lpac.config.http_driver='curl'
 uci -q get luci-lpac.config.custom_aid >/dev/null || uci set luci-lpac.config.custom_aid=''
 uci -q get luci-lpac.config.es10x_mss >/dev/null || uci set luci-lpac.config.es10x_mss='60'
 uci -q get luci-lpac.config.debug_http >/dev/null || uci set luci-lpac.config.debug_http='0'
 uci -q get luci-lpac.config.debug_apdu >/dev/null || uci set luci-lpac.config.debug_apdu='0'
 uci -q get luci-lpac.config.auto_notification >/dev/null || uci set luci-lpac.config.auto_notification='1'
-uci -q get luci-lpac.config.qmi_slot >/dev/null || uci set luci-lpac.config.qmi_slot='1'
+uci -q get luci-lpac.config.qmi_slot >/dev/null || uci set luci-lpac.config.qmi_slot='0'
 uci -q get luci-lpac.config.pcsc_reader >/dev/null || uci set luci-lpac.config.pcsc_reader=''
 
 # Initialize advanced configuration section if not exists
