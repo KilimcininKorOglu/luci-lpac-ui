@@ -1,0 +1,214 @@
+/**
+ * lpac.css - Custom styles for luci-app-lpac
+ * Copyright (C) 2025
+ * Licensed under GPL-3.0
+ */
+
+/* Badge styles for status indicators */
+.badge {
+	display: inline-block;
+	padding: 3px 8px;
+	font-size: 12px;
+	font-weight: bold;
+	line-height: 1;
+	color: #fff;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: baseline;
+	border-radius: 3px;
+}
+
+.badge-success {
+	background-color: #5cb85c;
+}
+
+.badge-warning {
+	background-color: #f0ad4e;
+}
+
+.badge-danger {
+	background-color: #d9534f;
+}
+
+.badge-secondary {
+	background-color: #6c757d;
+}
+
+/* Alert message styles */
+.alert-message {
+	padding: 12px;
+	margin-bottom: 15px;
+	border: 1px solid transparent;
+	border-radius: 4px;
+}
+
+.alert-message.success {
+	color: #3c763d;
+	background-color: #dff0d8;
+	border-color: #d6e9c6;
+}
+
+.alert-message.warning {
+	color: #8a6d3b;
+	background-color: #fcf8e3;
+	border-color: #faebcc;
+}
+
+.alert-message.error {
+	color: #a94442;
+	background-color: #f2dede;
+	border-color: #ebccd1;
+}
+
+.alert-message h4 {
+	margin-top: 0;
+	margin-bottom: 5px;
+}
+
+/* Text utility classes */
+.text-muted {
+	color: #777;
+}
+
+.text-warning {
+	color: #8a6d3b;
+}
+
+/* Modal dialog improvements */
+.modal {
+	z-index: 9999;
+}
+
+/* Spinner animation */
+.spinning {
+	display: inline-block;
+}
+
+.spinning::before {
+	content: "";
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+	border: 2px solid #999;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: spin 0.6s linear infinite;
+	vertical-align: middle;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Table enhancements */
+.table {
+	width: 100%;
+	margin-bottom: 15px;
+	border-collapse: collapse;
+}
+
+.table th,
+.table td {
+	padding: 8px;
+	text-align: left;
+	border-bottom: 1px solid #ddd;
+}
+
+.table th {
+	font-weight: bold;
+	background-color: #f5f5f5;
+}
+
+.table tr:hover {
+	background-color: #f9f9f9;
+}
+
+/* Code block styling */
+code {
+	padding: 2px 4px;
+	font-size: 90%;
+	color: #c7254e;
+	background-color: #f9f2f4;
+	border-radius: 3px;
+	font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+}
+
+/* Button enhancements */
+.btn {
+	margin-right: 5px;
+}
+
+/* Right-aligned button container */
+.right {
+	text-align: right;
+	margin-top: 10px;
+}
+
+/* Section spacing */
+.cbi-section {
+	margin-bottom: 20px;
+}
+
+.cbi-section h3 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #e5e5e5;
+}
+
+/* Value field improvements */
+.cbi-value {
+	margin-bottom: 15px;
+}
+
+.cbi-value-description {
+	font-size: 90%;
+	color: #777;
+	margin-top: 3px;
+}
+
+/* Form improvements */
+.cbi-input-text,
+.cbi-input-select {
+	width: 100%;
+	max-width: 500px;
+}
+
+/* Dashboard card grid */
+.dashboard-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 15px;
+	margin-bottom: 20px;
+}
+
+.dashboard-card {
+	padding: 15px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background-color: #fff;
+}
+
+.dashboard-card h4 {
+	margin-top: 0;
+	margin-bottom: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.cbi-input-text,
+	.cbi-input-select {
+		max-width: 100%;
+	}
+
+	.table {
+		font-size: 90%;
+	}
+
+	.btn {
+		margin-bottom: 5px;
+	}
+}
