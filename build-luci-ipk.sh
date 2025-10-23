@@ -52,42 +52,63 @@ echo "Source: $SOURCE_DIR"
 echo "Build:  $BUILD_DIR"
 echo
 
+# Count source files dynamically
+echo "🔍 Counting source files..."
+
+# Count API endpoints in controller
+CONTROLLER_FILE="$SOURCE_DIR/luasrc/controller/lpac.lua"
+if [ -f "$CONTROLLER_FILE" ]; then
+    ENDPOINT_COUNT=$(grep -c '^\s*entry(' "$CONTROLLER_FILE" 2>/dev/null || echo "0")
+else
+    ENDPOINT_COUNT=0
+fi
+
+# Count model modules
+MODEL_COUNT=$(find "$SOURCE_DIR/luasrc/model/lpac" -name "*.lua" 2>/dev/null | wc -l)
+
+# Count JavaScript views
+VIEW_COUNT=$(find "$SOURCE_DIR/htdocs/luci-static/resources/view/lpac" -name "*.js" 2>/dev/null | wc -l)
+
+# Count CSS files
+CSS_COUNT=$(find "$SOURCE_DIR/htdocs/luci-static/resources" -maxdepth 1 -name "*.css" 2>/dev/null | wc -l)
+
+echo "  📊 Found: $ENDPOINT_COUNT endpoints, $MODEL_COUNT models, $VIEW_COUNT views, $CSS_COUNT CSS"
+echo
+
 # Verify source files exist
 echo "🔍 Verifying source files..."
 MISSING_FILES=0
 
 # Check controller
-if [ ! -f "$SOURCE_DIR/luasrc/controller/lpac.lua" ]; then
+if [ ! -f "$CONTROLLER_FILE" ]; then
     echo "  ❌ Missing: luasrc/controller/lpac.lua"
     MISSING_FILES=$((MISSING_FILES + 1))
 else
-    echo "  ✅ Controller found"
+    echo "  ✅ Controller found ($ENDPOINT_COUNT API endpoints)"
 fi
 
 # Check model files
-for file in lpac_interface.lua lpac_model.lua lpac_util.lua; do
-    if [ ! -f "$SOURCE_DIR/luasrc/model/lpac/$file" ]; then
-        echo "  ❌ Missing: luasrc/model/lpac/$file"
-        MISSING_FILES=$((MISSING_FILES + 1))
-    fi
-done
-echo "  ✅ Model files found (3)"
-
-# Check views
-VIEW_COUNT=$(find "$SOURCE_DIR/htdocs/luci-static/resources/view/lpac" -name "*.js" 2>/dev/null | wc -l)
-if [ "$VIEW_COUNT" -ne 7 ]; then
-    echo "  ❌ Expected 7 view files, found: $VIEW_COUNT"
+if [ $MODEL_COUNT -eq 0 ]; then
+    echo "  ❌ Missing: Model files in luasrc/model/lpac/"
     MISSING_FILES=$((MISSING_FILES + 1))
 else
-    echo "  ✅ View files found ($VIEW_COUNT)"
+    echo "  ✅ Model files found ($MODEL_COUNT modules)"
+fi
+
+# Check views
+if [ $VIEW_COUNT -eq 0 ]; then
+    echo "  ❌ Missing: View files in htdocs/luci-static/resources/view/lpac/"
+    MISSING_FILES=$((MISSING_FILES + 1))
+else
+    echo "  ✅ View files found ($VIEW_COUNT views)"
 fi
 
 # Check CSS
-if [ ! -f "$SOURCE_DIR/htdocs/luci-static/resources/lpac.css" ]; then
-    echo "  ❌ Missing: htdocs/luci-static/resources/lpac.css"
+if [ $CSS_COUNT -eq 0 ]; then
+    echo "  ❌ Missing: CSS files in htdocs/luci-static/resources/"
     MISSING_FILES=$((MISSING_FILES + 1))
 else
-    echo "  ✅ CSS file found"
+    echo "  ✅ CSS files found ($CSS_COUNT files)"
 fi
 
 # Check UCI config
@@ -136,7 +157,7 @@ Depends: luci-base, lpac, luci-lib-jsonc
 Section: luci
 Architecture: all
 Installed-Size: 130048
-Maintainer:  kilimcinin kör oğlu <koroglan@hermestech.uk>
+Maintainer: Your Name <your.email@example.com>
 Description: LuCI Web Interface for lpac eSIM Management v$BASE_VERSION
  Modern web interface for lpac eSIM profile management with HTTP API
  integration and responsive design. Supports OpenWrt 23.05+ with Modern
@@ -149,7 +170,7 @@ Description: LuCI Web Interface for lpac eSIM Management v$BASE_VERSION
   - Profile download (activation code or manual entry)
   - Notification management
   - Configuration settings
-  - HTTP API with 27 endpoints
+  - HTTP API with $ENDPOINT_COUNT endpoints
   - No RPCD/ACL required (Modern LuCI HTTP API)
 EOF
 
@@ -224,23 +245,23 @@ mkdir -p "$BUILD_DIR/data/etc/uci-defaults"
 echo "📄 Copying LuCI files..."
 
 # Controller (HTTP API)
-echo "  → Controller (HTTP API - 27 endpoints)"
+echo "  → Controller (HTTP API - $ENDPOINT_COUNT endpoints)"
 cp "$SOURCE_DIR/luasrc/controller/lpac.lua" \
     "$BUILD_DIR/data/usr/lib/lua/luci/controller/"
 
 # Model layer (Business logic)
-echo "  → Model layer (3 modules)"
+echo "  → Model layer ($MODEL_COUNT modules)"
 cp "$SOURCE_DIR/luasrc/model/lpac"/*.lua \
     "$BUILD_DIR/data/usr/lib/lua/luci/model/lpac/"
 
 # JavaScript views (Modern LuCI)
-echo "  → JavaScript views (7 files)"
+echo "  → JavaScript views ($VIEW_COUNT files)"
 cp "$SOURCE_DIR/htdocs/luci-static/resources/view/lpac"/*.js \
     "$BUILD_DIR/data/www/luci-static/resources/view/lpac/"
 
 # CSS styling
-echo "  → Custom CSS"
-cp "$SOURCE_DIR/htdocs/luci-static/resources/lpac.css" \
+echo "  → Custom CSS ($CSS_COUNT files)"
+cp "$SOURCE_DIR/htdocs/luci-static/resources/"*.css \
     "$BUILD_DIR/data/www/luci-static/resources/"
 
 # UCI configuration
@@ -313,10 +334,10 @@ echo "📦 Latest copy: ipk_archive/luci-app-lpac_latest.ipk"
 echo ""
 echo "🔧 Architecture: Modern LuCI (HTTP API, No RPCD)"
 echo "📋 Contents:"
-echo "   • 1 Controller (HTTP API with 27 endpoints)"
-echo "   • 3 Model modules (interface, model, util)"
-echo "   • 7 JavaScript views (Modern LuCI)"
-echo "   • 1 CSS file (custom styling)"
+echo "   • 1 Controller (HTTP API with $ENDPOINT_COUNT endpoints)"
+echo "   • $MODEL_COUNT Model modules"
+echo "   • $VIEW_COUNT JavaScript views (Modern LuCI)"
+echo "   • $CSS_COUNT CSS files (custom styling)"
 echo "   • UCI configuration + defaults"
 echo ""
 echo "🚀 Install with:"
