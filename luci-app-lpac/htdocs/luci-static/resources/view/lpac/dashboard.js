@@ -127,13 +127,7 @@ return view.extend({
 			]),
 			notificationCount > 0 ? E('div', { 'class': 'text-warning' },
 				_('You have pending notifications that require attention.')) :
-				E('div', { 'class': 'text-muted' }, _('No pending notifications.')),
-			E('div', { 'style': 'margin-top: 10px' }, [
-				E('a', {
-					'href': L.url('admin', 'network', 'lpac', 'notifications'),
-					'class': 'btn cbi-button'
-				}, _('View Notifications'))
-			])
+				E('div', { 'class': 'text-muted' }, _('No pending notifications.'))
 		], '🔔'));
 
 		// Memory Status Card
