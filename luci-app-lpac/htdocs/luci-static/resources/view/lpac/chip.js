@@ -52,7 +52,7 @@ return view.extend({
 			content.push(E('div', { 'class': 'cbi-section' }, [
 				E('h3', {}, '📱 ' + _('eUICC Identifier (EID)')),
 				E('div', { 'class': 'cbi-value' }, [
-					E('code', { 'style': 'font-size: 14px; padding: 8px; background: #f5f5f5; display: block' },
+					E('code', { 'style': 'font-size: 14px; padding: 8px; display: block' },
 						chipData.eidValue)
 				])
 			]));
