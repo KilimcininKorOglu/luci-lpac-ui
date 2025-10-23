@@ -4,7 +4,7 @@
 
 **lpac** is a cross-platform Local Profile Assistant (LPA) implementation written in C, fully compatible with **SGP.22 version 2.2.2** specification. It serves as the foundational library that powers all eSIM management applications in the ecosystem.
 
-**Repository:** https://github.com/estkme-group/lpac
+**Repository:** <https://github.com/estkme-group/lpac>
 **Version:** 2.3.0
 **License:** GPL-3.0-or-later (core), MIT (some components)
 **Copyright:** © 2023-2025 ESTKME TECHNOLOGY LIMITED, Hong Kong
@@ -23,6 +23,7 @@ lpac is the **heart of the entire eSIM management ecosystem**. All other applica
 ## Key Features
 
 ### Profile Management
+
 - Download profiles with activation code and confirmation code
 - Enable/disable profiles with refresh control
 - Delete profiles
@@ -30,21 +31,25 @@ lpac is the **heart of the entire eSIM management ecosystem**. All other applica
 - List all profiles with detailed information
 
 ### SM-DS Discovery
+
 - Automatic profile discovery through SM-DS servers
 - Support for event-driven profile detection
 
 ### Chip Management
+
 - Query eUICC information (EID, firmware, memory)
 - View/modify default SM-DP+ server
 - Access extended eUICC Info2 (SGP.22 v2.1+)
 - Factory reset (purge) functionality
 
 ### Notification Management
+
 - List pending notifications
 - Process and send notifications to SM-DP+ server
 - Delete notifications
 
 ### Custom Options
+
 - Custom IMEI sent to server
 - Custom ISD-R AID support
 - Configurable ES10x maximum segment size (MSS)
@@ -99,12 +104,14 @@ lpac/
 The `libeuicc` library implements the SGP.22 specification:
 
 **ES10 Functions (eUICC-side):**
+
 - **ES10a**: Profile metadata retrieval and discovery
 - **ES10b**: Profile package download and installation
 - **ES10c**: Profile lifecycle management (enable/disable/delete)
 - **ES10c_ex**: Extended information queries
 
 **ES9+ Functions (SM-DP+ server-side):**
+
 - Initiate authentication
 - Authenticate client
 - Get bound profile package
@@ -112,6 +119,7 @@ The `libeuicc` library implements the SGP.22 specification:
 - Cancel sessions
 
 **ES8+ Functions (SM-DS server-side):**
+
 - Discover events
 - Retrieve event records
 
@@ -199,6 +207,7 @@ struct euicc_ctx {
 ```
 
 **Lifecycle:**
+
 1. Initialize context with `euicc_init()`
 2. Perform operations (download, enable, etc.)
 3. Clean up with `euicc_fini()`
@@ -222,6 +231,7 @@ struct euicc_apdu_interface {
 ```
 
 **Operations:**
+
 - `connect()`: Establish connection to eUICC
 - `disconnect()`: Close connection
 - `logic_channel_open()`: Open logical channel with AID
@@ -240,6 +250,7 @@ struct euicc_http_interface {
 ```
 
 **Operations:**
+
 - `transmit()`: Send HTTP POST request to SM-DP+/SM-DS
 
 ### ISD-R AID (Application Identifier)
@@ -249,11 +260,13 @@ The ISD-R (Issuer Security Domain Root) AID identifies the eUICC management appl
 **Default AID:** `A0000005591010FFFFFFFF8900000100`
 
 **Custom AIDs for specific vendors:**
+
 - **5ber:** `A0000005591010FFFFFFFF8900050500`
 - **esim.me:** `A0000005591010000000008900000300`
 - **xesim:** `A0000005591010FFFFFFFF8900000177`
 
 Configure via environment variable:
+
 ```bash
 export LPAC_CUSTOM_ISD_R_AID=A0000005591010FFFFFFFF8900050500
 ```
@@ -266,6 +279,7 @@ Controls APDU command fragmentation for compatibility with slower hardware:
 **Range:** 6-255 bytes
 
 Configure via environment variable:
+
 ```bash
 export LPAC_ES10X_MSS=30  # Use smaller segments
 ```
@@ -279,6 +293,7 @@ lpac <command> [subcommand] [parameters]
 ```
 
 **Main Commands:**
+
 - `chip`: View and manage eUICC chip information
 - `profile`: Manage eSIM profiles
 - `notification`: Manage notifications
@@ -301,6 +316,7 @@ All lpac commands return JSON in a standard format:
 ```
 
 **Fields:**
+
 - `type`: Always `"lpa"`
 - `code`: `0` for success, non-zero for errors
 - `message`: Success message or error description
@@ -330,6 +346,7 @@ lpac chip info
 ```
 
 **Returns:**
+
 - EID (eUICC Identifier)
 - Default SM-DP+ address
 - Root SM-DS address
@@ -367,6 +384,7 @@ lpac chip info
   }
 }
 ```
+
 </details>
 
 ---
@@ -378,6 +396,7 @@ lpac chip defaultsmdp <smdp-address>
 ```
 
 **Example:**
+
 ```bash
 lpac chip defaultsmdp smdp.example.com
 ```
@@ -429,13 +448,16 @@ lpac profile list
   }
 }
 ```
+
 </details>
 
 **Profile States:**
+
 - `enabled`: Active profile
 - `disabled`: Inactive profile
 
 **Profile Classes:**
+
 - `operational`: Regular user profile
 - `provisioning`: Temporary provisioning profile
 - `test`: Test profile
@@ -449,10 +471,12 @@ lpac profile enable <iccid> [refresh]
 ```
 
 **Parameters:**
+
 - `iccid`: Profile ICCID or ISD-P AID
 - `refresh`: `1` (default) or `0` to control modem refresh
 
 **Example:**
+
 ```bash
 lpac profile enable 89012345678901234567
 lpac profile enable 89012345678901234567 0  # No refresh
@@ -467,10 +491,12 @@ lpac profile disable <iccid> [refresh]
 ```
 
 **Parameters:**
+
 - `iccid`: Profile ICCID or ISD-P AID
 - `refresh`: `1` (default) or `0` to control modem refresh
 
 **Example:**
+
 ```bash
 lpac profile disable 89012345678901234567
 ```
@@ -484,6 +510,7 @@ lpac profile delete <iccid>
 ```
 
 **Example:**
+
 ```bash
 lpac profile delete 89012345678901234567
 ```
@@ -497,6 +524,7 @@ lpac profile nickname <iccid> <nickname>
 ```
 
 **Example:**
+
 ```bash
 lpac profile nickname 89012345678901234567 "Work SIM"
 ```
@@ -510,6 +538,7 @@ lpac profile download [options]
 ```
 
 **Options:**
+
 - `-a <activation-code>`: Full activation code (LPA:1$...)
 - `-s <smdp-address>`: SM-DP+ server address
 - `-m <matching-id>`: Matching ID
@@ -519,16 +548,19 @@ lpac profile download [options]
 **Examples:**
 
 Download with activation code:
+
 ```bash
 lpac profile download -a "LPA:1$smdp.example.com$MATCHING-ID-12345"
 ```
 
 Download with confirmation code:
+
 ```bash
 lpac profile download -a "LPA:1$smdp.example.com$MATCHING-ID-12345" -c "1234"
 ```
 
 Download with custom IMEI:
+
 ```bash
 lpac profile download -s smdp.example.com -m MATCHING-ID -i 123456789012345
 ```
@@ -557,9 +589,11 @@ lpac profile discovery [options]
 ```
 
 **Options:**
+
 - `-s <smds-address>`: SM-DS server address (optional)
 
 **Example:**
+
 ```bash
 lpac profile discovery
 lpac profile discovery -s smds.example.com
@@ -599,6 +633,7 @@ lpac notification list
   }
 }
 ```
+
 </details>
 
 ---
@@ -610,10 +645,12 @@ lpac notification process <seq-number> [-r]
 ```
 
 **Options:**
+
 - `seq-number`: Notification sequence number
 - `-r`: Remove notification after processing
 
 **Example:**
+
 ```bash
 lpac notification process 1 -r
 ```
@@ -627,10 +664,12 @@ lpac notification process -a [-r]
 ```
 
 **Options:**
+
 - `-a`: Process all notifications
 - `-r`: Remove notifications after processing
 
 **Example:**
+
 ```bash
 lpac notification process -a -r
 ```
@@ -644,6 +683,7 @@ lpac notification remove <seq-number>
 ```
 
 **Example:**
+
 ```bash
 lpac notification remove 1
 ```
@@ -711,6 +751,7 @@ lpac version
 | `LPAC_HTTP_DEBUG` | HTTP driver debug logging |
 
 **Example:**
+
 ```bash
 export LIBEUICC_DEBUG_HTTP=1
 export LIBEUICC_DEBUG_APDU=1
@@ -722,11 +763,13 @@ lpac chip info  # Outputs debug info
 ### Prerequisites
 
 **Required:**
+
 - CMake 3.23+
 - C99-compatible compiler (GCC, Clang, MSVC)
 - cJSON library (auto-downloaded if needed)
 
 **Optional (drivers):**
+
 - libpcsclite (PC/SC)
 - libcurl (HTTP)
 - libqmi (Qualcomm QMI)
@@ -767,6 +810,7 @@ cmake --build build
 | `LPAC_DYNAMIC_LIBEUICC` | `ON` | Build libeuicc as shared library |
 
 **Example:**
+
 ```bash
 cmake -B build -DUSE_SYSTEM_DEPS=ON -DSTANDALONE_MODE=ON
 ```
@@ -774,6 +818,7 @@ cmake -B build -DUSE_SYSTEM_DEPS=ON -DSTANDALONE_MODE=ON
 ### Output Structure
 
 **Linux Standard:**
+
 ```
 /usr/bin/lpac
 /usr/lib/libeuicc.so
@@ -782,6 +827,7 @@ cmake -B build -DUSE_SYSTEM_DEPS=ON -DSTANDALONE_MODE=ON
 ```
 
 **Standalone Mode:**
+
 ```
 executables/lpac
 executables/lib/libeuicc.so
@@ -901,6 +947,7 @@ Server-side errors from SM-DP+:
 | `8.8` | - | Undefined error |
 
 **Example Error:**
+
 ```json
 {
   "type": "lpa",
@@ -973,6 +1020,7 @@ const struct euicc_driver driver_apdu_my_driver = {
 ```
 
 **Compile as shared library:**
+
 ```bash
 gcc -shared -fPIC -o libapdu_my_driver.so my_apdu_driver.c
 ```
@@ -980,16 +1028,19 @@ gcc -shared -fPIC -o libapdu_my_driver.so my_apdu_driver.c
 ### Performance Tuning
 
 **Reduce APDU overhead:**
+
 ```bash
 export LPAC_ES10X_MSS=255  # Maximum segment size
 ```
 
 **Enable connection pooling (cURL):**
+
 ```bash
 export CURL_VERBOSE=0
 ```
 
 **Optimize for slow card readers:**
+
 ```bash
 export LPAC_ES10X_MSS=30  # Smaller segments
 ```
@@ -999,21 +1050,26 @@ export LPAC_ES10X_MSS=30  # Smaller segments
 ### Common Issues
 
 **1. "lpac: command not found"**
+
 - Install lpac or add to PATH
 
 **2. "SCardEstablishContext() failed: 8010001D"**
+
 - PC/SC daemon not running
 - Start: `sudo systemctl start pcscd`
 
 **3. "es10c_euicc_init error: -1"**
+
 - Wrong ISD-R AID
 - Try: `export LPAC_CUSTOM_ISD_R_AID=<correct-aid>`
 
 **4. "curl: (60) SSL certificate problem"**
+
 - Certificate validation issue
 - Debug: `export LIBEUICC_DEBUG_HTTP=1`
 
 **5. Download fails at "es9p_authenticate_client"**
+
 - Confirmation code required
 - Add: `-c <confirmation-code>`
 
@@ -1028,6 +1084,7 @@ lpac profile download -a "LPA:1$..." 2>&1 | tee lpac.log
 ```
 
 Output includes:
+
 - HTTP requests/responses
 - APDU commands/responses
 - Internal state transitions

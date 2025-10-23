@@ -4,11 +4,12 @@
 
 EasyLPAC is a cross-platform GUI frontend for [lpac](https://github.com/estkme-group/lpac), written in Go using the Fyne toolkit. It provides a user-friendly interface for managing eSIM profiles through the lpac command-line tool.
 
-**Repository:** https://github.com/creamlike1024/EasyLPAC
+**Repository:** <https://github.com/creamlike1024/EasyLPAC>
 
 ## Project Purpose
 
 EasyLPAC serves as a graphical wrapper around the lpac CLI tool, making eSIM profile management accessible to users who prefer a GUI over command-line interactions. It handles:
+
 - eUICC chip information retrieval
 - eSIM profile management (download, enable, disable, delete)
 - Profile notifications processing
@@ -40,6 +41,7 @@ EasyLPAC serves as a graphical wrapper around the lpac CLI tool, making eSIM pro
 ### Integration Method
 
 EasyLPAC integrates with lpac by:
+
 1. Locating the lpac binary (same directory or `/usr/bin/lpac` on Linux)
 2. Executing lpac commands via `os/exec.Command()`
 3. Setting required environment variables
@@ -96,16 +98,19 @@ const AID_XESIM = "A0000005591010FFFFFFFF8900000177"
 ### 1. Chip Information
 
 **Command:**
+
 ```bash
 lpac chip info
 ```
 
 **Function in EasyLPAC:**
+
 ```go
 func LpacChipInfo() (*EuiccInfo, error)
 ```
 
 **Returns:**
+
 - EID (eUICC Identifier)
 - Default SM-DP+ address
 - Root SM-DS address
@@ -116,17 +121,21 @@ func LpacChipInfo() (*EuiccInfo, error)
 ### 2. Profile Management
 
 #### List Profiles
+
 **Command:**
+
 ```bash
 lpac profile list
 ```
 
 **Function:**
+
 ```go
 func LpacProfileList() ([]*Profile, error)
 ```
 
 **Returns:** Array of profiles with:
+
 - ICCID
 - Profile state (enabled/disabled)
 - Service provider name
@@ -134,62 +143,78 @@ func LpacProfileList() ([]*Profile, error)
 - Profile class
 
 #### Enable Profile
+
 **Command:**
+
 ```bash
 lpac profile enable <iccid>
 ```
 
 **Function:**
+
 ```go
 func LpacProfileEnable(iccid string) error
 ```
 
 #### Disable Profile
+
 **Command:**
+
 ```bash
 lpac profile disable <iccid>
 ```
 
 **Function:**
+
 ```go
 func LpacProfileDisable(iccid string) error
 ```
 
 #### Delete Profile
+
 **Command:**
+
 ```bash
 lpac profile delete <iccid>
 ```
 
 **Function:**
+
 ```go
 func LpacProfileDelete(iccid string) error
 ```
 
 #### Download Profile
+
 **Command:**
+
 ```bash
 lpac profile download -s <smdp> -m <matchid> -c <confirmcode> -i <imei>
 ```
 
 **Function:**
+
 ```go
 func LpacProfileDownload(info PullInfo)
 ```
 
 **Parameters:**
+
 - `-s`: SM-DP+ address
 - `-m`: Matching ID
 - `-c`: Confirmation code
 - `-i`: IMEI (optional)
 
 #### Set Profile Nickname
+
 **Command:**
+
 ```bash
 lpac profile nickname <iccid> <nickname>
 ```
 
 **Function:**
+
 ```go
 func LpacProfileNickname(iccid, nickname string) error
 ```
@@ -199,37 +224,47 @@ func LpacProfileNickname(iccid, nickname string) error
 ### 3. Notification Management
 
 #### List Notifications
+
 **Command:**
+
 ```bash
 lpac notification list
 ```
 
 **Function:**
+
 ```go
 func LpacNotificationList() ([]*Notification, error)
 ```
 
 #### Process Notification
+
 **Command:**
+
 ```bash
 lpac notification process [-r] <seqnumber>
 ```
 
 **Function:**
+
 ```go
 func LpacNotificationProcess(seq int, remove bool) error
 ```
 
 **Parameters:**
+
 - `-r`: Remove notification after processing
 
 #### Remove Notification
+
 **Command:**
+
 ```bash
 lpac notification remove <seqnumber>
 ```
 
 **Function:**
+
 ```go
 func LpacNotificationRemove(seq int) error
 ```
@@ -239,12 +274,15 @@ func LpacNotificationRemove(seq int) error
 ### 4. Driver Management
 
 #### List APDU Drivers
+
 **Command:**
+
 ```bash
 lpac driver apdu list
 ```
 
 **Function:**
+
 ```go
 func LpacDriverApduList() ([]*ApduDriver, error)
 ```
@@ -256,12 +294,15 @@ func LpacDriverApduList() ([]*ApduDriver, error)
 ### 5. Chip Configuration
 
 #### Set Default SM-DP+
+
 **Command:**
+
 ```bash
 lpac chip defaultsmdp <smdp>
 ```
 
 **Function:**
+
 ```go
 func LpacChipDefaultSmdp(smdp string) error
 ```
@@ -271,11 +312,13 @@ func LpacChipDefaultSmdp(smdp string) error
 ### 6. Version Information
 
 **Command:**
+
 ```bash
 lpac version
 ```
 
 **Function:**
+
 ```go
 func LpacVersion() (string, error)
 ```
@@ -283,6 +326,7 @@ func LpacVersion() (string, error)
 ## Data Structures
 
 ### Profile
+
 ```go
 type Profile struct {
     Iccid               string
@@ -298,6 +342,7 @@ type Profile struct {
 ```
 
 ### Notification
+
 ```go
 type Notification struct {
     SeqNumber                  int
@@ -308,6 +353,7 @@ type Notification struct {
 ```
 
 ### EuiccInfo
+
 ```go
 type EuiccInfo struct {
     EidValue                 string
@@ -330,6 +376,7 @@ type EuiccInfo struct {
 ```
 
 ### lpac Response Format
+
 ```go
 type LpacReturnValue struct {
     Type    string // Always "lpa"
@@ -403,6 +450,7 @@ By default, EasyLPAC automatically processes and removes notifications after suc
 **Cause:** PCSC service not running
 
 **Solution (Linux):**
+
 ```bash
 sudo systemctl start pcscd
 ```
@@ -420,9 +468,11 @@ sudo systemctl start pcscd
 1. **User Action:** Enter activation code in UI
 2. **EasyLPAC:** Parses QR code or manual input
 3. **Execution:**
+
    ```bash
    lpac profile download -s <smdp> -m <matchid> -c <confirmcode>
    ```
+
 4. **Post-Download:**
    - Refresh notification list
    - Find new notification
@@ -433,18 +483,22 @@ sudo systemctl start pcscd
 
 1. **User Action:** Select profile, click "Enable"
 2. **Execution:**
+
    ```bash
    lpac profile enable <iccid>
    ```
+
 3. **Post-Enable:** Refresh profile list to update UI
 
 ### Example 3: Get Chip Info
 
 1. **User Action:** Click "Refresh" button
 2. **Execution:**
+
    ```bash
    lpac chip info
    ```
+
 3. **Display:**
    - EID
    - Default SM-DP+ address
@@ -474,6 +528,7 @@ Unit tests in `utils_test.go` for utility functions.
 ### Dependencies
 
 Install via `go get`:
+
 ```bash
 go mod download
 ```
@@ -496,9 +551,9 @@ fyne package
 
 ## Additional Resources
 
-- **lpac Documentation:** https://github.com/estkme-group/lpac
-- **Fyne Documentation:** https://docs.fyne.io/
-- **PCSC-Lite Error Codes:** https://pcsclite.apdu.fr/api/group__ErrorCodes.html
+- **lpac Documentation:** <https://github.com/estkme-group/lpac>
+- **Fyne Documentation:** <https://docs.fyne.io/>
+- **PCSC-Lite Error Codes:** <https://pcsclite.apdu.fr/api/group__ErrorCodes.html>
 - **GSMA SGP.22 Specification:** Remote SIM Provisioning standard
 
 ## Version Information

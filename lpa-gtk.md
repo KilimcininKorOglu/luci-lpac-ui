@@ -4,13 +4,14 @@
 
 **eSIM Manager** (lpa-gtk) is a GTK4 + Libadwaita-based graphical user interface for managing eSIM profiles on Linux devices, particularly targeting Linux phones using Phosh/GNOME Mobile. It uses [lpac](https://github.com/estkme-group/lpac) as its backend to interact with eUICC (embedded Universal Integrated Circuit Card) hardware.
 
-**Repository:** https://codeberg.org/lucaweiss/lpa-gtk
+**Repository:** <https://codeberg.org/lucaweiss/lpa-gtk>
 **License:** GPL-3.0-only
 **Version:** 0.3
 
 ## Project Purpose
 
 lpa-gtk provides a mobile-friendly GTK4 application for:
+
 - Managing eSIM profiles on Linux phones and computers
 - Downloading and activating eSIM profiles
 - Managing both built-in and removable eUICC cards
@@ -31,6 +32,7 @@ lpa-gtk provides a mobile-friendly GTK4 application for:
 ### System Requirements
 
 #### Runtime Dependencies
+
 - GTK4
 - Libadwaita (≥ 1.7)
 - Python 3
@@ -38,6 +40,7 @@ lpa-gtk provides a mobile-friendly GTK4 application for:
 - lpac
 
 #### Build-Time Dependencies
+
 - Meson
 - Blueprint Compiler
 
@@ -53,6 +56,7 @@ lpa-gtk provides a mobile-friendly GTK4 application for:
 ### Integration Method
 
 lpa-gtk integrates with lpac through:
+
 1. **Binary Discovery:** Uses `shutil.which("lpac")` to locate lpac executable
 2. **Process Execution:** Spawns lpac as subprocess via `subprocess.Popen()` or `subprocess.check_output()`
 3. **Environment Configuration:** Sets required environment variables
@@ -64,9 +68,11 @@ lpa-gtk integrates with lpac through:
 lpa-gtk implements a modular backend system with two implementations:
 
 #### 1. LpacBackend (Production)
+
 Real lpac integration for actual hardware interaction.
 
 #### 2. DummyBackend (Development/Testing)
+
 Mock backend for development without hardware, enabled via `LPA_GTK_BACKEND=dummy`.
 
 ### lpac Execution Pattern
@@ -104,6 +110,7 @@ def __get_lpac_env(self) -> dict[str, str]:
 #### Execution Methods
 
 **1. Simple Command Execution (`__run_lpac`)**
+
 ```python
 # From esim.py:308
 def __run_lpac(self, lpac_args) -> dict:
@@ -116,6 +123,7 @@ def __run_lpac(self, lpac_args) -> dict:
 ```
 
 **2. Streaming Execution (`__run_lpac_stream`)**
+
 ```python
 # From esim.py:318
 def __run_lpac_stream(self, lpac_args) -> Iterator[LpacProgressTypes]:
@@ -140,6 +148,7 @@ def __run_lpac_stream(self, lpac_args) -> Iterator[LpacProgressTypes]:
 lpa-gtk handles three types of responses:
 
 #### 1. LpacData
+
 ```python
 @dataclass
 class LpacData:
@@ -148,6 +157,7 @@ class LpacData:
 ```
 
 #### 2. LpacProgress
+
 ```python
 @dataclass
 class LpacProgress:
@@ -156,6 +166,7 @@ class LpacProgress:
 ```
 
 #### 3. LpacMisc
+
 ```python
 @dataclass
 class LpacMisc:
@@ -194,12 +205,15 @@ def __parse_output(self, output: dict) -> LpacProgressTypes:
 ### 1. Profile Management
 
 #### List Profiles
+
 **Command:**
+
 ```bash
 lpac profile list
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:336
 def get_profiles(self) -> list[ESimProfile]:
@@ -211,12 +225,15 @@ def get_profiles(self) -> list[ESimProfile]:
 ```
 
 #### Download Profile (with SM-DP+ server and matching ID)
+
 **Command:**
+
 ```bash
 lpac profile download -s <smdp_server> -m <matching_id>
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:344
 def download_profile(self, smdp_server: str, matching_id: str) -> Iterator[LpacProgressTypes]:
@@ -229,12 +246,15 @@ def download_profile(self, smdp_server: str, matching_id: str) -> Iterator[LpacP
 ```
 
 #### Download Profile (with activation code)
+
 **Command:**
+
 ```bash
 lpac profile download -a <activation_code>
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:348
 def download_profile_code(self, activation_code: str) -> Iterator[LpacProgressTypes]:
@@ -246,6 +266,7 @@ def download_profile_code(self, activation_code: str) -> Iterator[LpacProgressTy
 ```
 
 **Progress Steps During Download:**
+
 1. `es10b_get_euicc_challenge_and_info`
 2. `es9p_initiate_authentication`
 3. `es10b_authenticate_server`
@@ -256,12 +277,15 @@ def download_profile_code(self, activation_code: str) -> Iterator[LpacProgressTy
 8. Success message
 
 #### Enable Profile
+
 **Command:**
+
 ```bash
 lpac profile enable <iccid>
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:352
 def enable_profile(self, iccid: str) -> None:
@@ -269,12 +293,15 @@ def enable_profile(self, iccid: str) -> None:
 ```
 
 #### Disable Profile
+
 **Command:**
+
 ```bash
 lpac profile disable <iccid>
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:355
 def disable_profile(self, iccid: str) -> None:
@@ -282,12 +309,15 @@ def disable_profile(self, iccid: str) -> None:
 ```
 
 #### Delete Profile
+
 **Command:**
+
 ```bash
 lpac profile delete <iccid>
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:358
 def delete_profile(self, iccid: str) -> None:
@@ -295,12 +325,15 @@ def delete_profile(self, iccid: str) -> None:
 ```
 
 #### Set Profile Nickname
+
 **Command:**
+
 ```bash
 lpac profile nickname <iccid> <nickname>
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:361
 def set_profile_nickname(self, iccid: str, nickname: str) -> None:
@@ -312,11 +345,13 @@ def set_profile_nickname(self, iccid: str, nickname: str) -> None:
 ### 2. Chip Information
 
 **Command:**
+
 ```bash
 lpac chip info
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:364
 def get_chip_info(self) -> dict:
@@ -328,12 +363,15 @@ def get_chip_info(self) -> dict:
 ### 3. Notification Management
 
 #### List Notifications
+
 **Command:**
+
 ```bash
 lpac notification list
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:367
 def get_notifications(self) -> list[ESimNotification]:
@@ -345,12 +383,15 @@ def get_notifications(self) -> list[ESimNotification]:
 ```
 
 #### Process All Notifications
+
 **Command:**
+
 ```bash
 lpac notification process -a [-r]
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:375
 def process_notifications(self, remove: bool) -> Iterator[LpacProgressTypes]:
@@ -362,16 +403,20 @@ def process_notifications(self, remove: bool) -> Iterator[LpacProgressTypes]:
 ```
 
 **Parameters:**
+
 - `-a`: Process all notifications
 - `-r`: Remove notification after processing
 
 #### Process Specific Notification(s)
+
 **Command:**
+
 ```bash
 lpac notification process [-r] <seq_number> [<seq_number2> ...]
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:382
 def process_notification(self, seq_numbers: list[int], remove: bool) -> Iterator[LpacProgressTypes]:
@@ -385,12 +430,15 @@ def process_notification(self, seq_numbers: list[int], remove: bool) -> Iterator
 ```
 
 #### Remove Notification
+
 **Command:**
+
 ```bash
 lpac notification remove <seq_number>
 ```
 
 **Implementation:**
+
 ```python
 # From esim.py:391
 def remove_notification(self, seq_number: int) -> Iterator[LpacProgressTypes]:
@@ -404,6 +452,7 @@ def remove_notification(self, seq_number: int) -> Iterator[LpacProgressTypes]:
 ## Data Structures
 
 ### ESimProfile
+
 ```python
 @dataclass
 class ESimProfile:
@@ -427,6 +476,7 @@ class ESimProfile:
 ```
 
 ### ESimNotification
+
 ```python
 @dataclass
 class ESimNotification:
@@ -443,6 +493,7 @@ class ESimNotification:
 ```
 
 ### ESimManager
+
 ```python
 class ESimManager:
     """Main interface for eSIM operations"""
@@ -531,6 +582,7 @@ def notification_thread(self, success_cb, error_cb) -> None:
 ```
 
 **Notification Processing Steps:**
+
 1. `es10b_retrieve_notifications_list` - Retrieve notification
 2. `es9p_handle_notification` - Send to server
 3. Optional: Remove notification from eUICC
@@ -549,6 +601,7 @@ profiles = list(filter(
 ```
 
 Profile classes:
+
 - **operational**: Regular user profiles (shown)
 - **provisioning**: Temporary provisioning profiles (hidden)
 - **test**: Test profiles (hidden)
@@ -562,6 +615,7 @@ LPA_GTK_BACKEND=dummy lpa-gtk
 ```
 
 Features:
+
 - Generates random dummy profiles
 - Simulates download progress with delays
 - Mock notification processing
@@ -599,14 +653,18 @@ LPA_GTK_BACKEND=dummy lpa-gtk
 
 1. **User:** Enters activation code (e.g., `LPA:1$...`)
 2. **Application:**
+
    ```python
    manager.download_profile_code(slot, activation_code)
    ```
+
 3. **lpac execution:**
+
    ```bash
    LPAC_APDU=qmi_qrtr LPAC_APDU_QMI_UIM_SLOT=1 \
    lpac profile download -a "LPA:1$..."
    ```
+
 4. **Progress updates:** UI shows each step
 5. **Post-download:** Automatic notification processing
 6. **Result:** Profile appears in list
@@ -615,13 +673,17 @@ LPA_GTK_BACKEND=dummy lpa-gtk
 
 1. **User:** Selects disabled profile, clicks "Enable"
 2. **Application:**
+
    ```python
    profile.enable()  # Calls backend.enable_profile(iccid)
    ```
+
 3. **lpac execution:**
+
    ```bash
    lpac profile enable 89001012345678901234
    ```
+
 4. **UI update:** Profile list refreshes, profile shows as enabled
 
 ### Example 3: Automatic Notification Processing
@@ -640,16 +702,19 @@ LPA_GTK_BACKEND=dummy lpa-gtk
 ## Known Limitations
 
 ### 1. Platform Support
+
 - **Qualcomm only:** Currently supports QMI + QRTR interface
 - **Modern devices:** Requires recent Qualcomm modems
 - **Other platforms:** Requires backend implementation (interface is ready)
 
 ### 2. QR Code Scanning
+
 - **Not implemented:** Cannot scan QR codes from camera
 - **Workaround:** Manually enter activation code starting with `LPA:1$`
-- **Tracking:** https://codeberg.org/lucaweiss/lpa-gtk/issues/14
+- **Tracking:** <https://codeberg.org/lucaweiss/lpa-gtk/issues/14>
 
 ### 3. Profile Filtering
+
 - **Hidden profiles:** Test and provisioning profiles hidden by default
 - **No toggle:** Cannot view hidden profiles in UI (planned feature)
 
@@ -683,11 +748,13 @@ def show_toast_info(overlay, parent, title: str, info: str, markup: bool):
 ### Testing Without Hardware
 
 Use dummy backend:
+
 ```bash
 LPA_GTK_BACKEND=dummy lpa-gtk
 ```
 
 Dummy backend provides:
+
 - Instant feedback without delays
 - Random profile generation
 - Simulated progress updates
@@ -706,6 +773,7 @@ class NewBackend(ESimBackend):
 ```
 
 Register in `get_operational_backends()`:
+
 ```python
 @staticmethod
 def get_operational_backends() -> list[ESimBackend]:
@@ -725,12 +793,12 @@ def get_operational_backends() -> list[ESimBackend]:
 
 ## Additional Resources
 
-- **lpac Documentation:** https://github.com/estkme-group/lpac
-- **GTK4 Documentation:** https://docs.gtk.org/gtk4/
-- **Libadwaita Documentation:** https://gnome.pages.gitlab.gnome.org/libadwaita/
-- **Blueprint Compiler:** https://jwestman.pages.gitlab.gnome.org/blueprint-compiler/
-- **LPA Overview:** https://euicc-manual.osmocom.org/docs/lpa/known-solution/
-- **Issue Tracker:** https://codeberg.org/lucaweiss/lpa-gtk/issues
+- **lpac Documentation:** <https://github.com/estkme-group/lpac>
+- **GTK4 Documentation:** <https://docs.gtk.org/gtk4/>
+- **Libadwaita Documentation:** <https://gnome.pages.gitlab.gnome.org/libadwaita/>
+- **Blueprint Compiler:** <https://jwestman.pages.gitlab.gnome.org/blueprint-compiler/>
+- **LPA Overview:** <https://euicc-manual.osmocom.org/docs/lpa/known-solution/>
+- **Issue Tracker:** <https://codeberg.org/lucaweiss/lpa-gtk/issues>
 
 ## Version Information
 

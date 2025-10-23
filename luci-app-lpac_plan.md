@@ -12,6 +12,7 @@
 ## Executive Summary
 
 luci-app-lpac will provide a user-friendly web interface for managing eSIM profiles on OpenWrt routers using the lpac command-line tool. This will enable users to:
+
 - View eUICC chip information
 - List, enable, disable, and delete eSIM profiles
 - Download new profiles via activation codes
@@ -23,6 +24,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
 ### Dependencies
 
 **Required Packages:**
+
 - `lpac` (core functionality)
 - `luci-base` (>= 23.05)
 - `luci-lib-jsonc` (JSON parsing)
@@ -31,12 +33,14 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
 - `pcscd` (PC/SC daemon - optional)
 
 **Optional Packages:**
+
 - `qmi-utils` (Qualcomm modem support)
 - `libmbim` (MBIM modem support)
 
 ### Hardware Support
 
 **Supported eUICC Interfaces:**
+
 - PC/SC compatible USB card readers
 - Qualcomm QMI modems (built-in LTE modems)
 - MBIM modems
@@ -53,6 +57,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
 ### Phase 1: Core Features (MVP)
 
 #### 1.1 Dashboard
+
 - **eUICC Status Card**
   - Connection status (Connected/Disconnected)
   - EID display
@@ -65,6 +70,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
   - Settings
 
 #### 1.2 Chip Information
+
 - **Display Fields:**
   - EID (with copy button)
   - Default SM-DP+ address
@@ -81,6 +87,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
   - Factory reset (with confirmation dialog)
 
 #### 1.3 Profile Management
+
 - **Profile List View**
   - Table/Card view toggle
   - Columns: ICCID (masked), Nickname, Provider, Profile Name, State, Class, Actions
@@ -105,6 +112,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
   - State
 
 #### 1.4 Profile Download
+
 - **Input Methods:**
   - Activation code (LPA:1$...) - text input
   - Manual entry fields:
@@ -124,6 +132,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
   - Manual notification handling
 
 #### 1.5 Notification Management
+
 - **Notification List:**
   - Table: Sequence Number, Operation, Address, ICCID (masked), Actions
   - Operation types: Install, Enable, Disable, Delete
@@ -134,6 +143,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
   - Remove notification
 
 #### 1.6 Settings
+
 - **APDU Driver Configuration:**
   - Driver selection: auto, pcsc, qmi, qmi_qrtr, mbim, at
   - Driver-specific settings:
@@ -156,6 +166,7 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
   - Remove notifications after processing (checkbox)
 
 #### 1.7 About
+
 - **Application Information:**
   - luci-app-lpac version
   - lpac version (detected)
@@ -175,30 +186,36 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
 ### Phase 2: Enhanced Features
 
 #### 2.1 Profile Discovery (SM-DS)
+
 - Discover available profiles from SM-DS server
 - Display discovered profiles with provider info
 - One-click download from discovery results
 
 #### 2.2 Multi-SIM Support
+
 - Support for multiple eUICC slots/readers
 - Slot/reader selector in header
 - Per-slot configuration
 
 #### 2.3 Profile Import/Export
+
 - Export profile list as JSON/CSV
 - Import profiles from backup (if supported by hardware)
 
 #### 2.4 Scheduled Operations
+
 - Schedule profile switching based on:
   - Time of day
   - Day of week
   - Network availability
 
 #### 2.5 Notifications
+
 - Web notifications for profile events
 - Email notifications (optional)
 
 #### 2.6 Internationalization
+
 - Multi-language support
 - Initially: English
 - Future: Chinese, Turkish, German, French, Spanish
@@ -206,15 +223,18 @@ luci-app-lpac will provide a user-friendly web interface for managing eSIM profi
 ### Phase 3: Advanced Features
 
 #### 3.1 QR Code Support
+
 - QR code scanning via uploaded image
 - QR code generation for sharing profiles (if allowed by operator)
 
 #### 3.2 Profile Analytics
+
 - Data usage tracking per profile (if modem supports)
 - Connection history
 - Signal strength monitoring
 
 #### 3.3 Backup and Restore
+
 - Configuration backup
 - Profile list export
 - Settings migration between devices
@@ -864,6 +884,7 @@ config lpac 'advanced'
 ### Page Layouts
 
 #### 1. Dashboard Layout
+
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  eSIM Management - Dashboard                                  │
@@ -899,6 +920,7 @@ config lpac 'advanced'
 ```
 
 #### 2. Chip Information Layout
+
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  Chip Information                          [🔄 Refresh]        │
@@ -944,6 +966,7 @@ config lpac 'advanced'
 ```
 
 #### 3. Profile List Layout
+
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  Profiles                                        [🔄 Refresh]  │
@@ -1002,6 +1025,7 @@ Profile Details Modal (when "View Details" clicked):
 ```
 
 #### 4. Download Profile Layout
+
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  Download Profile                                              │
@@ -1076,6 +1100,7 @@ Download Success Modal:
 ```
 
 #### 5. Notifications Layout
+
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  Notifications                              [🔄 Refresh]       │
@@ -1145,6 +1170,7 @@ Info Box (when no notifications):
 ```
 
 #### 6. Settings Layout
+
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  Settings                                         [💾 Save]    │
@@ -1200,6 +1226,7 @@ Info Box (when no notifications):
 ```
 
 #### 7. About Page Layout
+
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  About luci-app-lpac                                           │
@@ -1285,6 +1312,7 @@ These features are **optional** and can be implemented later or made configurabl
 #### 1. CSRF Protection
 
 **Status:** Already handled by LuCI framework
+
 - LuCI automatically adds CSRF tokens to forms
 - No additional implementation needed
 - Just use LuCI's standard form/JSON handlers
@@ -1296,6 +1324,7 @@ These features are **optional** and can be implemented later or made configurabl
 **Context:** OpenWrt is typically single-user on local network
 
 **Pragmatic Approach:**
+
 ```lua
 -- Simple operation throttling (optional)
 -- Only for expensive operations like download
@@ -1314,6 +1343,7 @@ end
 ```
 
 **When to use:**
+
 - ✅ Prevent accidental multiple downloads (user double-clicking)
 - ✅ Avoid overwhelming SM-DP+ servers
 - ❌ NOT for preventing "attacks" (local network is trusted)
@@ -1324,6 +1354,7 @@ end
 #### 3. HTTPS/SSL
 
 **Status:** LuCI supports HTTPS via uhttpd
+
 - Not enforced by default in OpenWrt
 - User can enable if needed
 - Most home networks don't need SSL for local access
@@ -1333,16 +1364,19 @@ end
 ### What We Actually Need
 
 **Priority 1 (Must Have):**
+
 1. ✅ Input validation (prevent injection)
 2. ✅ Use LuCI's built-in authentication
 3. ✅ RPC ACL for admin-only access
 4. ✅ Don't log sensitive data
 
 **Priority 2 (Nice to Have):**
+
 1. 🔶 Basic download cooldown (30-60 seconds)
 2. 🔶 ICCID masking in UI
 
 **Priority 3 (Optional/Future):**
+
 1. ⭕ Configurable rate limiting
 2. ⭕ HTTPS enforcement (user choice)
 3. ⭕ Audit logging
@@ -1375,6 +1409,7 @@ end
 ### Threat Model (Realistic for OpenWrt)
 
 **Real Threats:**
+
 1. 🔴 Command injection from malicious input → **Must prevent**
 2. 🟡 Accidental multiple operations from UI bugs → **Should prevent**
 3. 🟢 Local network eavesdropping → **Low risk (trusted network)**
@@ -1382,6 +1417,7 @@ end
 5. 🟢 Brute force attacks → **Very low risk (local network, LuCI login)**
 
 **Non-Threats (in typical OpenWrt context):**
+
 - ❌ DDoS attacks (local network)
 - ❌ Advanced persistent threats (home router)
 - ❌ Multi-tenant security (single user)
@@ -1390,6 +1426,7 @@ end
 ### Conclusion
 
 For luci-app-lpac on OpenWrt:
+
 - **Focus on:** Input validation, command injection prevention
 - **Use built-in:** LuCI authentication, CSRF tokens (automatic)
 - **Keep simple:** Basic cooldown for downloads (optional)
@@ -1471,25 +1508,25 @@ define Build/Compile
 endef
 
 define Package/luci-app-lpac/install
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
-	$(INSTALL_DATA) ./luasrc/controller/*.lua $(1)/usr/lib/lua/luci/controller/
+ $(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
+ $(INSTALL_DATA) ./luasrc/controller/*.lua $(1)/usr/lib/lua/luci/controller/
 
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/lpac
-	$(INSTALL_DATA) ./luasrc/model/lpac/*.lua $(1)/usr/lib/lua/luci/model/lpac/
+ $(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/lpac
+ $(INSTALL_DATA) ./luasrc/model/lpac/*.lua $(1)/usr/lib/lua/luci/model/lpac/
 
-	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/lpac
-	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/lpac/*.js \
-		$(1)/www/luci-static/resources/view/lpac/
+ $(INSTALL_DIR) $(1)/www/luci-static/resources/view/lpac
+ $(INSTALL_DATA) ./htdocs/luci-static/resources/view/lpac/*.js \
+  $(1)/www/luci-static/resources/view/lpac/
 
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./root/etc/config/lpac $(1)/etc/config/
+ $(INSTALL_DIR) $(1)/etc/config
+ $(INSTALL_CONF) ./root/etc/config/lpac $(1)/etc/config/
 
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./root/etc/uci-defaults/* $(1)/etc/uci-defaults/
+ $(INSTALL_DIR) $(1)/etc/uci-defaults
+ $(INSTALL_BIN) ./root/etc/uci-defaults/* $(1)/etc/uci-defaults/
 
-	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
-	$(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/*.json \
-		$(1)/usr/share/rpcd/acl.d/
+ $(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
+ $(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/*.json \
+  $(1)/usr/share/rpcd/acl.d/
 endef
 
 $(eval $(call BuildPackage,luci-app-lpac))
@@ -1550,24 +1587,28 @@ make package/luci-app-lpac/compile V=s
 ### Milestone 1: MVP (Weeks 1-4)
 
 **Week 1: Project Setup**
+
 - [x] Create project structure
 - [x] Set up development environment
 - [x] Design UCI configuration schema
 - [x] Write Makefile
 
 **Week 2: Backend Development**
+
 - [ ] Implement lpac_interface.lua
 - [ ] Implement lpac_model.lua
 - [ ] Create controller with API endpoints
 - [ ] Write unit tests
 
 **Week 3: Frontend Development**
+
 - [ ] Implement dashboard.js
 - [ ] Implement profiles.js
 - [ ] Implement download.js
 - [ ] Add CSS styling
 
 **Week 4: Testing and Polish**
+
 - [ ] Integration testing
 - [ ] Bug fixes
 - [ ] Documentation
@@ -1601,11 +1642,13 @@ make package/luci-app-lpac/compile V=s
 **Framework:** busted (Lua testing framework)
 
 **Test Coverage:**
+
 - lpac_interface.lua: Command execution, JSON parsing
 - lpac_model.lua: Business logic, error handling
 - lpac_util.lua: Utility functions
 
 **Example Test:**
+
 ```lua
 describe("lpac_interface", function()
     local lpac = require "luci.model.lpac.lpac_interface"
@@ -1650,12 +1693,14 @@ end)
 ### Hardware Testing
 
 **Test Devices:**
+
 - GL.iNet routers (GL-X3000, GL-XE3000)
 - Generic x86 router with USB card reader
 - Raspberry Pi with USB card reader
 - Router with built-in QMI modem
 
 **Test Cases:**
+
 - PC/SC reader detection
 - QMI modem communication
 - Multiple reader support
@@ -1664,10 +1709,12 @@ end)
 ### User Acceptance Testing
 
 **Test Users:**
+
 - Technical users (router enthusiasts)
 - Non-technical users (home users)
 
 **Feedback Collection:**
+
 - GitHub issues
 - OpenWrt forum thread
 - User survey
@@ -1777,17 +1824,20 @@ _('Download Profile')
 ### Version Compatibility
 
 **OpenWrt Versions:**
+
 - 23.05.x (LuCI 23.05)
 - 24.05.x (LuCI 24.05)
 - Snapshot (testing)
 
 **lpac Versions:**
+
 - 2.0.0+ (minimum)
 - 2.3.0+ (recommended)
 
 ### Upgrade Path
 
 **Version Migration:**
+
 ```bash
 # Check existing version
 opkg list-installed | grep luci-app-lpac
@@ -1803,6 +1853,7 @@ opkg upgrade luci-app-lpac
 ### Bug Reporting
 
 **Issue Template:**
+
 ```markdown
 ## Bug Report
 
@@ -1908,6 +1959,7 @@ luci-app-lpac will bring professional eSIM management to OpenWrt routers, making
 The project follows OpenWrt and LuCI best practices, ensuring seamless integration with the existing ecosystem. With careful planning, thorough testing, and community engagement, luci-app-lpac has the potential to become a valuable addition to the OpenWrt package repository.
 
 **Next Steps:**
+
 1. Validate plan with OpenWrt/LuCI community
 2. Set up development environment
 3. Begin MVP implementation

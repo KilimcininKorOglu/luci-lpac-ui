@@ -4,7 +4,7 @@
 
 **OpenEUICC** is a fully free and open-source Local Profile Assistant (LPA) implementation for Android devices. It provides complete eSIM management capabilities using the [lpac](https://github.com/estkme-group/lpac) library integrated through JNI (Java Native Interface).
 
-**Repository:** https://gitea.angry.im/PeterCxy/OpenEUICC
+**Repository:** <https://gitea.angry.im/PeterCxy/OpenEUICC>
 **License:** GPL-3.0 (without "or later" clause)
 
 ## Project Variants
@@ -25,12 +25,14 @@ OpenEUICC has two variants serving different use cases:
 [^2]: Carrier Partner API unimplemented
 
 ### OpenEUICC (Privileged)
+
 - Must be installed as system app
 - Full access to device's internal eUICC
 - Supports any SGP.22-compliant eUICC chip
 - No allowlisting required
 
 ### EasyEUICC (Unprivileged)
+
 - Regular user app installation
 - Requires eUICC to proactively grant access via ARA-M field
 - ARA-M hash for official builds: `2A2FA878BC7C3354C2CF82935A5945A3EDAE4AFA`
@@ -128,6 +130,7 @@ init {
 ```
 
 **Context Lifecycle:**
+
 1. `createContext()` - Initialize lpac context
 2. `euiccInit()` - Initialize eUICC connection
 3. Perform operations (download, enable, delete, etc.)
@@ -139,6 +142,7 @@ init {
 OpenEUICC provides two key interfaces that lpac uses:
 
 #### ApduInterface
+
 ```kotlin
 // From ApduInterface.kt:6
 interface ApduInterface {
@@ -152,11 +156,13 @@ interface ApduInterface {
 ```
 
 **Implementations:**
+
 - **TelephonyManagerApduInterface**: Uses Android's TelephonyManager (privileged access)
 - **OmapiApduInterface**: Uses OMAPI (Open Mobile API) for unprivileged access
 - **UsbApduInterface**: Direct USB CCID communication
 
 #### HttpInterface
+
 ```kotlin
 // From HttpInterface.kt:8
 interface HttpInterface {
@@ -168,6 +174,7 @@ interface HttpInterface {
 ```
 
 **Implementation:**
+
 - **HttpInterfaceImpl**: Standard HTTP client with certificate pinning support
 
 ### 4. Thread Safety
@@ -188,12 +195,15 @@ override fun enableProfile(iccid: String, refresh: Boolean): Boolean = lock.with
 ### Profile Management
 
 #### Get Profile List
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cGetProfilesInfo(handle: Long): Long
 ```
 
 **Implementation:**
+
 ```kotlin
 // From LocalProfileAssistantImpl.kt:113
 override val profiles: List<LocalProfileInfo>
@@ -225,12 +235,15 @@ override val profiles: List<LocalProfileInfo>
 ---
 
 #### Enable Profile
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cEnableProfile(handle: Long, iccid: String, refresh: Boolean): Int
 ```
 
 **Usage:**
+
 ```kotlin
 // Returns 0 on success
 override fun enableProfile(iccid: String, refresh: Boolean): Boolean = lock.withLock {
@@ -239,18 +252,22 @@ override fun enableProfile(iccid: String, refresh: Boolean): Boolean = lock.with
 ```
 
 **Parameters:**
+
 - `iccid`: Profile ICCID
 - `refresh`: Whether to refresh the modem after enabling
 
 ---
 
 #### Disable Profile
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cDisableProfile(handle: Long, iccid: String, refresh: Boolean): Int
 ```
 
 **Usage:**
+
 ```kotlin
 override fun disableProfile(iccid: String, refresh: Boolean): Boolean = lock.withLock {
     LpacJni.es10cDisableProfile(contextHandle, iccid, refresh) == 0
@@ -260,12 +277,15 @@ override fun disableProfile(iccid: String, refresh: Boolean): Boolean = lock.wit
 ---
 
 #### Delete Profile
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cDeleteProfile(handle: Long, iccid: String): Int
 ```
 
 **Usage:**
+
 ```kotlin
 override fun deleteProfile(iccid: String): Boolean = lock.withLock {
     LpacJni.es10cDeleteProfile(contextHandle, iccid) == 0
@@ -275,7 +295,9 @@ override fun deleteProfile(iccid: String): Boolean = lock.withLock {
 ---
 
 #### Download Profile
+
 **JNI Method:**
+
 ```kotlin
 external fun downloadProfile(
     handle: Long,
@@ -288,6 +310,7 @@ external fun downloadProfile(
 ```
 
 **Usage:**
+
 ```kotlin
 // From LocalProfileAssistantImpl.kt:217
 override fun downloadProfile(
@@ -319,6 +342,7 @@ override fun downloadProfile(
 ```
 
 **Callback Interface:**
+
 ```kotlin
 interface ProfileDownloadCallback {
     fun onStateUpdate(state: String)
@@ -327,6 +351,7 @@ interface ProfileDownloadCallback {
 ```
 
 **Download Flow:**
+
 1. ES10b: Get eUICC challenge and info
 2. ES9+: Initiate authentication with SM-DP+
 3. ES10b: Authenticate server
@@ -338,12 +363,15 @@ interface ProfileDownloadCallback {
 ---
 
 #### Set Nickname
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cSetNickname(handle: Long, iccid: String, nickNullTerminated: ByteArray): Int
 ```
 
 **Usage:**
+
 ```kotlin
 // From LocalProfileAssistantImpl.kt:257
 override fun setNickname(iccid: String, nickname: String) = lock.withLock {
@@ -362,6 +390,7 @@ override fun setNickname(iccid: String, nickname: String) = lock.withLock {
 ```
 
 **Constraints:**
+
 - Must be valid UTF-8
 - Maximum 63 bytes (64 including null terminator)
 
@@ -370,12 +399,15 @@ override fun setNickname(iccid: String, nickname: String) = lock.withLock {
 ### Chip Information
 
 #### Get EID
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cGetEid(handle: Long): String?
 ```
 
 **Usage:**
+
 ```kotlin
 override val eID: String
     get() = lock.withLock { LpacJni.es10cGetEid(contextHandle)!! }
@@ -384,12 +416,15 @@ override val eID: String
 ---
 
 #### Get Extended eUICC Info (EuiccInfo2)
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cexGetEuiccInfo2(handle: Long): Long
 ```
 
 **Usage:**
+
 ```kotlin
 // From LocalProfileAssistantImpl.kt:170
 override val euiccInfo2: EuiccInfo2?
@@ -416,6 +451,7 @@ override val euiccInfo2: EuiccInfo2?
 ```
 
 **EuiccInfo2 Fields:**
+
 - SGP.22 version
 - Profile version
 - Firmware version
@@ -430,12 +466,15 @@ override val euiccInfo2: EuiccInfo2?
 ### Notification Management
 
 #### List Notifications
+
 **JNI Method:**
+
 ```kotlin
 external fun es10bListNotification(handle: Long): Long
 ```
 
 **Usage:**
+
 ```kotlin
 // From LocalProfileAssistantImpl.kt:139
 override val notifications: List<LocalProfileNotification>
@@ -466,12 +505,15 @@ override val notifications: List<LocalProfileNotification>
 ---
 
 #### Handle Notification
+
 **JNI Method:**
+
 ```kotlin
 external fun handleNotification(handle: Long, seqNumber: Long): Int
 ```
 
 **Usage:**
+
 ```kotlin
 // Send notification to SM-DP+ server
 override fun handleNotification(seqNumber: Long): Boolean = lock.withLock {
@@ -482,12 +524,15 @@ override fun handleNotification(seqNumber: Long): Boolean = lock.withLock {
 ---
 
 #### Delete Notification
+
 **JNI Method:**
+
 ```kotlin
 external fun es10bDeleteNotification(handle: Long, seqNumber: Long): Int
 ```
 
 **Usage:**
+
 ```kotlin
 override fun deleteNotification(seqNumber: Long): Boolean = lock.withLock {
     LpacJni.es10bDeleteNotification(contextHandle, seqNumber) == 0
@@ -499,12 +544,15 @@ override fun deleteNotification(seqNumber: Long): Boolean = lock.withLock {
 ### Advanced Operations
 
 #### Memory Reset
+
 **JNI Method:**
+
 ```kotlin
 external fun es10cEuiccMemoryReset(handle: Long): Int
 ```
 
 **Usage:**
+
 ```kotlin
 override fun euiccMemoryReset() {
     lock.withLock {
@@ -518,12 +566,15 @@ override fun euiccMemoryReset() {
 ---
 
 #### Set Maximum Segment Size
+
 **JNI Method:**
+
 ```kotlin
 external fun euiccSetMss(handle: Long, mss: Byte)
 ```
 
 **Usage:**
+
 ```kotlin
 override fun setEs10xMss(mss: Byte) {
     LpacJni.euiccSetMss(contextHandle, mss)
@@ -535,12 +586,15 @@ override fun setEs10xMss(mss: Byte) {
 ---
 
 #### Cancel Sessions
+
 **JNI Method:**
+
 ```kotlin
 external fun cancelSessions(handle: Long)
 ```
 
 **Usage:**
+
 ```kotlin
 // Cancel any ongoing ES9+ and/or ES10b sessions
 LpacJni.cancelSessions(contextHandle)
@@ -549,6 +603,7 @@ LpacJni.cancelSessions(contextHandle)
 ## Data Structures
 
 ### LocalProfileInfo
+
 ```kotlin
 data class LocalProfileInfo(
     val iccid: String,
@@ -562,6 +617,7 @@ data class LocalProfileInfo(
 ```
 
 ### LocalProfileNotification
+
 ```kotlin
 data class LocalProfileNotification(
     val seqNumber: Long,
@@ -572,6 +628,7 @@ data class LocalProfileNotification(
 ```
 
 ### EuiccInfo2
+
 ```kotlin
 data class EuiccInfo2(
     val sgp22Version: Version,
@@ -723,10 +780,12 @@ storeFile=/path/to/android/keystore
 ### OpenEUICC (System App)
 
 **Requirements:**
+
 - Root access or AOSP build integration
 - System partition write access
 
 **Methods:**
+
 1. **Magisk Module:** Flash from CI artifacts
 2. **Manual:** Copy to `/system/priv-app/OpenEUICC/`
 3. **AOSP Build:** Include in system image
@@ -734,10 +793,12 @@ storeFile=/path/to/android/keystore
 ### EasyEUICC (User App)
 
 **Requirements:**
+
 - Android 9+ device
 - Removable eSIM with correct ARA-M or USB reader
 
 **Installation:**
+
 1. Download APK from [releases](https://gitea.angry.im/PeterCxy/OpenEUICC/releases)
 2. Install normally via APK installer
 3. Grant USB permissions (if using USB reader)
@@ -815,6 +876,7 @@ if (info != null) {
 ### 1. Multi-Channel Support
 
 OpenEUICC supports multiple eUICC channels simultaneously:
+
 - Internal phone eSIM slots (1-2 slots)
 - Removable eSIM cards
 - USB CCID readers
@@ -822,14 +884,17 @@ OpenEUICC supports multiple eUICC channels simultaneously:
 ### 2. Flexible APDU Access
 
 **Privileged (OpenEUICC):**
+
 - Direct TelephonyManager access
 - Full control over internal eUICC
 
 **Unprivileged (EasyEUICC):**
+
 - OMAPI (Open Mobile API)
 - Requires ARA-M allowlisting
 
 **Universal:**
+
 - USB CCID readers (no allowlisting needed)
 
 ### 3. Thread-Safe Operations
@@ -839,6 +904,7 @@ All lpac operations are synchronized using ReentrantLock to ensure thread safety
 ### 4. Error Diagnostics
 
 Comprehensive error capture:
+
 - Last HTTP response/exception
 - Last APDU response/exception
 - LPA error codes with descriptions
@@ -846,6 +912,7 @@ Comprehensive error capture:
 ### 5. Certificate Pinning
 
 HTTP interface supports:
+
 - Public key ID-based certificate validation
 - Custom trust managers
 - TLS certificate verification
@@ -945,22 +1012,24 @@ A: No, EasyEUICC only works with allowlisted external eSIMs or USB readers.
 
 **Q: Where can I get prebuilt APKs?**
 A:
+
 - OpenEUICC: Debug APKs and Magisk modules from [CI Actions](https://gitea.angry.im/PeterCxy/OpenEUICC/actions)
 - EasyEUICC: Release APKs from [Releases](https://gitea.angry.im/PeterCxy/OpenEUICC/releases)
 
 **Q: Are removable eSIMs a joke?**
 A: No! Benefits include:
+
 - Transfer profiles without carrier approval
 - Use eSIM on unsupported devices (Wi-Fi hotspots, routers)
 - Physical portability between devices
 
 ## Additional Resources
 
-- **lpac Library:** https://github.com/estkme-group/lpac
-- **SGP.22 Specification:** https://www.gsma.com/solutions-and-impact/technologies/esim/
-- **USB CCID Protocol:** https://en.wikipedia.org/wiki/CCID_%28protocol%29
-- **Android OMAPI:** https://source.android.com/devices/tech/config/omapi
-- **Issue Tracker:** https://gitea.angry.im/PeterCxy/OpenEUICC/issues
+- **lpac Library:** <https://github.com/estkme-group/lpac>
+- **SGP.22 Specification:** <https://www.gsma.com/solutions-and-impact/technologies/esim/>
+- **USB CCID Protocol:** <https://en.wikipedia.org/wiki/CCID_%28protocol%29>
+- **Android OMAPI:** <https://source.android.com/devices/tech/config/omapi>
+- **Issue Tracker:** <https://gitea.angry.im/PeterCxy/OpenEUICC/issues>
 
 ## License
 
