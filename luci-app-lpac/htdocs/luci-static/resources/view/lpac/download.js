@@ -144,7 +144,7 @@ return view.extend({
 												E('button', {
 													'class': 'btn cbi-button-action',
 													'click': function() {
-														window.location.href = L.url('admin', 'services', 'lpac', 'profiles');
+														window.location.href = L.url('admin', 'network', 'lpac', 'profiles');
 													}
 												}, _('View Profiles')),
 												' ',
@@ -314,7 +314,7 @@ return view.extend({
 			]),
 			E('p', {}, [
 				_('After downloading, you can manage your profiles on the '),
-				E('a', { 'href': L.url('admin', 'services', 'lpac', 'profiles') }, _('Profiles')),
+				E('a', { 'href': L.url('admin', 'network', 'lpac', 'profiles') }, _('Profiles')),
 				_(' page.')
 			])
 		]);

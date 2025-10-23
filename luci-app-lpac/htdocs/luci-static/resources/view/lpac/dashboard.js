@@ -104,7 +104,7 @@ return view.extend({
 			]),
 			E('p', { 'style': 'margin-top: 10px' }, [
 				E('a', {
-					'href': L.url('admin', 'services', 'lpac', 'profiles'),
+					'href': L.url('admin', 'network', 'lpac', 'profiles'),
 					'class': 'btn cbi-button'
 				}, _('Manage Profiles'))
 			])
@@ -126,7 +126,7 @@ return view.extend({
 				E('p', { 'class': 'text-muted' }, _('No pending notifications.')),
 			E('p', { 'style': 'margin-top: 10px' }, [
 				E('a', {
-					'href': L.url('admin', 'services', 'lpac', 'notifications'),
+					'href': L.url('admin', 'network', 'lpac', 'notifications'),
 					'class': 'btn cbi-button'
 				}, _('View Notifications'))
 			])
@@ -152,15 +152,15 @@ return view.extend({
 		content.push(createCard(_('Quick Actions'), [
 			E('div', { 'style': 'display: flex; flex-wrap: wrap; gap: 10px' }, [
 				E('a', {
-					'href': L.url('admin', 'services', 'lpac', 'download'),
+					'href': L.url('admin', 'network', 'lpac', 'download'),
 					'class': 'btn cbi-button-action'
 				}, _('Download Profile')),
 				E('a', {
-					'href': L.url('admin', 'services', 'lpac', 'chip'),
+					'href': L.url('admin', 'network', 'lpac', 'chip'),
 					'class': 'btn cbi-button'
 				}, _('Chip Info')),
 				E('a', {
-					'href': L.url('admin', 'services', 'lpac', 'settings'),
+					'href': L.url('admin', 'network', 'lpac', 'settings'),
 					'class': 'btn cbi-button'
 				}, _('Settings'))
 			])

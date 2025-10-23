@@ -305,7 +305,7 @@ return view.extend({
 				E('p', {}, _('No profiles installed on the eUICC.')),
 				E('p', {}, [
 					_('You can download a new profile from the '),
-					E('a', { 'href': L.url('admin', 'services', 'lpac', 'download') }, _('Download')),
+					E('a', { 'href': L.url('admin', 'network', 'lpac', 'download') }, _('Download')),
 					_(' page.')
 				])
 			]));
