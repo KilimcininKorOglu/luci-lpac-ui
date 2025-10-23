@@ -4,7 +4,7 @@
 uci -q get luci-lpac.config >/dev/null || uci set luci-lpac.config=luci_lpac
 
 # Set default values only if not already set (preserves user settings)
-uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='pcsc'
+uci -q get luci-lpac.config.apdu_driver >/dev/null || uci set luci-lpac.config.apdu_driver='auto'
 uci -q get luci-lpac.config.http_driver >/dev/null || uci set luci-lpac.config.http_driver='curl'
 uci -q get luci-lpac.config.custom_aid >/dev/null || uci set luci-lpac.config.custom_aid=''
 uci -q get luci-lpac.config.es10x_mss >/dev/null || uci set luci-lpac.config.es10x_mss='60'
