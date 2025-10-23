@@ -38,133 +38,147 @@ return view.extend({
 			return E('span', { 'class': badgeClass }, text);
 		};
 
-		// Create info card
-		var createCard = function(title, content, icon) {
-			return E('div', { 'class': 'cbi-section' }, [
-				E('h3', {}, [
-					icon ? E('span', {}, icon + ' ') : '',
-					title
-				]),
-				E('div', { 'class': 'cbi-value' }, content)
-			]);
-		};
-
-		var content = [];
+		var container = E('div', { 'class': 'cbi-map' }, [
+			E('h2', {}, _('eSIM Management Dashboard')),
+			E('div', { 'class': 'cbi-section-descr' },
+				_('Overview of your eSIM/eUICC status and profiles'))
+		]);
 
 		// lpac availability check
 		if (!lpacAvailable) {
-			return E('div', { 'class': 'cbi-map' }, [
-				E('h2', {}, _('eSIM Management Dashboard')),
-				E('div', { 'class': 'alert-message warning' }, [
-					E('h4', {}, _('lpac Not Installed')),
-					E('p', {}, _('The lpac binary is not installed or not executable. Please install lpac package first.'))
-				])
-			]);
+			container.appendChild(E('div', { 'class': 'alert-message warning' }, [
+				E('h4', {}, _('lpac Not Installed')),
+				E('p', {}, _('The lpac binary is not installed or not executable. Please install lpac package first.'))
+			]));
+			return container;
 		}
 
-		// eUICC Chip Status Card
+		// eUICC Chip Status Section
 		var chipStatus = summary.chip_status || 'disconnected';
 		var chipStatusText = chipStatus === 'connected' ? _('Connected') : _('Disconnected');
 
-		content.push(createCard(_('eUICC Chip Status'), [
-			// Status
-			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('strong', {}, _('Status')),
-				E('div', { 'style': 'margin-top: 5px' }, createStatusBadge(chipStatus, chipStatusText))
-			]),
-			// EID
-			summary.eid ? E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('strong', {}, _('EID')),
-				E('div', { 'style': 'margin-top: 5px' }, E('code', {}, summary.eid))
-			]) : E('div', { 'style': 'margin-bottom: 10px', 'class': 'text-muted' }, _('EID not available')),
-			// Firmware Version
-			summary.firmware_version ? E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('strong', {}, _('Firmware')),
-				E('div', { 'style': 'margin-top: 5px' }, summary.firmware_version)
-			]) : null,
-			// Free Memory
-			(summary.free_memory !== null && summary.free_memory !== undefined) ? E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('strong', {}, _('Free Memory')),
-				E('div', { 'style': 'margin-top: 5px' }, [
-					summary.free_memory < 1024 ?
-						summary.free_memory + ' KB' :
-						(summary.free_memory / 1024).toFixed(1) + ' MB'
-				])
-			]) : null,
-			// Profiles Count
-			(summary.profiles_total !== null && summary.profiles_total !== undefined) ? E('div', {}, [
-				E('strong', {}, _('Profiles')),
-				E('div', { 'style': 'margin-top: 5px' }, [
-					String(summary.profiles_enabled || 0) + '/' + String(summary.profiles_total || 0) + ' ',
-					_('active')
-				])
-			]) : null
-		].filter(function(item) { return item !== null; }), '📱'));
+		var chipSection = E('div', { 'class': 'cbi-section' }, [
+			E('h3', {}, '📱 ' + _('eUICC Chip Status'))
+		]);
 
-		// Profiles Summary Card
-		content.push(createCard(_('Profile Summary'), [
-			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('strong', {}, _('Total Profiles')),
-				E('div', { 'style': 'margin-top: 5px; font-weight: bold' }, String(summary.profiles_total || 0))
+		var chipRows = [];
+
+		// Status row
+		chipRows.push(E('tr', {}, [
+			E('td', {}, _('Status')),
+			E('td', {}, createStatusBadge(chipStatus, chipStatusText))
+		]));
+
+		// EID row
+		if (summary.eid) {
+			chipRows.push(E('tr', {}, [
+				E('td', {}, _('EID')),
+				E('td', {}, E('code', {}, summary.eid))
+			]));
+		} else {
+			chipRows.push(E('tr', {}, [
+				E('td', {}, _('EID')),
+				E('td', { 'class': 'text-muted' }, _('Not available'))
+			]));
+		}
+
+		// Firmware row
+		if (summary.firmware_version) {
+			chipRows.push(E('tr', {}, [
+				E('td', {}, _('Firmware Version')),
+				E('td', {}, summary.firmware_version)
+			]));
+		}
+
+		// Free Memory row
+		if (summary.free_memory !== null && summary.free_memory !== undefined) {
+			var memoryText = summary.free_memory < 1024 ?
+				summary.free_memory + ' KB' :
+				(summary.free_memory / 1024).toFixed(1) + ' MB';
+			chipRows.push(E('tr', {}, [
+				E('td', {}, _('Free Memory')),
+				E('td', {}, memoryText)
+			]));
+		}
+
+		// Profiles count row
+		if (summary.profiles_total !== null && summary.profiles_total !== undefined) {
+			chipRows.push(E('tr', {}, [
+				E('td', {}, _('Profiles')),
+				E('td', {}, String(summary.profiles_enabled || 0) + '/' + String(summary.profiles_total || 0) + ' ' + _('active'))
+			]));
+		}
+
+		chipSection.appendChild(E('table', { 'class': 'table' }, [
+			E('tbody', {}, chipRows)
+		]));
+
+		container.appendChild(chipSection);
+
+		// Profile Summary Section
+		var profileSection = E('div', { 'class': 'cbi-section' }, [
+			E('h3', {}, '📋 ' + _('Profile Summary'))
+		]);
+
+		var profileRows = [
+			E('tr', {}, [
+				E('td', {}, _('Total Profiles')),
+				E('td', {}, E('strong', {}, String(summary.profiles_total || 0)))
 			]),
-			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('strong', {}, _('Enabled')),
-				E('div', { 'style': 'margin-top: 5px' }, [
+			E('tr', {}, [
+				E('td', {}, _('Enabled')),
+				E('td', {}, [
 					createStatusBadge('success', '●'),
 					' ',
-					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_enabled || 0))
+					E('strong', {}, String(summary.profiles_enabled || 0))
 				])
 			]),
-			E('div', { 'style': 'margin-bottom: 10px' }, [
-				E('strong', {}, _('Disabled')),
-				E('div', { 'style': 'margin-top: 5px' }, [
+			E('tr', {}, [
+				E('td', {}, _('Disabled')),
+				E('td', {}, [
 					createStatusBadge('error', '●'),
 					' ',
-					E('span', { 'style': 'font-weight: bold' }, String(summary.profiles_disabled || 0))
+					E('strong', {}, String(summary.profiles_disabled || 0))
 				])
 			])
-		], '📋'));
+		];
 
-		// Notifications Card
+		profileSection.appendChild(E('table', { 'class': 'table' }, [
+			E('tbody', {}, profileRows)
+		]));
+
+		container.appendChild(profileSection);
+
+		// Notifications Section
 		var notificationCount = summary.notifications_pending || 0;
 		var notificationBadge = notificationCount > 0 ?
 			createStatusBadge('warning', String(notificationCount)) :
 			createStatusBadge('success', '0');
 
-		content.push(createCard(_('Notifications'), [
-			E('div', { 'style': 'margin-bottom: 10px' }, [
-			E('strong', {}, _('Pending Notifications')),
-			E('div', { 'style': 'margin-top: 5px' }, notificationBadge)
+		var notificationSection = E('div', { 'class': 'cbi-section' }, [
+			E('h3', {}, '🔔 ' + _('Notifications'))
+		]);
+
+		var notificationRows = [
+			E('tr', {}, [
+				E('td', {}, _('Pending Notifications')),
+				E('td', {}, notificationBadge)
 			]),
-			notificationCount > 0 ? E('div', { 'class': 'text-warning' },
-				_('You have pending notifications that require attention.')) :
-				E('div', { 'class': 'text-muted' }, _('No pending notifications.'))
-		], '🔔'));
-
-		// Memory Status Card
-		if (summary.free_memory !== null && summary.free_memory !== undefined) {
-			var memoryKB = summary.free_memory;
-			var memoryFormatted = memoryKB < 1024 ?
-				memoryKB + ' KB' :
-				(memoryKB / 1024).toFixed(1) + ' MB';
-
-			content.push(createCard(_('eUICC Memory'), [
-				E('p', {}, [
-					E('strong', {}, _('Free Memory: ')),
-					memoryFormatted
-				]),
-				E('p', { 'class': 'text-muted' }, _('Available space for new profiles'))
-			], '💾'));
-		}
-
-		// Return with properly spread content array
-		var result = [
-			E('h2', {}, _('eSIM Management Dashboard')),
-			E('div', { 'class': 'cbi-section-descr' },
-				_('Overview of your eSIM/eUICC status and profiles'))
+			E('tr', {}, [
+				E('td', {}, _('Status')),
+				E('td', {}, notificationCount > 0 ?
+					E('span', { 'class': 'text-warning' }, _('You have pending notifications that require attention.')) :
+					E('span', { 'class': 'text-muted' }, _('No pending notifications.')))
+			])
 		];
 
-		return E('div', { 'class': 'cbi-map' }, result.concat(content));
+		notificationSection.appendChild(E('table', { 'class': 'table' }, [
+			E('tbody', {}, notificationRows)
+		]));
+
+		container.appendChild(notificationSection);
+
+		return container;
 	},
 
 	handleSaveApply: null,
