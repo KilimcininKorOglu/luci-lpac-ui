@@ -14,6 +14,11 @@ local function get_config(option, default)
 	return uci:get("luci-lpac", "config", option) or default
 end
 
+-- Get advanced UCI configuration values
+local function get_advanced_config(option, default)
+	return uci:get("luci-lpac", "advanced", option) or default
+end
+
 -- Build environment variables for lpac execution
 local function build_env()
 	local env = {}
@@ -494,6 +499,123 @@ end
 -- List available HTTP drivers
 function M.list_http_drivers()
 	return M.exec_lpac({"driver", "http", "list"})
+end
+
+-- Helper: Get QMI device path for current configuration
+local function get_qmi_device_path()
+	local apdu_driver = get_config("apdu_driver", "qmi")
+
+	if apdu_driver ~= "qmi" and apdu_driver ~= "qmi_qrtr" then
+		return nil  -- Not using QMI
+	end
+
+	-- Get configured device or auto-detect
+	local qmi_device = get_config("qmi_device", "")
+	if qmi_device == "" then
+		-- Auto-detect: try multiple devices in order
+		local test_devices = {
+			"/dev/cdc-wdm0",
+			"/dev/cdc-wdm1",
+			"/dev/wwan0qmi0",
+			"/dev/mhi_QMI0"
+		}
+		for _, dev in ipairs(test_devices) do
+			local f = io.open(dev, "r")
+			if f then
+				f:close()
+				qmi_device = dev
+				break
+			end
+		end
+		-- If no device found, use default
+		if qmi_device == "" then
+			qmi_device = "/dev/cdc-wdm0"
+		end
+	end
+
+	return qmi_device
+end
+
+-- Stop wwan interface to release QMI device lock
+-- Returns: true if stopped, false if not needed or failed
+function M.stop_wwan_interface()
+	local auto_manage = get_advanced_config("auto_manage_wwan", "1")
+	if auto_manage ~= "1" then
+		return false  -- Auto-management disabled
+	end
+
+	-- Check if wwan interface exists and is up
+	local result = os.execute("ifstatus wwan >/dev/null 2>&1")
+	if result ~= 0 then
+		return false  -- Interface doesn't exist
+	end
+
+	-- Stop the interface
+	os.execute("ifdown wwan >/dev/null 2>&1")
+	nixio.nanosleep(2, 0)  -- Wait 2 seconds
+
+	return true
+end
+
+-- Restart wwan interface after lpac operations
+-- Returns: true if restarted, false if not needed
+function M.restart_wwan_interface()
+	local auto_manage = get_advanced_config("auto_manage_wwan", "1")
+	if auto_manage ~= "1" then
+		return false  -- Auto-management disabled
+	end
+
+	-- Start the interface
+	os.execute("ifup wwan >/dev/null 2>&1")
+
+	return true
+end
+
+-- Power cycle SIM card (QMI only)
+-- This helps modem recognize newly enabled/downloaded profiles
+-- Returns: true if successful, false otherwise
+function M.sim_power_cycle()
+	local auto_cycle = get_advanced_config("auto_sim_power_cycle", "1")
+	if auto_cycle ~= "1" then
+		return false  -- Auto power cycle disabled
+	end
+
+	local apdu_driver = get_config("apdu_driver", "qmi")
+	if apdu_driver ~= "qmi" and apdu_driver ~= "qmi_qrtr" then
+		return false  -- Not using QMI
+	end
+
+	local qmi_device = get_qmi_device_path()
+	if not qmi_device then
+		return false
+	end
+
+	local qmi_slot = get_config("qmi_slot", "0")
+	-- uqmi uses 1-based slot numbers, we use 0-based
+	local slot_num = tonumber(qmi_slot) + 1
+
+	-- Power off SIM
+	os.execute(string.format("uqmi -d %s --uim-power-off --uim-slot %d >/dev/null 2>&1", qmi_device, slot_num))
+	nixio.nanosleep(2, 0)  -- Wait 2 seconds
+
+	-- Power on SIM
+	os.execute(string.format("uqmi -d %s --uim-power-on --uim-slot %d >/dev/null 2>&1", qmi_device, slot_num))
+	nixio.nanosleep(2, 0)  -- Wait 2 seconds
+
+	return true
+end
+
+-- Complete modem management wrapper for lpac operations
+-- Call before lpac operations that need QMI access
+function M.prepare_modem_for_lpac()
+	M.stop_wwan_interface()
+end
+
+-- Complete modem management wrapper after lpac operations
+-- Call after lpac operations complete
+function M.restore_modem_after_lpac()
+	M.sim_power_cycle()
+	M.restart_wwan_interface()
 end
 
 return M

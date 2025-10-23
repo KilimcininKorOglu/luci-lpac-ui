@@ -38,6 +38,8 @@ if [ "$FIRST_INSTALL" = "1" ]; then
 	uci set luci-lpac.advanced.log_level='info'
 	uci set luci-lpac.advanced.timeout='120'
 	uci set luci-lpac.advanced.download_cooldown='60'
+	uci set luci-lpac.advanced.auto_manage_wwan='1'
+	uci set luci-lpac.advanced.auto_sim_power_cycle='1'
 
 	# Mark as configured
 	touch /etc/config/luci-lpac.user_configured
@@ -57,6 +59,8 @@ else
 	uci -q get luci-lpac.advanced.log_level >/dev/null || uci set luci-lpac.advanced.log_level='info'
 	uci -q get luci-lpac.advanced.timeout >/dev/null || uci set luci-lpac.advanced.timeout='120'
 	uci -q get luci-lpac.advanced.download_cooldown >/dev/null || uci set luci-lpac.advanced.download_cooldown='60'
+	uci -q get luci-lpac.advanced.auto_manage_wwan >/dev/null || uci set luci-lpac.advanced.auto_manage_wwan='1'
+	uci -q get luci-lpac.advanced.auto_sim_power_cycle >/dev/null || uci set luci-lpac.advanced.auto_sim_power_cycle='1'
 fi
 
 # Commit changes

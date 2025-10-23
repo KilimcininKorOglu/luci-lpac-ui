@@ -129,8 +129,14 @@ function M.enable_profile_safe(iccid, refresh)
 		return util.create_result(false, err, nil)
 	end
 
+	-- Prepare modem (stop wwan interface if needed)
+	lpac.prepare_modem_for_lpac()
+
 	-- Execute operation
 	local result = lpac.enable_profile(iccid, refresh)
+
+	-- Restore modem (SIM power cycle + restart wwan)
+	lpac.restore_modem_after_lpac()
 
 	if not util.is_success(result) then
 		return util.create_result(false, util.get_error_message(result), nil)
@@ -147,8 +153,14 @@ function M.disable_profile_safe(iccid, refresh)
 		return util.create_result(false, err, nil)
 	end
 
+	-- Prepare modem (stop wwan interface if needed)
+	lpac.prepare_modem_for_lpac()
+
 	-- Execute operation
 	local result = lpac.disable_profile(iccid, refresh)
+
+	-- Restore modem (SIM power cycle + restart wwan)
+	lpac.restore_modem_after_lpac()
 
 	if not util.is_success(result) then
 		return util.create_result(false, util.get_error_message(result), nil)
@@ -269,8 +281,14 @@ function M.download_profile_safe(opts)
 	-- Update cooldown timestamp
 	last_download_time = os.time()
 
+	-- Prepare modem (stop wwan interface if needed)
+	lpac.prepare_modem_for_lpac()
+
 	-- Execute download
 	local result = lpac.download_profile(opts)
+
+	-- Restore modem (SIM power cycle + restart wwan)
+	lpac.restore_modem_after_lpac()
 
 	if not util.is_success(result) then
 		return util.create_result(false, util.get_error_message(result), nil)
