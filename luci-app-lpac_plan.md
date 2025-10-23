@@ -306,7 +306,7 @@ This application uses Modern LuCI's HTTP API architecture for frontend-backend c
 
 - **Frontend**: JavaScript views use `'require request'` with `request.get()` and `request.post()` methods
 - **Backend**: Lua controller defines HTTP endpoints using `call()` functions
-- **API Format**: RESTful-style endpoints at `/cgi-bin/luci/admin/services/lpac/api/*`
+- **API Format**: RESTful-style endpoints at `/cgi-bin/luci/admin/network/lpac/api/*`
 - **Response Format**: JSON objects with `{success: bool, message: string, data: object}` structure
 
 **Note:** This application does NOT use ubus RPC communication (`rpc.declare()`). All frontend-backend communication goes through HTTP API endpoints defined in the controller.
@@ -315,7 +315,7 @@ This application uses Modern LuCI's HTTP API architecture for frontend-backend c
 
 ```javascript
 // Frontend (profiles.js)
-request.post('/cgi-bin/luci/admin/services/lpac/api/enable_profile', {
+request.post('/cgi-bin/luci/admin/network/lpac/api/enable_profile', {
     iccid: '89012345678901234567',
     refresh: true
 })
@@ -323,7 +323,7 @@ request.post('/cgi-bin/luci/admin/services/lpac/api/enable_profile', {
 
 ```lua
 -- Backend (controller/lpac.lua)
-entry({"admin", "services", "lpac", "api", "enable_profile"},
+entry({"admin", "network", "lpac", "api", "enable_profile"},
       call("action_enable_profile")).leaf = true
 
 function action_enable_profile()
@@ -344,6 +344,7 @@ luci-app-lpac/
 ├── htdocs/
 │   └── luci-static/
 │       └── resources/
+│           ├── lpac.css              # Custom CSS styling
 │           └── view/
 │               └── lpac/
 │                   ├── dashboard.js      # Dashboard view
@@ -369,18 +370,12 @@ luci-app-lpac/
 │           └── (legacy views if needed)
 │
 ├── root/
-│   ├── etc/
-│   │   ├── config/
-│   │   │   └── lpac                # Default UCI configuration
-│   │   │
-│   │   └── uci-defaults/
-│   │       └── 90-luci-lpac        # Post-installation script
-│   │
-│   └── usr/
-│       └── share/
-│           └── rpcd/
-│               └── acl.d/
-│                   └── luci-app-lpac.json  # RPC ACL permissions
+│   └── etc/
+│       ├── config/
+│       │   └── lpac                # Default UCI configuration
+│       │
+│       └── uci-defaults/
+│           └── 90-luci-lpac        # Post-installation script
 │
 └── po/                              # Translations (future)
     └── templates/
@@ -397,52 +392,52 @@ luci-app-lpac/
 module("luci.controller.lpac", package.seeall)
 
 function index()
-    entry({"admin", "services", "lpac"},
-          alias("admin", "services", "lpac", "dashboard"),
+    entry({"admin", "network", "lpac"},
+          alias("admin", "network", "lpac", "dashboard"),
           _("eSIM Management"), 60)
 
-    entry({"admin", "services", "lpac", "dashboard"},
+    entry({"admin", "network", "lpac", "dashboard"},
           view("lpac/dashboard"),
           _("Dashboard"), 1)
 
-    entry({"admin", "services", "lpac", "chip"},
+    entry({"admin", "network", "lpac", "chip"},
           view("lpac/chip"),
           _("Chip Info"), 2)
 
-    entry({"admin", "services", "lpac", "profiles"},
+    entry({"admin", "network", "lpac", "profiles"},
           view("lpac/profiles"),
           _("Profiles"), 3)
 
-    entry({"admin", "services", "lpac", "download"},
+    entry({"admin", "network", "lpac", "download"},
           view("lpac/download"),
           _("Download"), 4)
 
-    entry({"admin", "services", "lpac", "notifications"},
+    entry({"admin", "network", "lpac", "notifications"},
           view("lpac/notifications"),
           _("Notifications"), 5)
 
-    entry({"admin", "services", "lpac", "settings"},
+    entry({"admin", "network", "lpac", "settings"},
           view("lpac/settings"),
           _("Settings"), 6)
 
-    entry({"admin", "services", "lpac", "about"},
+    entry({"admin", "network", "lpac", "about"},
           view("lpac/about"),
           _("About"), 7)
 
     -- API endpoints
-    entry({"admin", "services", "lpac", "api", "chip_info"},
+    entry({"admin", "network", "lpac", "api", "chip_info"},
           call("action_chip_info")).leaf = true
 
-    entry({"admin", "services", "lpac", "api", "get_version"},
+    entry({"admin", "network", "lpac", "api", "get_version"},
           call("action_get_version")).leaf = true
 
-    entry({"admin", "services", "lpac", "api", "list_profiles"},
+    entry({"admin", "network", "lpac", "api", "list_profiles"},
           call("action_list_profiles")).leaf = true
 
-    entry({"admin", "services", "lpac", "api", "enable_profile"},
+    entry({"admin", "network", "lpac", "api", "enable_profile"},
           call("action_enable_profile")).leaf = true
 
-    entry({"admin", "services", "lpac", "api", "download_profile"},
+    entry({"admin", "network", "lpac", "api", "download_profile"},
           call("action_download_profile")).leaf = true
 
     -- ... more API endpoints
@@ -617,7 +612,7 @@ return M
 return view.extend({
     load: function() {
         return Promise.all([
-            request.get('/cgi-bin/luci/admin/services/lpac/api/list_profiles')
+            request.get('/cgi-bin/luci/admin/network/lpac/api/list_profiles')
         ]);
     },
 
@@ -684,7 +679,7 @@ return view.extend({
 
     handleToggleProfile: function(iccid, currentState) {
         var action = currentState === 'enabled' ? 'disable' : 'enable';
-        var endpoint = '/cgi-bin/luci/admin/services/lpac/api/' + action + '_profile';
+        var endpoint = '/cgi-bin/luci/admin/network/lpac/api/' + action + '_profile';
 
         ui.showModal(_(currentState === 'enabled' ? 'Disabling Profile' : 'Enabling Profile'), [
             E('p', { 'class': 'spinning' }, _('Please wait...'))
@@ -731,7 +726,7 @@ return view.extend({
             E('p', { 'class': 'spinning' }, _('Please wait...'))
         ]);
 
-        return request.post('/cgi-bin/luci/admin/services/lpac/api/delete_profile', {
+        return request.post('/cgi-bin/luci/admin/network/lpac/api/delete_profile', {
             iccid: iccid,
             confirmed: true
         }).then(function(result) {
@@ -763,7 +758,7 @@ return view.extend({
 return view.extend({
     load: function() {
         return Promise.all([
-            request.get('/cgi-bin/luci/admin/services/lpac/api/system_info')
+            request.get('/cgi-bin/luci/admin/network/lpac/api/system_info')
         ]);
     },
 
@@ -882,28 +877,6 @@ config lpac 'config'
 config lpac 'advanced'
     option log_level 'info'
     option timeout '120'
-```
-
-#### 5. RPC ACL (`root/usr/share/rpcd/acl.d/luci-app-lpac.json`)
-
-**Purpose:** Define permissions for RPC calls
-
-```json
-{
-    "luci-app-lpac": {
-        "description": "Grant access to lpac functionality",
-        "read": {
-            "uci": [ "lpac" ],
-            "file": {
-                "/usr/bin/lpac": [ "exec" ]
-            }
-        },
-        "write": {
-            "uci": [ "lpac" ],
-            "cgi-io": [ "upload" ]
-        }
-    }
-}
 ```
 
 ## User Interface Design
@@ -1322,7 +1295,7 @@ OpenWrt routers typically operate in trusted local networks with single-user acc
 #### 1. Authentication and Authorization
 
 - **LuCI Authentication:** Use built-in LuCI login system (already handles sessions)
-- **RPC ACL:** Restrict lpac operations to admin users (standard OpenWrt practice)
+- **HTTP API authentication:** All HTTP API endpoints require LuCI authentication
 - **Input Validation:** Sanitize user inputs to prevent command injection
 
 #### 2. Command Injection Prevention
@@ -1411,7 +1384,7 @@ end
 
 1. ✅ Input validation (prevent injection)
 2. ✅ Use LuCI's built-in authentication
-3. ✅ RPC ACL for admin-only access
+3. ✅ HTTP API authentication for admin-only access
 4. ✅ Don't log sensitive data
 
 **Priority 2 (Nice to Have):**
@@ -1562,15 +1535,15 @@ define Package/luci-app-lpac/install
  $(INSTALL_DATA) ./htdocs/luci-static/resources/view/lpac/*.js \
   $(1)/www/luci-static/resources/view/lpac/
 
+ $(INSTALL_DIR) $(1)/www/luci-static/resources
+ $(INSTALL_DATA) ./htdocs/luci-static/resources/*.css \
+  $(1)/www/luci-static/resources/
+
  $(INSTALL_DIR) $(1)/etc/config
  $(INSTALL_CONF) ./root/etc/config/lpac $(1)/etc/config/
 
  $(INSTALL_DIR) $(1)/etc/uci-defaults
  $(INSTALL_BIN) ./root/etc/uci-defaults/* $(1)/etc/uci-defaults/
-
- $(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
- $(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/*.json \
-  $(1)/usr/share/rpcd/acl.d/
 endef
 
 $(eval $(call BuildPackage,luci-app-lpac))
@@ -1592,11 +1565,11 @@ uci -q get lpac.config || {
     uci commit lpac
 }
 
-# Restart rpcd to load new ACLs
-/etc/init.d/rpcd restart
-
 # Clear LuCI cache
 rm -rf /tmp/luci-*
+
+# Restart web server to load new LuCI modules
+/etc/init.d/uhttpd restart 2>/dev/null || true
 
 exit 0
 ```
@@ -1637,7 +1610,7 @@ make package/luci-app-lpac/compile V=s
 - ✅ Write Makefile (OpenWrt package definition)
 - ✅ Create README.md and LICENSE
 - ✅ Design and implement UCI configuration schema
-- ✅ Create RPC ACL configuration
+- ✅ Create HTTP API authentication configuration
 - ✅ Write uci-defaults post-install script
 
 ### Week 2: Backend Development
@@ -2063,7 +2036,7 @@ The project follows OpenWrt and LuCI best practices, ensuring seamless integrati
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Last Updated:** 2025-10-23
-**Status:** Planning Phase
+**Status:** MVP Complete, Build Testing Phase
 **Author:** Project Team
