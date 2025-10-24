@@ -48,13 +48,13 @@ debug() {
 
 # Initialize BUILD_ROOT based on environment
 # Hybrid approach: Use native FS for cache/extract (avoids symlink issues on WSL/Windows)
-if grep -qi microsoft /proc/version 2>/dev/null; then
+if grep -i microsoft /proc/version 2>/dev/null || [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
     # Running on WSL
     BUILD_ROOT="${HOME}/.local/build/openwrt-lpac"
     debug "Detected WSL environment - using native filesystem for builds"
 else
     # Running on native Linux
-    BUILD_ROOT="$SCRIPT_DIR/build-openwrt"
+    BUILD_ROOT="$SCRIPT_DIR/lpac/build-openwrt"
 fi
 
 show_usage() {
@@ -674,20 +674,20 @@ prepare_package() {
 
     mkdir -p "$package_dir"
 
-    # Copy lpac source (excluding build artifacts and scripts)
+    # Copy lpac source from lpac/ subdirectory (excluding build artifacts and scripts)
     rsync -a --exclude='build*' --exclude='output' --exclude='.git' \
-        --exclude='device-profiles' --exclude='*.sh' \
-        "$SCRIPT_DIR/" "$package_dir/"
+        --exclude='app_ipk_archive' --exclude='*.sh' \
+        "$SCRIPT_DIR/lpac/" "$package_dir/"
 
     # Verify required files exist
-    if [ ! -d "$SCRIPT_DIR/files" ]; then
-        error "Missing required files/ directory in app/"
+    if [ ! -d "$SCRIPT_DIR/lpac/files" ]; then
+        error "Missing required files/ directory in lpac source!"
         return 1
     fi
 
     # Ensure config files are executable
-    chmod +x "$SCRIPT_DIR/files/lpac.init" 2>/dev/null || true
-    chmod +x "$SCRIPT_DIR/files/90-lpac-config" 2>/dev/null || true
+    chmod +x "$SCRIPT_DIR/lpac/files/lpac.init" 2>/dev/null || true
+    chmod +x "$SCRIPT_DIR/lpac/files/90-lpac-config" 2>/dev/null || true
 
     # LuCI UI integration disabled - use separate luci-app-lpac package
 
@@ -891,6 +891,24 @@ main() {
         exit 0
     fi
 
+    # Handle clean command early (before profile validation)
+    if [ "$clean" = true ]; then
+        # For clean, we accept direct build directory names (e.g., ath79-nand)
+        # without requiring device profiles or --arch mode
+        if [ -n "$device" ]; then
+            # Check if it's a valid build directory
+            if [ -d "$BUILD_ROOT/$device" ]; then
+                clean_build "$device"
+                exit 0
+            else
+                log "No build directory to clean for $device"
+                exit 0
+            fi
+        else
+            error "No target specified for clean. Usage: $0 --clean <device-name or arch-name>"
+        fi
+    fi
+
     # Determine build mode
     if [ "$arch_mode" = true ]; then
         build_mode="generic"
@@ -939,12 +957,6 @@ main() {
             echo "  Default: ${OPENWRT_VERSIONS[0]}"
             echo "  Or specify any OpenWrt version as argument"
         fi
-        exit 0
-    fi
-
-    # Handle clean
-    if [ "$clean" = true ]; then
-        clean_build "$device"
         exit 0
     fi
 
