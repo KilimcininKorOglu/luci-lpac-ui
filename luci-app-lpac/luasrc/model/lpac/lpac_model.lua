@@ -628,7 +628,10 @@ function M.get_config()
 		pcsc_reader = uci:get("luci-lpac", "config", "pcsc_reader") or "",
 		log_level = uci:get("luci-lpac", "advanced", "log_level") or "info",
 		timeout = uci:get("luci-lpac", "advanced", "timeout") or "120",
-		download_cooldown = uci:get("luci-lpac", "advanced", "download_cooldown") or "60"
+		download_cooldown = uci:get("luci-lpac", "advanced", "download_cooldown") or "60",
+		auto_manage_wwan = uci:get("luci-lpac", "advanced", "auto_manage_wwan") or "1",
+		wwan_interface = uci:get("luci-lpac", "advanced", "wwan_interface") or "wwan",
+		auto_sim_power_cycle = uci:get("luci-lpac", "advanced", "auto_sim_power_cycle") or "1"
 	}
 
 	return util.create_result(true, "Success", config)
