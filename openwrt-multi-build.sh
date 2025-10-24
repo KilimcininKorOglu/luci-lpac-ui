@@ -449,12 +449,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lpac
 PKG_VERSION:=2.1.0
-PKG_RELEASE:=$(shell \
-	if git -C "$(PKG_BUILD_DIR)" rev-parse --git-dir >/dev/null 2>&1; then \
-		git -C "$(PKG_BUILD_DIR)" rev-list --count HEAD 2>/dev/null || echo "1"; \
-	else \
-		date +%Y%m%d%H%M 2>/dev/null || echo "1"; \
-	fi)
+PKG_RELEASE:=$(shell date +%Y%m%d)-1
 
 PKG_LICENSE:=AGPL-3.0
 PKG_LICENSE_FILES:=LICENSE
@@ -491,8 +486,9 @@ CMAKE_OPTIONS += \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/usr \
   -DCMAKE_INSTALL_LIBDIR=lib \
+  -DLPAC_WITH_APDU_PCSC=OFF \
   -DLPAC_WITH_APDU_AT=ON \
-  -DLPAC_WITH_APDU_PCSC=ON \
+  -DLPAC_WITH_APDU_UQMI=ON \
   -DLPAC_WITH_HTTP_CURL=ON
 
 define Build/Prepare
@@ -530,11 +526,6 @@ define Package/lpac/install
 
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/90-lpac-config $(1)/etc/uci-defaults/90-lpac-config
-
-	# Install LuCI web interface files if available
-	if [ -d "./luci_ui/luci-app-lpac/files" ]; then \
-		$(CP) ./luci_ui/luci-app-lpac/files/* $(1)/; \
-	fi
 endef
 
 $(eval $(call BuildPackage,lpac))
@@ -566,12 +557,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lpac
 PKG_VERSION:=2.1.0
-PKG_RELEASE:=$(shell \
-	if git -C "$(PKG_BUILD_DIR)" rev-parse --git-dir >/dev/null 2>&1; then \
-		git -C "$(PKG_BUILD_DIR)" rev-list --count HEAD 2>/dev/null || echo "1"; \
-	else \
-		date +%Y%m%d%H%M 2>/dev/null || echo "1"; \
-	fi)
+PKG_RELEASE:=$(shell date +%Y%m%d)-1
 
 PKG_LICENSE:=AGPL-3.0
 PKG_LICENSE_FILES:=LICENSE
@@ -623,8 +609,9 @@ MAKEFILE_EOF
     echo "  -DCMAKE_BUILD_TYPE=Release \\" >> "$output_file"
     echo "  -DCMAKE_INSTALL_PREFIX=/usr \\" >> "$output_file"
     echo "  -DCMAKE_INSTALL_LIBDIR=lib \\" >> "$output_file"
+    echo "  -DLPAC_WITH_APDU_PCSC=OFF \\" >> "$output_file"
     echo "  -DLPAC_WITH_APDU_AT=ON \\" >> "$output_file"
-    echo "  -DLPAC_WITH_APDU_PCSC=ON \\" >> "$output_file"
+    echo "  -DLPAC_WITH_APDU_UQMI=ON \\" >> "$output_file"
     echo "  -DLPAC_WITH_HTTP_CURL=ON" >> "$output_file"
 
     # Add compiler flags
@@ -670,11 +657,6 @@ define Package/lpac/install
 
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/90-lpac-config $(1)/etc/uci-defaults/90-lpac-config
-
-	# Install LuCI web interface files if available
-	if [ -d "./luci_ui/luci-app-lpac/files" ]; then \
-		$(CP) ./luci_ui/luci-app-lpac/files/* $(1)/; \
-	fi
 endef
 
 $(eval $(call BuildPackage,lpac))
@@ -707,16 +689,7 @@ prepare_package() {
     chmod +x "$SCRIPT_DIR/files/lpac.init" 2>/dev/null || true
     chmod +x "$SCRIPT_DIR/files/90-lpac-config" 2>/dev/null || true
 
-    # Copy LuCI UI if available
-    local luci_src="$SCRIPT_DIR/../luci_ui"
-    if [ -d "$luci_src" ]; then
-        log "Integrating LuCI web interface..."
-        mkdir -p "$package_dir/luci_ui"
-        rsync -a "$luci_src/" "$package_dir/luci_ui/"
-        log "LuCI UI integrated successfully"
-    else
-        debug "LuCI UI not found at $luci_src, skipping..."
-    fi
+    # LuCI UI integration disabled - use separate luci-app-lpac package
 
     # Generate Makefile
     generate_makefile "$device" "$sdk_dir"
@@ -776,11 +749,17 @@ build_version() {
     if [ "$pkg_count" -gt 0 ]; then
         log "Package(s) saved to: $output_dir"
 
-        # Copy to Windows-accessible directory
-        local project_ipk_dir="$SCRIPT_DIR/../build-ipk/$device/$version"
+        # Copy to Windows-accessible directory (build-ipk at project root)
+        local project_ipk_dir="$SCRIPT_DIR/build-ipk/$device/$version"
         mkdir -p "$project_ipk_dir"
         cp "$output_dir"/*.ipk "$project_ipk_dir/" 2>/dev/null
         log "Package(s) copied to: $project_ipk_dir"
+
+        # Archive to app_ipk_archive (at lpac source directory)
+        local archive_dir="$SCRIPT_DIR/lpac/app_ipk_archive/$device/$version"
+        mkdir -p "$archive_dir"
+        cp "$output_dir"/*.ipk "$archive_dir/" 2>/dev/null
+        log "Package(s) archived to: $archive_dir"
 
         # Show Windows path if running on WSL
         if grep -qi microsoft /proc/version 2>/dev/null; then
