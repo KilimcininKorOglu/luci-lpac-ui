@@ -716,11 +716,16 @@ build_version() {
     # Prepare package
     prepare_package "$sdk_dir" "$device"
 
-    # Update feeds
-    log "Updating feeds..."
+    # Update feeds (only if not already done)
     cd "$sdk_dir"
-    ./scripts/feeds update -a >> "$output_dir/build.log" 2>&1 || warn "Feed update had warnings"
-    ./scripts/feeds install -a >> "$output_dir/build.log" 2>&1 || warn "Feed install had warnings"
+    if [ ! -f "$sdk_dir/.feeds_updated" ]; then
+        log "Updating feeds..."
+        ./scripts/feeds update -a >> "$output_dir/build.log" 2>&1 || warn "Feed update had warnings"
+        ./scripts/feeds install -a >> "$output_dir/build.log" 2>&1 || warn "Feed install had warnings"
+        touch "$sdk_dir/.feeds_updated"
+    else
+        debug "Feeds already updated, skipping..."
+    fi
 
     # Configure
     log "Configuring build..."
@@ -749,20 +754,20 @@ build_version() {
     if [ "$pkg_count" -gt 0 ]; then
         log "Package(s) saved to: $output_dir"
 
-        # Copy to Windows-accessible directory (build-ipk at project root)
-        local project_ipk_dir="$SCRIPT_DIR/build-ipk/$device/$version"
+        # Copy to build-ipk directory (at lpac source directory)
+        local project_ipk_dir="$SCRIPT_DIR/lpac/build-ipk/$device/$version"
         mkdir -p "$project_ipk_dir"
         cp "$output_dir"/*.ipk "$project_ipk_dir/" 2>/dev/null
         log "Package(s) copied to: $project_ipk_dir"
 
-        # Archive to app_ipk_archive (at lpac source directory)
-        local archive_dir="$SCRIPT_DIR/lpac/app_ipk_archive/$device/$version"
+        # Archive to app_ipk_archive (at project root)
+        local archive_dir="$SCRIPT_DIR/app_ipk_archive/$device/$version"
         mkdir -p "$archive_dir"
         cp "$output_dir"/*.ipk "$archive_dir/" 2>/dev/null
         log "Package(s) archived to: $archive_dir"
 
         # Show Windows path if running on WSL
-        if grep -qi microsoft /proc/version 2>/dev/null; then
+        if grep -i microsoft /proc/version 2>/dev/null || [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
             local win_path=$(wslpath -w "$project_ipk_dir" 2>/dev/null || echo "")
             [ -n "$win_path" ] && log "Windows path: $win_path"
         fi
@@ -799,6 +804,22 @@ clean_all() {
 main() {
     # Start timer
     local start_time=$(date +%s)
+
+    # Show directory structure info (skip for help/list commands)
+    if [ "$1" != "--help" ] && [ "$1" != "-h" ] && [ "$1" != "--list-targets" ] && [ "$1" != "-l" ] && [ "$1" != "-v" ] && [ "$1" != "--list-versions" ]; then
+        log "Directory Structure:"
+        log "  BUILD_ROOT: $BUILD_ROOT"
+        log "    ├─ SDK cache and extraction"
+        log "    └─ Build output: \$BUILD_ROOT/<device>/output/<version>/"
+        log "  "
+        log "  Project Root: $SCRIPT_DIR/"
+        log "    └─ app_ipk_archive/ - Archived IPK packages by device/version"
+        log "  "
+        log "  LPAC Source: $SCRIPT_DIR/lpac/"
+        log "    ├─ files/           - OpenWrt config files (lpac.config, lpac.init, etc.)"
+        log "    └─ build-ipk/       - Copied IPK packages for easy access"
+        log ""
+    fi
 
     local list_devices_flag=false
     local list_targets_flag=false
@@ -986,7 +1007,7 @@ main() {
 
     for version in "${versions_to_build[@]}"; do
         # Create output directory
-        mkdir -p "$SCRIPT_DIR/build-openwrt/$device/output/$version"
+        mkdir -p "$BUILD_ROOT/$device/output/$version"
 
         if build_version "$version" "$device"; then
             ((success_count++))
@@ -1023,7 +1044,7 @@ main() {
     log "Successful builds: $success_count"
     log "Failed builds: $fail_count"
     log "Total build time: $time_str"
-    log "Output directory: $SCRIPT_DIR/build-openwrt/$device/output/"
+    log "Output directory: $BUILD_ROOT/$device/output/"
     log "================================================================"
 }
 
