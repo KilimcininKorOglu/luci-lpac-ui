@@ -362,7 +362,7 @@ download_sdk() {
         log "File size: ~300MB (may take 5-15 minutes depending on connection)"
 
         # Download with timeout (1 hour for slow connections)
-        if ! timeout 3600 wget --progress=bar:force -O "$cache_file.tmp" "$sdk_url"; then
+        if ! timeout 3600 wget --progress=bar:force --no-verbose -O "$cache_file.tmp" "$sdk_url" 2>&1 | grep -v "^$"; then
             rm -f "$cache_file.tmp"
             error "Failed to download SDK from $sdk_url"
         fi
