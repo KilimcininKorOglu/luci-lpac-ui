@@ -6,17 +6,23 @@ module("luci.controller.lpac", package.seeall)
 -- Helper function to get device settings from UCI
 local function get_device_settings()
 	local uci = require "luci.model.uci".cursor()
+	local driver = uci:get("lpac", "device", "driver") or "at"
+	local at_device = uci:get("lpac", "device", "at_device") or "/dev/ttyUSB2"
+	local mbim_device = uci:get("lpac", "device", "mbim_device") or "/dev/cdc-wdm0"
 	local qmi_device = uci:get("lpac", "device", "qmi_device") or "/dev/cdc-wdm0"
-	local serial_device = uci:get("lpac", "device", "serial_device") or ""
-	return qmi_device, serial_device
+	local http_client = uci:get("lpac", "device", "http_client") or "curl"
+	return driver, at_device, mbim_device, qmi_device, http_client
 end
 
 -- Helper function to save device settings to UCI
-local function save_device_settings(qmi_device, serial_device)
+local function save_device_settings(driver, at_device, mbim_device, qmi_device, http_client)
 	local uci = require "luci.model.uci".cursor()
 	uci:set("lpac", "device", "settings")
+	uci:set("lpac", "device", "driver", driver or "at")
+	uci:set("lpac", "device", "at_device", at_device or "/dev/ttyUSB2")
+	uci:set("lpac", "device", "mbim_device", mbim_device or "/dev/cdc-wdm0")
 	uci:set("lpac", "device", "qmi_device", qmi_device or "/dev/cdc-wdm0")
-	uci:set("lpac", "device", "serial_device", serial_device or "")
+	uci:set("lpac", "device", "http_client", http_client or "curl")
 	uci:commit("lpac")
 	return true
 end
@@ -43,9 +49,11 @@ function action_add_profile()
 	local confirmation_code = http.formvalue("confirmation_code")
 
 	-- Get device settings from UCI (or use form values as override)
-	local qmi_device, serial_device = get_device_settings()
+	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	driver = http.formvalue("driver") or driver
+	at_device = http.formvalue("at_device") or at_device
+	mbim_device = http.formvalue("mbim_device") or mbim_device
 	qmi_device = http.formvalue("qmi_device") or qmi_device
-	serial_device = http.formvalue("serial_device") or serial_device
 
 	if not activation_code or activation_code == "" then
 		http.prepare_content("application/json")
@@ -56,13 +64,20 @@ function action_add_profile()
 		return
 	end
 
-	-- Build command with wrapper script and device options
-	local cmd = string.format("/usr/bin/quectel_lpad_json -q %s", util.shellquote(qmi_device))
+	-- Build command with lpac_json wrapper and device options
+	local cmd = string.format("/usr/bin/lpac_json -d %s", util.shellquote(driver))
 
-	if serial_device ~= "" then
-		cmd = cmd .. string.format(" -s %s", util.shellquote(serial_device))
+	-- Add device paths based on driver type
+	if driver == "at" or driver == "at_csim" then
+		cmd = cmd .. string.format(" -t %s", util.shellquote(at_device))
+	elseif driver == "mbim" then
+		cmd = cmd .. string.format(" -m %s", util.shellquote(mbim_device))
+	elseif driver == "qmi" or driver == "uqmi" then
+		cmd = cmd .. string.format(" -q %s", util.shellquote(qmi_device))
+	-- qmi_qrtr doesn't need device path
 	end
 
+	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
 	cmd = cmd .. string.format(" add %s", util.shellquote(activation_code))
 
 	if confirmation_code and confirmation_code ~= "" then
@@ -93,30 +108,38 @@ function action_delete_profile()
 	local util = require "luci.util"
 	local json = require "luci.jsonc"
 
-	local profile_id = tonumber(http.formvalue("profile_id"))
+	local iccid = http.formvalue("iccid")
 
 	-- Get device settings from UCI (or use form values as override)
-	local qmi_device, serial_device = get_device_settings()
+	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	driver = http.formvalue("driver") or driver
+	at_device = http.formvalue("at_device") or at_device
+	mbim_device = http.formvalue("mbim_device") or mbim_device
 	qmi_device = http.formvalue("qmi_device") or qmi_device
-	serial_device = http.formvalue("serial_device") or serial_device
 
-	if not profile_id or profile_id < 1 or profile_id > 16 then
+	if not iccid or iccid == "" then
 		http.prepare_content("application/json")
 		http.write_json({
 			success = false,
-			error = "Invalid profile ID (1-16)"
+			error = "ICCID is required"
 		})
 		return
 	end
 
-	-- Build command with wrapper script and device options
-	local cmd = string.format("/usr/bin/quectel_lpad_json -q %s", util.shellquote(qmi_device))
+	-- Build command with lpac_json wrapper and device options
+	local cmd = string.format("/usr/bin/lpac_json -d %s", util.shellquote(driver))
 
-	if serial_device ~= "" then
-		cmd = cmd .. string.format(" -s %s", util.shellquote(serial_device))
+	-- Add device paths based on driver type
+	if driver == "at" or driver == "at_csim" then
+		cmd = cmd .. string.format(" -t %s", util.shellquote(at_device))
+	elseif driver == "mbim" then
+		cmd = cmd .. string.format(" -m %s", util.shellquote(mbim_device))
+	elseif driver == "qmi" or driver == "uqmi" then
+		cmd = cmd .. string.format(" -q %s", util.shellquote(qmi_device))
 	end
 
-	cmd = cmd .. string.format(" delete %d", profile_id)
+	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
+	cmd = cmd .. string.format(" delete %s", util.shellquote(iccid))
 
 	-- Execute command
 	local output = util.exec(cmd .. " 2>&1")
@@ -143,17 +166,25 @@ function action_list_profiles()
 	local json = require "luci.jsonc"
 
 	-- Get device settings from UCI (or use form values as override)
-	local qmi_device, serial_device = get_device_settings()
+	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	driver = http.formvalue("driver") or driver
+	at_device = http.formvalue("at_device") or at_device
+	mbim_device = http.formvalue("mbim_device") or mbim_device
 	qmi_device = http.formvalue("qmi_device") or qmi_device
-	serial_device = http.formvalue("serial_device") or serial_device
 
 	-- Build command with device options
-	local cmd = string.format("/usr/bin/quectel_lpad_json -q %s", util.shellquote(qmi_device))
+	local cmd = string.format("/usr/bin/lpac_json -d %s", util.shellquote(driver))
 
-	if serial_device ~= "" then
-		cmd = cmd .. string.format(" -s %s", util.shellquote(serial_device))
+	-- Add device paths based on driver type
+	if driver == "at" or driver == "at_csim" then
+		cmd = cmd .. string.format(" -t %s", util.shellquote(at_device))
+	elseif driver == "mbim" then
+		cmd = cmd .. string.format(" -m %s", util.shellquote(mbim_device))
+	elseif driver == "qmi" or driver == "uqmi" then
+		cmd = cmd .. string.format(" -q %s", util.shellquote(qmi_device))
 	end
 
+	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
 	cmd = cmd .. " list 2>&1"
 
 	local output = util.exec(cmd)
@@ -173,29 +204,49 @@ function action_list_profiles()
 	end
 end
 
--- Get modem status
+-- Get modem/chip status
 function action_get_status()
 	local http = require "luci.http"
 	local util = require "luci.util"
+	local json = require "luci.jsonc"
 
 	-- Get device settings from UCI (or use form values as override)
-	local qmi_device, _ = get_device_settings()
+	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	driver = http.formvalue("driver") or driver
+	at_device = http.formvalue("at_device") or at_device
+	mbim_device = http.formvalue("mbim_device") or mbim_device
 	qmi_device = http.formvalue("qmi_device") or qmi_device
 
-	-- Get modem status
-	local cmd = string.format("qmicli -d %s --uim-get-card-status 2>&1", util.shellquote(qmi_device))
+	-- Build command with lpac_json wrapper to get chip info/status
+	local cmd = string.format("/usr/bin/lpac_json -d %s", util.shellquote(driver))
+
+	-- Add device paths based on driver type
+	if driver == "at" or driver == "at_csim" then
+		cmd = cmd .. string.format(" -t %s", util.shellquote(at_device))
+	elseif driver == "mbim" then
+		cmd = cmd .. string.format(" -m %s", util.shellquote(mbim_device))
+	elseif driver == "qmi" or driver == "uqmi" then
+		cmd = cmd .. string.format(" -q %s", util.shellquote(qmi_device))
+	end
+
+	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
+	cmd = cmd .. " status 2>&1"
+
 	local output = util.exec(cmd)
 
-	-- Check if modem is accessible
-	local modem_available = not output:match("error") and not output:match("couldn't find")
+	-- Parse JSON output from wrapper
+	local result = json.parse(output)
 
 	http.prepare_content("application/json")
-	http.write_json({
-		success = modem_available,
-		status = output,
-		modem_available = modem_available,
-		device = qmi_device
-	})
+	if result then
+		http.write_json(result)
+	else
+		http.write_json({
+			success = false,
+			error = "Failed to parse response",
+			raw_output = output
+		})
+	end
 end
 
 -- Detect available modem devices
@@ -206,30 +257,11 @@ function action_detect_devices()
 	local fs = require "nixio.fs"
 
 	local devices = {
-		qmi_devices = {},
-		serial_devices = {}
+		at_devices = {},
+		mbim_devices = {}
 	}
 
-	-- Detect QMI devices (/dev/cdc-wdm*)
-	local qmi_pattern = "/dev/cdc-wdm"
-	for i = 0, 9 do
-		local dev = qmi_pattern .. i
-		if fs.stat(dev, "type") == "chr" then
-			-- Check if device is accessible
-			local test_cmd = string.format("qmicli -d %s --get-service-version-info 2>&1 || uqmi -d %s --get-versions 2>&1 || rqmi -d %s --get-versions 2>&1", dev, dev, dev)
-			local output = util.exec(test_cmd)
-			local accessible = not output:match("error opening device") and not output:match("No such file")
-
-			table.insert(devices.qmi_devices, {
-				path = dev,
-				name = "cdc-wdm" .. i,
-				accessible = accessible,
-				type = "QMI"
-			})
-		end
-	end
-
-	-- Detect serial/AT devices (/dev/ttyUSB*)
+	-- Detect AT devices (/dev/ttyUSB*)
 	local serial_pattern = "/dev/ttyUSB"
 	for i = 0, 9 do
 		local dev = serial_pattern .. i
@@ -239,7 +271,7 @@ function action_detect_devices()
 			local output = util.exec(at_test)
 			local accessible = not output:match("Permission denied") and not output:match("No such file")
 
-			table.insert(devices.serial_devices, {
+			table.insert(devices.at_devices, {
 				path = dev,
 				name = "ttyUSB" .. i,
 				accessible = accessible,
@@ -257,7 +289,7 @@ function action_detect_devices()
 			local output = util.exec(at_test)
 			local accessible = not output:match("Permission denied") and not output:match("No such file")
 
-			table.insert(devices.serial_devices, {
+			table.insert(devices.at_devices, {
 				path = dev,
 				name = "ttyACM" .. i,
 				accessible = accessible,
@@ -266,12 +298,31 @@ function action_detect_devices()
 		end
 	end
 
+	-- Detect MBIM devices (/dev/cdc-wdm*)
+	local mbim_pattern = "/dev/cdc-wdm"
+	for i = 0, 9 do
+		local dev = mbim_pattern .. i
+		if fs.stat(dev, "type") == "chr" then
+			-- Check if device is accessible
+			local test_cmd = string.format("mbimcli -d %s --query-device-caps 2>&1 || qmicli -d %s --get-service-version-info 2>&1", dev, dev)
+			local output = util.exec(test_cmd)
+			local accessible = not output:match("error opening device") and not output:match("No such file")
+
+			table.insert(devices.mbim_devices, {
+				path = dev,
+				name = "cdc-wdm" .. i,
+				accessible = accessible,
+				type = "MBIM"
+			})
+		end
+	end
+
 	http.prepare_content("application/json")
 	http.write_json({
 		success = true,
-		qmi_devices = devices.qmi_devices,
-		serial_devices = devices.serial_devices,
-		total_devices = #devices.qmi_devices + #devices.serial_devices
+		at_devices = devices.at_devices,
+		mbim_devices = devices.mbim_devices,
+		total_devices = #devices.at_devices + #devices.mbim_devices
 	})
 end
 
@@ -279,13 +330,16 @@ end
 function action_get_settings()
 	local http = require "luci.http"
 
-	local qmi_device, serial_device = get_device_settings()
+	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
 
 	http.prepare_content("application/json")
 	http.write_json({
 		success = true,
+		driver = driver,
+		at_device = at_device,
+		mbim_device = mbim_device,
 		qmi_device = qmi_device,
-		serial_device = serial_device
+		http_client = http_client
 	})
 end
 
@@ -293,25 +347,41 @@ end
 function action_save_settings()
 	local http = require "luci.http"
 
+	local driver = http.formvalue("driver")
+	local at_device = http.formvalue("at_device")
+	local mbim_device = http.formvalue("mbim_device")
 	local qmi_device = http.formvalue("qmi_device")
-	local serial_device = http.formvalue("serial_device")
+	local http_client = http.formvalue("http_client")
 
-	if not qmi_device or qmi_device == "" then
+	if not driver or driver == "" then
 		http.prepare_content("application/json")
 		http.write_json({
 			success = false,
-			error = "QMI device is required"
+			error = "Driver selection is required"
 		})
 		return
 	end
 
-	local success = save_device_settings(qmi_device, serial_device)
+	-- Validate driver
+	if driver ~= "at" and driver ~= "at_csim" and driver ~= "mbim" and driver ~= "qmi" and driver ~= "qmi_qrtr" and driver ~= "uqmi" then
+		http.prepare_content("application/json")
+		http.write_json({
+			success = false,
+			error = "Invalid driver. Must be: at, at_csim, mbim, qmi, qmi_qrtr, or uqmi"
+		})
+		return
+	end
+
+	local success = save_device_settings(driver, at_device, mbim_device, qmi_device, http_client)
 
 	http.prepare_content("application/json")
 	http.write_json({
 		success = success,
+		driver = driver,
+		at_device = at_device,
+		mbim_device = mbim_device,
 		qmi_device = qmi_device,
-		serial_device = serial_device,
+		http_client = http_client,
 		message = "Device settings saved to UCI configuration"
 	})
 end

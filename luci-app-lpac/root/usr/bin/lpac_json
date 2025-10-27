@@ -1,0 +1,313 @@
+#!/bin/sh
+# Copyright 2025 Kerem
+# Licensed under MIT
+# Wrapper script for lpac - Adapts lpac JSON output for LuCI interface
+
+# Configuration
+LPAC_BIN="/usr/bin/lpac"
+APDU_DRIVER="${LPAC_APDU:-at}"
+AT_DEVICE="${LPAC_APDU_AT_DEVICE:-/dev/ttyUSB2}"
+MBIM_DEVICE="${LPAC_APDU_MBIM_DEVICE:-/dev/cdc-wdm0}"
+QMI_DEVICE="${LPAC_APDU_QMI_DEVICE:-/dev/cdc-wdm0}"
+HTTP_CLIENT="${LPAC_HTTP:-curl}"
+TIMEOUT=90
+
+# Parse command-line options for device override
+while getopts "d:t:m:q:h:" opt; do
+    case "$opt" in
+        d) APDU_DRIVER="$OPTARG" ;;      # Driver: at, at_csim, mbim, qmi, qmi_qrtr, uqmi
+        t) AT_DEVICE="$OPTARG" ;;         # AT device (ttyUSB*)
+        m) MBIM_DEVICE="$OPTARG" ;;       # MBIM device (cdc-wdm*)
+        q) QMI_DEVICE="$OPTARG" ;;        # QMI device (cdc-wdm*)
+        h) HTTP_CLIENT="$OPTARG" ;;       # HTTP client: curl, wget
+    esac
+done
+shift $((OPTIND-1))
+
+# Set environment variables for lpac
+export LPAC_APDU="$APDU_DRIVER"
+export LPAC_HTTP="$HTTP_CLIENT"
+
+case "$APDU_DRIVER" in
+    at|at_csim)
+        export LPAC_APDU_AT_DEVICE="$AT_DEVICE"
+        DEVICE_TO_CHECK="$AT_DEVICE"
+        ;;
+    mbim)
+        export LPAC_APDU_MBIM_DEVICE="$MBIM_DEVICE"
+        DEVICE_TO_CHECK="$MBIM_DEVICE"
+        ;;
+    qmi|uqmi)
+        export LPAC_APDU_QMI_DEVICE="$QMI_DEVICE"
+        DEVICE_TO_CHECK="$QMI_DEVICE"
+        ;;
+    qmi_qrtr)
+        # QMI QRTR doesn't need a device file - it uses Qualcomm IPC Router
+        DEVICE_TO_CHECK=""
+        ;;
+    *)
+        echo "{\"success\": false, \"error\": \"Invalid APDU driver: $APDU_DRIVER. Valid: at, at_csim, mbim, qmi, qmi_qrtr, uqmi\"}"
+        exit 1
+        ;;
+esac
+
+# Function to convert lpac JSON to LuCI-compatible format
+convert_lpac_json() {
+    local lpac_output="$1"
+    local action="$2"
+
+    # Extract lpac response fields
+    local code=$(echo "$lpac_output" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
+    local message=$(echo "$lpac_output" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+
+    # Success if code is 0
+    if [ "$code" = "0" ]; then
+        echo "{"
+        echo "  \"success\": true,"
+        echo "  \"message\": \"$([ -n "$message" ] && echo "$message" || echo "Operation completed successfully")\","
+        echo "  \"output\": $(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$/"/' | tr -d '\n')"
+        echo "}"
+    else
+        # Extract error details
+        local error_msg="$message"
+        if [ -z "$error_msg" ]; then
+            error_msg="Operation failed with code: $code"
+        fi
+
+        echo "{"
+        echo "  \"success\": false,"
+        echo "  \"error\": \"$error_msg\","
+        echo "  \"output\": $(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$/"/' | tr -d '\n')"
+        echo "}"
+    fi
+}
+
+# Function to extract profile list from lpac JSON
+extract_profiles() {
+    local lpac_output="$1"
+
+    # Check if successful
+    local code=$(echo "$lpac_output" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
+
+    if [ "$code" != "0" ]; then
+        echo "{"
+        echo "  \"success\": false,"
+        echo "  \"profiles\": [],"
+        echo "  \"error\": \"Failed to list profiles\""
+        echo "}"
+        return
+    fi
+
+    # Parse profiles from lpac data.profiles array
+    echo "{"
+    echo "  \"success\": true,"
+    echo "  \"profiles\": ["
+
+    # Extract ICCID, state, and nickname from each profile
+    # lpac format: "profiles": [{"iccid": "...", "state": 0/1, "nickname": "..."}, ...]
+    local first=1
+    echo "$lpac_output" | grep -o '"iccid"[[:space:]]*:[[:space:]]*"[^"]*"' | while IFS= read -r iccid_line; do
+        ICCID=$(echo "$iccid_line" | sed 's/.*"\([^"]*\)".*/\1/')
+
+        # Try to find state for this ICCID (0=disabled, 1=enabled)
+        STATE="unknown"
+        if echo "$lpac_output" | grep -A 3 "$ICCID" | grep -q '"state"[[:space:]]*:[[:space:]]*1'; then
+            STATE="enabled"
+        elif echo "$lpac_output" | grep -A 3 "$ICCID" | grep -q '"state"[[:space:]]*:[[:space:]]*0'; then
+            STATE="disabled"
+        fi
+
+        # Extract nickname if present
+        NICKNAME=$(echo "$lpac_output" | grep -A 5 "$ICCID" | grep -o '"nickname"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/' | head -1)
+
+        if [ $first -eq 0 ]; then
+            echo "    ,"
+        fi
+        first=0
+
+        echo "    {"
+        echo "      \"iccid\": \"$ICCID\","
+        echo "      \"state\": \"$STATE\""
+        if [ -n "$NICKNAME" ]; then
+            echo "      ,\"nickname\": \"$NICKNAME\""
+        fi
+        echo "    }"
+    done
+
+    echo "  ],"
+    echo "  \"raw_output\": $(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$/"/' | tr -d '\n')"
+    echo "}"
+}
+
+# Check if lpac binary exists
+if [ ! -x "$LPAC_BIN" ]; then
+    echo "{\"success\": false, \"error\": \"lpac binary not found at $LPAC_BIN\"}"
+    exit 1
+fi
+
+# Check if device exists
+if [ ! -e "$DEVICE_TO_CHECK" ]; then
+    echo "{\"success\": false, \"error\": \"Device not found at $DEVICE_TO_CHECK\"}"
+    exit 1
+fi
+
+# Parse action
+ACTION="$1"
+
+case "$ACTION" in
+    add)
+        ACTIVATION_CODE="$2"
+        CONFIRMATION_CODE="$3"
+
+        # Validation
+        if [ -z "$ACTIVATION_CODE" ]; then
+            echo "{\"success\": false, \"error\": \"Activation code is required\"}"
+            exit 1
+        fi
+
+        # Build lpac command
+        # lpac profile download -a 'LPA:...' or -s server -m matching-id [-c confirmation]
+        if echo "$ACTIVATION_CODE" | grep -q '^LPA:'; then
+            # QR code format
+            CMD="$LPAC_BIN profile download -a '$ACTIVATION_CODE'"
+        else
+            # Assume it's a matching ID, need server
+            echo "{\"success\": false, \"error\": \"Invalid activation code format. Use QR code (LPA:...) or provide server and matching ID separately\"}"
+            exit 1
+        fi
+
+        # Add confirmation code if provided
+        if [ -n "$CONFIRMATION_CODE" ]; then
+            CMD="$CMD -c '$CONFIRMATION_CODE'"
+        fi
+
+        # Execute with timeout
+        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\", \"output\": \"$OUTPUT\"}"
+            exit 0
+        fi
+
+        # Convert lpac JSON to LuCI format
+        convert_lpac_json "$OUTPUT" "download"
+        exit 0
+        ;;
+
+    delete)
+        ICCID="$2"
+
+        # Validation
+        if [ -z "$ICCID" ]; then
+            echo "{\"success\": false, \"error\": \"ICCID is required\"}"
+            exit 1
+        fi
+
+        # Build lpac command
+        CMD="$LPAC_BIN profile delete '$ICCID'"
+
+        # Execute with timeout
+        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\", \"output\": \"$OUTPUT\"}"
+            exit 0
+        fi
+
+        # Convert lpac JSON to LuCI format
+        convert_lpac_json "$OUTPUT" "delete"
+        exit 0
+        ;;
+
+    enable)
+        ICCID="$2"
+
+        if [ -z "$ICCID" ]; then
+            echo "{\"success\": false, \"error\": \"ICCID is required\"}"
+            exit 1
+        fi
+
+        CMD="$LPAC_BIN profile enable '$ICCID'"
+        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\", \"output\": \"$OUTPUT\"}"
+            exit 0
+        fi
+
+        convert_lpac_json "$OUTPUT" "enable"
+        exit 0
+        ;;
+
+    disable)
+        ICCID="$2"
+
+        if [ -z "$ICCID" ]; then
+            echo "{\"success\": false, \"error\": \"ICCID is required\"}"
+            exit 1
+        fi
+
+        CMD="$LPAC_BIN profile disable '$ICCID'"
+        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\", \"output\": \"$OUTPUT\"}"
+            exit 0
+        fi
+
+        convert_lpac_json "$OUTPUT" "disable"
+        exit 0
+        ;;
+
+    list)
+        # List profiles using lpac
+        OUTPUT=$(timeout $TIMEOUT $LPAC_BIN profile list 2>&1)
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\", \"profiles\": []}"
+            exit 0
+        fi
+
+        # Extract profiles from lpac JSON
+        extract_profiles "$OUTPUT"
+        exit 0
+        ;;
+
+    info)
+        # Get chip info
+        OUTPUT=$(timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\"}"
+            exit 0
+        fi
+
+        convert_lpac_json "$OUTPUT" "info"
+        exit 0
+        ;;
+
+    status)
+        # Get chip info as status
+        OUTPUT=$(timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\"}"
+            exit 0
+        fi
+
+        convert_lpac_json "$OUTPUT" "status"
+        exit 0
+        ;;
+
+    *)
+        echo "{\"success\": false, \"error\": \"Invalid action: $ACTION. Valid actions: add, delete, enable, disable, list, info, status\"}"
+        exit 1
+        ;;
+esac

@@ -82,6 +82,7 @@ echo -e "${YELLOW}[2/6]${NC} Creating directory structure..."
 mkdir -p "$DATA_DIR/usr/lib/lua/luci/controller"
 mkdir -p "$DATA_DIR/usr/lib/lua/luci/view/lpac"
 mkdir -p "$DATA_DIR/usr/bin"
+mkdir -p "$DATA_DIR/etc/config"
 
 # Copy LuCI files
 echo -e "${YELLOW}[3/6]${NC} Copying LuCI files..."
@@ -91,9 +92,12 @@ cp "$PROJECT_DIR/luasrc/controller/lpac.lua" "$DATA_DIR/usr/lib/lua/luci/control
 echo "  → Template view (profiles.htm)"
 cp "$PROJECT_DIR/luasrc/view/lpac/profiles.htm" "$DATA_DIR/usr/lib/lua/luci/view/lpac/"
 
-echo "  → Wrapper script (quectel_lpad_json)"
-cp "$PROJECT_DIR/root/usr/bin/quectel_lpad_json" "$DATA_DIR/usr/bin/"
-chmod 755 "$DATA_DIR/usr/bin/quectel_lpad_json"
+echo "  → Wrapper script (lpac_json)"
+cp "$PROJECT_DIR/root/usr/bin/lpac_json" "$DATA_DIR/usr/bin/"
+chmod 755 "$DATA_DIR/usr/bin/lpac_json"
+
+echo "  → UCI configuration (lpac)"
+cp "$PROJECT_DIR/root/etc/config/lpac" "$DATA_DIR/etc/config/"
 
 # Copy additional root files if they exist
 if [ -d "$PROJECT_DIR/root" ]; then
@@ -126,9 +130,10 @@ Architecture: $PKG_ARCH
 Installed-Size: $(du -sb "$DATA_DIR" | cut -f1)
 Maintainer: Kerem <kerem@example.com>
 Description: LuCI Support for eSIM Profile Management (LPAC)
- Web interface for managing eSIM profiles on Quectel modems.
- Provides add, delete, list, and status operations for eSIM profiles.
- Requires one of: qmicli (libqmi-utils), uqmi, or rqmi for QMI communication.
+ Web interface for managing eSIM profiles on Quectel modems via lpac binary.
+ Supports multiple APDU drivers: AT, AT_CSIM, and MBIM.
+ Provides ICCID-based profile management: add, delete, enable, disable, list.
+ Requires lpac binary and curl/wget for HTTP communication.
  Classic LuCI template-based architecture.
 EOF
 
@@ -235,7 +240,8 @@ echo ""
 echo -e "${BLUE}Contents:${NC}"
 echo -e "  ✓ Controller:  /usr/lib/lua/luci/controller/lpac.lua"
 echo -e "  ✓ View:        /usr/lib/lua/luci/view/lpac/profiles.htm"
-echo -e "  ✓ Wrapper:     /usr/bin/quectel_lpad_json"
+echo -e "  ✓ Wrapper:     /usr/bin/lpac_json"
+echo -e "  ✓ UCI Config:  /etc/config/lpac"
 echo ""
 echo -e "${BLUE}Installation:${NC}"
 echo -e "  opkg install $IPK_FILE"

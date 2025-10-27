@@ -138,7 +138,7 @@
 
     <!-- Device Selection Section -->
     <div class="lpac-section">
-        <h3><%:Modem Device Selection%></h3>
+        <h3><%:Modem Device & Driver Selection%></h3>
 
         <div class="lpac-form-group">
             <button class="lpac-button lpac-button-secondary" onclick="detectDevices()">
@@ -148,22 +148,48 @@
 
         <div id="device_selection_container" style="margin-top: 15px; display: none;">
             <div class="lpac-form-group">
-                <label class="lpac-form-label"><%:QMI Device%> (<%:for eSIM management%>)</label>
-                <select id="qmi_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
-                    <option value=""><%:-- Select QMI Device --%></option>
+                <label class="lpac-form-label"><%:APDU Driver%></label>
+                <select id="driver_select" class="lpac-select" style="width: 100%; max-width: 400px;" onchange="updateDeviceInputs()">
+                    <option value="at">AT (ETSI TS 127 007) - Recommended for EP06-E</option>
+                    <option value="at_csim">AT_CSIM (Faster, may not work on all modems)</option>
+                    <option value="mbim">MBIM (USB Mobile Broadband Interface)</option>
+                    <option value="qmi">QMI (Qualcomm MSM Interface)</option>
+                    <option value="qmi_qrtr">QMI QRTR (QMI over QRTR)</option>
+                    <option value="uqmi">uQMI (OpenWrt QMI command line tool)</option>
                 </select>
                 <span class="lpac-form-hint">
-                    <%:Select /dev/cdc-wdm* device for QMI communication%>
+                    <%:Select APDU driver based on your modem type%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group" id="at_device_group">
+                <label class="lpac-form-label"><%:AT Serial Device%></label>
+                <select id="at_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
+                    <option value=""><%:-- Select AT Device --%></option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select /dev/ttyUSB* or /dev/ttyACM* device for AT driver%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group" id="mbim_device_group" style="display: none;">
+                <label class="lpac-form-label"><%:MBIM Device%></label>
+                <select id="mbim_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
+                    <option value=""><%:-- Select MBIM Device --%></option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select /dev/cdc-wdm* device for MBIM driver%>
                 </span>
             </div>
 
             <div class="lpac-form-group">
-                <label class="lpac-form-label"><%:Serial Device%> (<%:optional, for AT commands%>)</label>
-                <select id="serial_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
-                    <option value=""><%:-- Select Serial Device --%></option>
+                <label class="lpac-form-label"><%:HTTP Client%></label>
+                <select id="http_client_select" class="lpac-select" style="width: 100%; max-width: 200px;">
+                    <option value="curl">curl</option>
+                    <option value="wget">wget</option>
                 </select>
                 <span class="lpac-form-hint">
-                    <%:Select /dev/ttyUSB* or /dev/ttyACM* device for AT+QESIM commands%>
+                    <%:Select HTTP client for SM-DP+ communication%>
                 </span>
             </div>
 
@@ -192,8 +218,8 @@
                 <thead>
                     <tr style="background: #f5f5f5;">
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:ICCID%></th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:Nickname%></th>
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:Status%></th>
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:Slot%></th>
                     </tr>
                 </thead>
                 <tbody id="profiles_tbody">
@@ -254,20 +280,18 @@
         <h3><%:Delete eSIM Profile%></h3>
 
         <div class="lpac-form-group">
-            <label class="lpac-form-label" for="delete_profile_id"><%:Profile ID%></label>
-            <select id="delete_profile_id" class="lpac-select">
-                <% for i=1,16 do %>
-                <option value="<%=i%>">Profile <%=i%></option>
-                <% end %>
+            <label class="lpac-form-label" for="delete_iccid"><%:Select Profile to Delete%></label>
+            <select id="delete_iccid" class="lpac-select" style="width: 100%; max-width: 500px;">
+                <option value=""><%:-- No profiles loaded, click Refresh Profile List --%></option>
             </select>
             <span class="lpac-form-hint">
-                <%:Select profile ID to delete (1-16)%>
+                <%:Select profile by ICCID. Refresh profile list to populate this dropdown.%>
             </span>
         </div>
 
         <div class="lpac-form-group">
             <button class="lpac-button lpac-button-danger" onclick="deleteProfile()">
-                <%:Delete Profile%>
+                <%:Delete Selected Profile%>
             </button>
         </div>
 
@@ -291,25 +315,49 @@
 
 <script>
 // Global device settings (loaded from UCI on page load)
-var selectedQmiDevice = '/dev/cdc-wdm0';
-var selectedSerialDevice = '';
+var selectedDriver = 'at';
+var selectedAtDevice = '/dev/ttyUSB2';
+var selectedMbimDevice = '/dev/cdc-wdm0';
+var selectedHttpClient = 'curl';
+var installedProfiles = []; // Cache for installed profiles
 
 // Load device settings from UCI
 function loadDeviceSettings() {
     XHR.get('<%=url("admin/network/lpac/get_settings")%>', null, function(x, data) {
         if (data.success) {
-            selectedQmiDevice = data.qmi_device || '/dev/cdc-wdm0';
-            selectedSerialDevice = data.serial_device || '';
+            selectedDriver = data.driver || 'at';
+            selectedAtDevice = data.at_device || '/dev/ttyUSB2';
+            selectedMbimDevice = data.mbim_device || '/dev/cdc-wdm0';
+            selectedHttpClient = data.http_client || 'curl';
         }
     });
+}
+
+// Update device input fields based on selected driver
+function updateDeviceInputs() {
+    var driverSelect = document.getElementById('driver_select');
+    var atGroup = document.getElementById('at_device_group');
+    var mbimGroup = document.getElementById('mbim_device_group');
+
+    var driver = driverSelect.value;
+
+    if (driver === 'at' || driver === 'at_csim') {
+        atGroup.style.display = 'block';
+        mbimGroup.style.display = 'none';
+    } else if (driver === 'mbim') {
+        atGroup.style.display = 'none';
+        mbimGroup.style.display = 'block';
+    }
 }
 
 // Detect available modem devices
 function detectDevices() {
     var statusDiv = document.getElementById('device_status');
     var selectionContainer = document.getElementById('device_selection_container');
-    var qmiSelect = document.getElementById('qmi_device_select');
-    var serialSelect = document.getElementById('serial_device_select');
+    var driverSelect = document.getElementById('driver_select');
+    var atSelect = document.getElementById('at_device_select');
+    var mbimSelect = document.getElementById('mbim_device_select');
+    var httpSelect = document.getElementById('http_client_select');
 
     statusDiv.className = 'lpac-status info';
     statusDiv.innerHTML = '<%:Scanning for modem devices...%>';
@@ -318,49 +366,54 @@ function detectDevices() {
     XHR.get('<%=url("admin/network/lpac/detect_devices")%>', null, function(x, data) {
         if (data.success) {
             // Clear existing options
-            qmiSelect.innerHTML = '<option value=""><%:-- Select QMI Device --%></option>';
-            serialSelect.innerHTML = '<option value=""><%:-- Select Serial Device --%></option>';
+            atSelect.innerHTML = '<option value=""><%:-- Select AT Device --%></option>';
+            mbimSelect.innerHTML = '<option value=""><%:-- Select MBIM Device --%></option>';
 
-            // Populate QMI devices
-            if (data.qmi_devices && data.qmi_devices.length > 0) {
-                data.qmi_devices.forEach(function(device) {
+            // Populate AT devices
+            if (data.at_devices && data.at_devices.length > 0) {
+                data.at_devices.forEach(function(device) {
                     var option = document.createElement('option');
                     option.value = device.path;
                     var accessibleText = device.accessible ? ' ✓' : ' ✗';
                     option.innerHTML = device.path + ' (' + device.name + ')' + accessibleText;
                     option.disabled = !device.accessible;
-                    qmiSelect.appendChild(option);
+                    atSelect.appendChild(option);
 
                     // Auto-select if matches saved preference
-                    if (device.path === selectedQmiDevice) {
+                    if (device.path === selectedAtDevice) {
                         option.selected = true;
                     }
                 });
             }
 
-            // Populate serial devices
-            if (data.serial_devices && data.serial_devices.length > 0) {
-                data.serial_devices.forEach(function(device) {
+            // Populate MBIM devices
+            if (data.mbim_devices && data.mbim_devices.length > 0) {
+                data.mbim_devices.forEach(function(device) {
                     var option = document.createElement('option');
                     option.value = device.path;
                     var accessibleText = device.accessible ? ' ✓' : ' ✗';
                     option.innerHTML = device.path + ' (' + device.name + ')' + accessibleText;
                     option.disabled = !device.accessible;
-                    serialSelect.appendChild(option);
+                    mbimSelect.appendChild(option);
 
                     // Auto-select if matches saved preference
-                    if (device.path === selectedSerialDevice) {
+                    if (device.path === selectedMbimDevice) {
                         option.selected = true;
                     }
                 });
             }
+
+            // Set current driver
+            driverSelect.value = selectedDriver;
+            httpSelect.value = selectedHttpClient;
+            updateDeviceInputs();
 
             // Show results
             selectionContainer.style.display = 'block';
             statusDiv.className = 'lpac-status success';
             statusDiv.innerHTML = '<strong>✓</strong> <%:Found%> ' + data.total_devices + ' <%:device(s)%><br>' +
-                                 '<%:QMI:%> ' + (data.qmi_devices ? data.qmi_devices.length : 0) + ' | ' +
-                                 '<%:Serial:%> ' + (data.serial_devices ? data.serial_devices.length : 0);
+                                 '<%:AT:%> ' + (data.at_devices ? data.at_devices.length : 0) + ' | ' +
+                                 '<%:MBIM:%> ' + (data.mbim_devices ? data.mbim_devices.length : 0);
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to detect devices%>';
@@ -370,26 +423,34 @@ function detectDevices() {
 
 // Save device settings to UCI
 function saveDeviceSettings() {
-    var qmiSelect = document.getElementById('qmi_device_select');
-    var serialSelect = document.getElementById('serial_device_select');
+    var driverSelect = document.getElementById('driver_select');
+    var atSelect = document.getElementById('at_device_select');
+    var mbimSelect = document.getElementById('mbim_device_select');
+    var httpSelect = document.getElementById('http_client_select');
     var statusDiv = document.getElementById('device_status');
 
-    selectedQmiDevice = qmiSelect.value || '/dev/cdc-wdm0';
-    selectedSerialDevice = serialSelect.value || '';
+    selectedDriver = driverSelect.value || 'at';
+    selectedAtDevice = atSelect.value || '/dev/ttyUSB2';
+    selectedMbimDevice = mbimSelect.value || '/dev/cdc-wdm0';
+    selectedHttpClient = httpSelect.value || 'curl';
 
     statusDiv.className = 'lpac-status info';
     statusDiv.innerHTML = '<%:Saving device settings to UCI...%>';
 
     // Save to UCI via backend
     XHR.post('<%=url("admin/network/lpac/save_settings")%>', {
-        qmi_device: selectedQmiDevice,
-        serial_device: selectedSerialDevice
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
     }, function(x, data) {
         if (data.success) {
             statusDiv.className = 'lpac-status success';
             statusDiv.innerHTML = '<strong>✓</strong> ' + data.message + '<br>' +
-                                 '<%:QMI:%> ' + data.qmi_device + '<br>' +
-                                 (data.serial_device ? '<%:Serial:%> ' + data.serial_device : '<%:Serial:%> <%:Not selected%>');
+                                 '<%:Driver:%> ' + data.driver + '<br>' +
+                                 '<%:AT Device:%> ' + data.at_device + '<br>' +
+                                 '<%:MBIM Device:%> ' + data.mbim_device + '<br>' +
+                                 '<%:HTTP Client:%> ' + data.http_client;
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to save settings:%> ' + (data.error || '<%:Unknown error%>');
@@ -436,8 +497,10 @@ function addProfile() {
     XHR.post('<%=url("admin/network/lpac/add")%>', {
         activation_code: activation_code,
         confirmation_code: confirmation_code,
-        qmi_device: selectedQmiDevice,
-        serial_device: selectedSerialDevice
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
     }, function(x, data) {
         clearInterval(progressInterval);
         progressDiv.style.display = 'none';
@@ -461,12 +524,18 @@ function addProfile() {
 
 // Delete eSIM Profile
 function deleteProfile() {
-    var profile_id = document.getElementById('delete_profile_id').value;
+    var iccid = document.getElementById('delete_iccid').value;
 
     var statusDiv = document.getElementById('delete_status');
     var outputDiv = document.getElementById('delete_output');
 
-    if (!confirm('<%:Are you sure you want to delete profile%> ' + profile_id + '?')) {
+    if (!iccid || iccid === '') {
+        statusDiv.className = 'lpac-status error';
+        statusDiv.innerHTML = '<%:Please select a profile to delete%>';
+        return;
+    }
+
+    if (!confirm('<%:Are you sure you want to delete profile with ICCID:%> ' + iccid + '?')) {
         return;
     }
 
@@ -475,13 +544,17 @@ function deleteProfile() {
     outputDiv.style.display = 'none';
 
     XHR.post('<%=url("admin/network/lpac/delete")%>', {
-        profile_id: profile_id,
-        qmi_device: selectedQmiDevice,
-        serial_device: selectedSerialDevice
+        iccid: iccid,
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
     }, function(x, data) {
         if (data.success) {
             statusDiv.className = 'lpac-status success';
             statusDiv.innerHTML = '<strong>✓</strong> <%:Profile deleted successfully!%>';
+            // Refresh profile list to update delete dropdown
+            listProfiles();
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Deletion failed:%> ' + (data.error || '<%:Unknown error%>');
@@ -501,12 +574,18 @@ function refreshStatus() {
     outputDiv.innerHTML = '<%:Loading modem status...%>';
     outputDiv.style.display = 'block';
 
-    XHR.get('<%=url("admin/network/lpac/status")%>?qmi_device=' + encodeURIComponent(selectedQmiDevice), null, function(x, data) {
-        if (data.modem_available) {
-            outputDiv.innerHTML = data.status || '<%:No status available%>';
+    var url = '<%=url("admin/network/lpac/status")%>?' +
+              'driver=' + encodeURIComponent(selectedDriver) +
+              '&at_device=' + encodeURIComponent(selectedAtDevice) +
+              '&mbim_device=' + encodeURIComponent(selectedMbimDevice) +
+              '&http_client=' + encodeURIComponent(selectedHttpClient);
+
+    XHR.get(url, null, function(x, data) {
+        if (data.success) {
+            outputDiv.innerHTML = data.output || data.message || '<%:No status available%>';
         } else {
-            outputDiv.innerHTML = '<span style="color: red;"><%:Modem not accessible. Please check QMI device.%></span>\n\n' +
-                                 (data.status || '');
+            outputDiv.innerHTML = '<span style="color: red;"><%:Failed to get modem status:%> ' + (data.error || '<%:Unknown error%>') + '</span>\n\n' +
+                                 (data.output || '');
         }
     });
 }
@@ -517,6 +596,7 @@ function listProfiles() {
     var outputDiv = document.getElementById('profiles_output');
     var listContainer = document.getElementById('profiles_list_container');
     var tbody = document.getElementById('profiles_tbody');
+    var deleteSelect = document.getElementById('delete_iccid');
 
     // Reset UI
     statusDiv.className = 'lpac-status info';
@@ -524,23 +604,39 @@ function listProfiles() {
     outputDiv.style.display = 'none';
     listContainer.style.display = 'none';
 
-    XHR.get('<%=url("admin/network/lpac/list")%>?qmi_device=' + encodeURIComponent(selectedQmiDevice) + '&serial_device=' + encodeURIComponent(selectedSerialDevice), null, function(x, data) {
+    var url = '<%=url("admin/network/lpac/list")%>?' +
+              'driver=' + encodeURIComponent(selectedDriver) +
+              '&at_device=' + encodeURIComponent(selectedAtDevice) +
+              '&mbim_device=' + encodeURIComponent(selectedMbimDevice) +
+              '&http_client=' + encodeURIComponent(selectedHttpClient);
+
+    XHR.get(url, null, function(x, data) {
         if (data.success && data.profiles && data.profiles.length > 0) {
+            // Store profiles in global variable
+            installedProfiles = data.profiles;
+
             // Clear table
             tbody.innerHTML = '';
 
-            // Populate table
+            // Clear delete dropdown and add placeholder
+            deleteSelect.innerHTML = '<option value=""><%:-- Select Profile to Delete --%></option>';
+
+            // Populate table and delete dropdown
             data.profiles.forEach(function(profile) {
                 var row = tbody.insertRow();
 
                 var cellIccid = row.insertCell(0);
-                var cellState = row.insertCell(1);
-                var cellSlot = row.insertCell(2);
+                var cellNickname = row.insertCell(1);
+                var cellState = row.insertCell(2);
 
                 cellIccid.style.padding = '10px';
                 cellIccid.style.border = '1px solid #ddd';
                 cellIccid.style.fontFamily = 'monospace';
                 cellIccid.innerHTML = profile.iccid || '<%:Unknown%>';
+
+                cellNickname.style.padding = '10px';
+                cellNickname.style.border = '1px solid #ddd';
+                cellNickname.innerHTML = profile.nickname || '<%:No name%>';
 
                 cellState.style.padding = '10px';
                 cellState.style.border = '1px solid #ddd';
@@ -549,10 +645,15 @@ function listProfiles() {
                 cellState.innerHTML = '<span style="color: ' + stateColor + '; font-weight: bold;">' +
                                      (profile.state || '<%:Unknown%>').toUpperCase() + '</span>';
 
-                cellSlot.style.padding = '10px';
-                cellSlot.style.border = '1px solid #ddd';
-                cellSlot.style.textAlign = 'center';
-                cellSlot.innerHTML = profile.slot || '1';
+                // Add to delete dropdown
+                var option = document.createElement('option');
+                option.value = profile.iccid;
+                var displayText = profile.iccid;
+                if (profile.nickname) {
+                    displayText = profile.nickname + ' (' + profile.iccid + ')';
+                }
+                option.text = displayText;
+                deleteSelect.add(option);
             });
 
             // Show table
@@ -562,9 +663,15 @@ function listProfiles() {
         } else if (data.success && data.profiles && data.profiles.length === 0) {
             statusDiv.className = 'lpac-status info';
             statusDiv.innerHTML = '<%:No profiles installed on the modem%>';
+            // Clear delete dropdown
+            deleteSelect.innerHTML = '<option value=""><%:-- No profiles available --%></option>';
+            installedProfiles = [];
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to list profiles:%> ' + (data.error || '<%:Unknown error%>');
+            // Clear delete dropdown
+            deleteSelect.innerHTML = '<option value=""><%:-- Error loading profiles --%></option>';
+            installedProfiles = [];
         }
 
         // Show raw output if available
