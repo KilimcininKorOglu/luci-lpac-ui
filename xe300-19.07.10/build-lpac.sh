@@ -691,6 +691,12 @@ CTRLEOF
 [ -s ${IPKG_INSTROOT}/lib/functions.sh ] || exit 0
 . ${IPKG_INSTROOT}/lib/functions.sh
 
+# Clean up old directory structure from previous versions
+if [ -d "${IPKG_INSTROOT}/usr/lib/lpac" ] && [ ! -f "${IPKG_INSTROOT}/usr/lib/lpac" ]; then
+    echo "Cleaning up old lpac directory structure..."
+    rm -rf "${IPKG_INSTROOT}/usr/lib/lpac"
+fi
+
 echo ""
 echo "✅ lpac v8 installed (OpenWrt standard structure)"
 echo ""
