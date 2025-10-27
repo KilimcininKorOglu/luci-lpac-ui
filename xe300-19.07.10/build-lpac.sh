@@ -339,7 +339,7 @@ EOF
 
     # Configure with CMake
     log_info "CMake configuration..."
-    cmake -B build \
+    cmake -B build -Wno-dev \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN_FILE" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
