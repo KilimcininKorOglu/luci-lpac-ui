@@ -40,9 +40,9 @@ BUILD_DIR="${HOME}/.local/build/lpac-xe300-22.03.7"
 LPAC_SOURCE_DIR="${PROJECT_ROOT}/lpac"
 
 # SDK information (reference for manual installation)
-SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}_gcc-10.3.0_musl.Linux-x86_64.tar.xz"
+SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}_gcc-11.2.0_musl.Linux-x86_64.tar.xz"
 SDK_ARCHIVE="openwrt-sdk-${OPENWRT_VERSION}.tar.xz"
-SDK_EXTRACTED="openwrt-sdk-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}_gcc-10.3.0_musl.Linux-x86_64"
+SDK_EXTRACTED="openwrt-sdk-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}_gcc-11.2.0_musl.Linux-x86_64"
 
 # Toolchain information
 TOOLCHAIN_PREFIX="mips-openwrt-linux-musl-"
@@ -165,7 +165,7 @@ setup_toolchain() {
     log_step "Setting up toolchain..."
 
     export STAGING_DIR="${SDK_DIR}/staging_dir"
-    export PATH="${SDK_DIR}/staging_dir/toolchain-mips_24kc_gcc-10.3.0_musl/bin:$PATH"
+    export PATH="${SDK_DIR}/staging_dir/toolchain-mips_24kc_gcc-11.2.0_musl/bin:$PATH"
 
     # Toolchain check
     if ! command -v "${CROSS_COMPILE}gcc" &> /dev/null; then
@@ -297,7 +297,7 @@ compile() {
 
     # Now create toolchain file in the new location
     local TOOLCHAIN_FILE="${BUILD_DIR}/openwrt-mips.cmake"
-    local toolchain_dir="${SDK_DIR}/staging_dir/toolchain-mips_24kc_gcc-10.3.0_musl"
+    local toolchain_dir="${SDK_DIR}/staging_dir/toolchain-mips_24kc_gcc-11.2.0_musl"
 
     log_info "Creating CMake toolchain file..."
     cat > "$TOOLCHAIN_FILE" << EOF
