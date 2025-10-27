@@ -652,18 +652,10 @@ esac
 exec /usr/lib/lpac "$@"
 WRAPPEREOF
     chmod +x "$IPK_BUILD_DIR/data/usr/bin/lpac"
-    log_info "Created wrapper script at /usr/bin/lpac"
+    log_info "Created wrapper script at /usr/bin/lpac (reads from /etc/config/lpac provided by luci-app-lpac)"
 
-    # Create UCI config file - shared with LuCI app
-    cat > "$IPK_BUILD_DIR/data/etc/config/lpac" << 'UCIEOF'
-config settings 'device'
-	option driver 'at'
-	option at_device '/dev/ttyUSB2'
-	option mbim_device '/dev/cdc-wdm0'
-	option qmi_device '/dev/cdc-wdm0'
-	option http_client 'curl'
-UCIEOF
-    log_info "Created UCI config at /etc/config/lpac"
+    # Note: UCI config file (/etc/config/lpac) is provided by luci-app-lpac package
+    # The wrapper script reads from that shared UCI config
 
     # Calculate binary size
     local BINARY_SIZE=$(stat -c%s "$BUILD_DIR/build/src/lpac" 2>/dev/null || stat -f%z "$BUILD_DIR/build/src/lpac" 2>/dev/null)
