@@ -598,16 +598,16 @@ DEPLOYEOF
     cp "$BUILD_DIR/build/src/lpac" "$IPK_BUILD_DIR/data/usr/bin/"
     chmod +x "$IPK_BUILD_DIR/data/usr/bin/lpac"
 
-    # Copy drivers if exist
+    # Copy drivers to /usr/bin/driver (lpac expects drivers at $ORIGIN/driver)
     if [ -d "$OUTPUT_DIR/driver" ] && [ "$(ls -A $OUTPUT_DIR/driver 2>/dev/null)" ]; then
-        mkdir -p "$IPK_BUILD_DIR/data/usr/lib/lpac/driver"
-        cp "$OUTPUT_DIR/driver"/* "$IPK_BUILD_DIR/data/usr/lib/lpac/driver/" 2>/dev/null || true
+        mkdir -p "$IPK_BUILD_DIR/data/usr/bin/driver"
+        cp "$OUTPUT_DIR/driver"/* "$IPK_BUILD_DIR/data/usr/bin/driver/" 2>/dev/null || true
     fi
 
     # Copy liblpac-utils.so (critical utility library)
     if [ -f "$BUILD_DIR/build/utils/liblpac-utils.so" ]; then
-        mkdir -p "$IPK_BUILD_DIR/data/usr/lib/lpac/driver"
-        cp "$BUILD_DIR/build/utils/liblpac-utils.so" "$IPK_BUILD_DIR/data/usr/lib/lpac/driver/"
+        mkdir -p "$IPK_BUILD_DIR/data/usr/bin/driver"
+        cp "$BUILD_DIR/build/utils/liblpac-utils.so" "$IPK_BUILD_DIR/data/usr/bin/driver/"
         log_info "Added liblpac-utils.so to IPK package"
     fi
 
@@ -645,11 +645,6 @@ CTRLEOF
 [ -s ${IPKG_INSTROOT}/lib/functions.sh ] || exit 0
 . ${IPKG_INSTROOT}/lib/functions.sh
 
-# Create symlinks for driver libraries in /usr/lib
-ln -sf /usr/lib/lpac/driver/libeuicc-driver-loader.so.2 ${IPKG_INSTROOT}/usr/lib/libeuicc-driver-loader.so.2
-ln -sf /usr/lib/lpac/driver/libeuicc-drivers.so.2 ${IPKG_INSTROOT}/usr/lib/libeuicc-drivers.so.2
-ln -sf /usr/lib/lpac/driver/liblpac-utils.so ${IPKG_INSTROOT}/usr/lib/liblpac-utils.so
-
 echo ""
 echo "✅ lpac installed!"
 echo ""
@@ -671,11 +666,6 @@ POSTEOF
 #!/bin/sh
 [ -s ${IPKG_INSTROOT}/lib/functions.sh ] || exit 0
 . ${IPKG_INSTROOT}/lib/functions.sh
-
-# Remove symlinks from /usr/lib
-rm -f ${IPKG_INSTROOT}/usr/lib/libeuicc-driver-loader.so.2
-rm -f ${IPKG_INSTROOT}/usr/lib/libeuicc-drivers.so.2
-rm -f ${IPKG_INSTROOT}/usr/lib/liblpac-utils.so
 
 default_prerm $0 $@
 PREMEOF
