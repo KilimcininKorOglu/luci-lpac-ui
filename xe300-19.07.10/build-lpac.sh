@@ -383,9 +383,9 @@ post_process() {
     ls -lh "$BINARY_PATH"
     file "$BINARY_PATH"
 
-    # Apply strip
-    log_info "Removing debug symbols (strip)..."
-    "${CROSS_COMPILE}strip" "$BINARY_PATH"
+    # Apply strip (preserve RPATH for driver discovery)
+    log_info "Removing debug symbols (strip --strip-unneeded)..."
+    "${CROSS_COMPILE}strip" --strip-unneeded "$BINARY_PATH"
 
     log_info "Binary information (after strip):"
     ls -lh "$BINARY_PATH"
