@@ -589,27 +589,64 @@ DEPLOYEOF
 
     # Clean and create IPK structure
     rm -rf "$IPK_BUILD_DIR"
-    mkdir -p "$IPK_BUILD_DIR"/{control,data/usr/bin}
+    mkdir -p "$IPK_BUILD_DIR"/{control,data/usr/bin,data/usr/lib,data/etc/config}
 
     # Create debian-binary
     echo "2.0" > "$IPK_BUILD_DIR/debian-binary"
 
-    # Copy binary to data folder
-    cp "$BUILD_DIR/build/src/lpac" "$IPK_BUILD_DIR/data/usr/bin/"
-    chmod +x "$IPK_BUILD_DIR/data/usr/bin/lpac"
+    # Copy binary to /usr/lib/lpac (following official OpenWrt package structure)
+    cp "$BUILD_DIR/build/src/lpac" "$IPK_BUILD_DIR/data/usr/lib/lpac"
+    chmod +x "$IPK_BUILD_DIR/data/usr/lib/lpac"
 
-    # Copy drivers to /usr/bin/driver (lpac expects drivers at $ORIGIN/driver)
+    # Copy drivers to /usr/lib/driver (lpac binary at /usr/lib/lpac expects drivers at $ORIGIN/driver = /usr/lib/driver)
     if [ -d "$OUTPUT_DIR/driver" ] && [ "$(ls -A $OUTPUT_DIR/driver 2>/dev/null)" ]; then
-        mkdir -p "$IPK_BUILD_DIR/data/usr/bin/driver"
-        cp "$OUTPUT_DIR/driver"/* "$IPK_BUILD_DIR/data/usr/bin/driver/" 2>/dev/null || true
+        mkdir -p "$IPK_BUILD_DIR/data/usr/lib/driver"
+        cp "$OUTPUT_DIR/driver"/* "$IPK_BUILD_DIR/data/usr/lib/driver/" 2>/dev/null || true
     fi
 
     # Copy liblpac-utils.so (critical utility library)
     if [ -f "$BUILD_DIR/build/utils/liblpac-utils.so" ]; then
-        mkdir -p "$IPK_BUILD_DIR/data/usr/bin/driver"
-        cp "$BUILD_DIR/build/utils/liblpac-utils.so" "$IPK_BUILD_DIR/data/usr/bin/driver/"
+        mkdir -p "$IPK_BUILD_DIR/data/usr/lib/driver"
+        cp "$BUILD_DIR/build/utils/liblpac-utils.so" "$IPK_BUILD_DIR/data/usr/lib/driver/"
         log_info "Added liblpac-utils.so to IPK package"
     fi
+
+    # Create wrapper script at /usr/bin/lpac (following official OpenWrt package structure)
+    cat > "$IPK_BUILD_DIR/data/usr/bin/lpac" << 'WRAPPEREOF'
+#!/bin/sh
+# lpac wrapper script - reads UCI config and calls the real binary
+# Based on official OpenWrt lpac package structure
+
+# Default values
+APDU_DRIVER="${LPAC_APDU:-at}"
+AT_DEVICE="${LPAC_APDU_AT_DEVICE:-/dev/ttyUSB2}"
+HTTP_CLIENT="${LPAC_HTTP:-curl}"
+
+# Export environment variables for lpac binary
+export LPAC_APDU="$APDU_DRIVER"
+export LPAC_HTTP="$HTTP_CLIENT"
+
+# Set device path based on driver type
+case "$APDU_DRIVER" in
+    at|at_csim)
+        export LPAC_APDU_AT_DEVICE="$AT_DEVICE"
+        ;;
+esac
+
+# Call the real lpac binary in /usr/lib
+exec /usr/lib/lpac "$@"
+WRAPPEREOF
+    chmod +x "$IPK_BUILD_DIR/data/usr/bin/lpac"
+    log_info "Created wrapper script at /usr/bin/lpac"
+
+    # Create UCI config file (optional but recommended)
+    cat > "$IPK_BUILD_DIR/data/etc/config/lpac" << 'UCIEOF'
+config device 'settings'
+	option driver 'at'
+	option at_device '/dev/ttyUSB2'
+	option http_client 'curl'
+UCIEOF
+    log_info "Created UCI config at /etc/config/lpac"
 
     # Calculate binary size
     local BINARY_SIZE=$(stat -c%s "$BUILD_DIR/build/src/lpac" 2>/dev/null || stat -f%z "$BUILD_DIR/build/src/lpac" 2>/dev/null)
@@ -646,7 +683,13 @@ CTRLEOF
 . ${IPKG_INSTROOT}/lib/functions.sh
 
 echo ""
-echo "✅ lpac installed!"
+echo "✅ lpac v8 installed (OpenWrt standard structure)"
+echo ""
+echo "Package structure:"
+echo "  /usr/bin/lpac        → Shell wrapper (user-facing command)"
+echo "  /usr/lib/lpac        → Real binary"
+echo "  /usr/lib/driver/     → Driver plugins (.so files)"
+echo "  /etc/config/lpac     → UCI configuration"
 echo ""
 echo "Usage:"
 echo "  lpac chip info                    # Show chip info"
@@ -654,7 +697,10 @@ echo "  lpac profile list                 # List profiles"
 echo "  lpac profile download -a <code>   # Download profile"
 echo "  lpac profile enable -i <iccid>    # Enable profile"
 echo ""
-echo "AT device: /dev/ttyUSB2 (Quectel modem)"
+echo "Configuration:"
+echo "  Edit /etc/config/lpac to change driver settings"
+echo "  Default: AT driver on /dev/ttyUSB2 (Quectel modem)"
+echo ""
 echo "More info: lpac -h"
 echo ""
 
