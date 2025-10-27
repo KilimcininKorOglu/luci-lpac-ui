@@ -598,15 +598,18 @@ DEPLOYEOF
     cp "$BUILD_DIR/build/src/lpac" "$IPK_BUILD_DIR/data/usr/lib/lpac"
     chmod +x "$IPK_BUILD_DIR/data/usr/lib/lpac"
 
-    # Copy drivers to /usr/lib/driver (lpac binary at /usr/lib/lpac expects drivers at $ORIGIN/driver = /usr/lib/driver)
-    if [ -d "$OUTPUT_DIR/driver" ] && [ "$(ls -A $OUTPUT_DIR/driver 2>/dev/null)" ]; then
-        mkdir -p "$IPK_BUILD_DIR/data/usr/lib/driver"
-        cp "$OUTPUT_DIR/driver"/* "$IPK_BUILD_DIR/data/usr/lib/driver/" 2>/dev/null || true
+    # Copy all shared libraries and drivers to /usr/lib/driver
+    # lpac binary at /usr/lib/lpac expects drivers at $ORIGIN/driver = /usr/lib/driver
+    mkdir -p "$IPK_BUILD_DIR/data/usr/lib/driver"
+
+    # Copy driver plugins from build directory
+    if [ -d "$BUILD_DIR/build/driver" ]; then
+        cp "$BUILD_DIR/build/driver"/*.so* "$IPK_BUILD_DIR/data/usr/lib/driver/" 2>/dev/null || true
+        log_info "Added driver plugins to IPK package"
     fi
 
     # Copy liblpac-utils.so (critical utility library)
     if [ -f "$BUILD_DIR/build/utils/liblpac-utils.so" ]; then
-        mkdir -p "$IPK_BUILD_DIR/data/usr/lib/driver"
         cp "$BUILD_DIR/build/utils/liblpac-utils.so" "$IPK_BUILD_DIR/data/usr/lib/driver/"
         log_info "Added liblpac-utils.so to IPK package"
     fi
