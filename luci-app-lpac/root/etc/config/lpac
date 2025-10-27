@@ -1,0 +1,3 @@
+config settings 'device'
+	option qmi_device '/dev/cdc-wdm0'
+	option serial_device ''

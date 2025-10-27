@@ -1,0 +1,284 @@
+#!/bin/sh
+# Copyright 2025 Kerem
+# Licensed under MIT
+# Wrapper script for quectel_lpad - Converts text output to JSON for LuCI
+
+# Configuration
+LPAD_BIN="/usr/bin/quectel_lpad"
+QMI_DEVICE="${LPAC_QMI_DEVICE:-/dev/cdc-wdm0}"  # Can be overridden by environment variable
+SERIAL_DEVICE="${LPAC_SERIAL_DEVICE:-}"  # Optional serial device for AT commands
+TIMEOUT=90
+
+# Parse command-line options for device override
+while getopts "q:s:" opt; do
+    case "$opt" in
+        q) QMI_DEVICE="$OPTARG" ;;
+        s) SERIAL_DEVICE="$OPTARG" ;;
+    esac
+done
+shift $((OPTIND-1))
+
+# Function to strip ANSI color codes
+strip_ansi() {
+    echo "$1" | sed 's/\x1b\[[0-9;]*m//g'
+}
+
+# Function to escape JSON strings
+json_escape() {
+    echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g; s/\r/\\r/g; s/\t/\\t/g'
+}
+
+# Function to output JSON response
+output_json() {
+    local success="$1"
+    local message="$2"
+    local output="$3"
+    local error="$4"
+
+    echo "{"
+    echo "  \"success\": $success,"
+    if [ -n "$message" ]; then
+        echo "  \"message\": \"$(json_escape "$message")\","
+    fi
+    if [ -n "$error" ]; then
+        echo "  \"error\": \"$(json_escape "$error")\","
+    fi
+    if [ -n "$output" ]; then
+        echo "  \"output\": \"$(json_escape "$output")\""
+    else
+        echo "  \"output\": \"\""
+    fi
+    echo "}"
+}
+
+# Check if quectel_lpad binary exists
+if [ ! -x "$LPAD_BIN" ]; then
+    output_json "false" "" "" "quectel_lpad binary not found at $LPAD_BIN"
+    exit 1
+fi
+
+# Check if QMI device exists
+if [ ! -e "$QMI_DEVICE" ]; then
+    output_json "false" "" "" "QMI device not found at $QMI_DEVICE"
+    exit 1
+fi
+
+# Parse command
+ACTION="$1"
+
+case "$ACTION" in
+    add)
+        ACTIVATION_CODE="$2"
+        CONFIRMATION_CODE="$3"
+
+        # Validation
+        if [ -z "$ACTIVATION_CODE" ]; then
+            output_json "false" "" "" "Activation code is required"
+            exit 1
+        fi
+
+        # Build command
+        CMD="$LPAD_BIN -A \"$ACTIVATION_CODE\""
+        if [ -n "$CONFIRMATION_CODE" ]; then
+            CMD="$CMD -C \"$CONFIRMATION_CODE\""
+        fi
+
+        # Execute with timeout
+        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        EXIT_CODE=$?
+
+        # Strip ANSI codes
+        OUTPUT=$(strip_ansi "$OUTPUT")
+
+        # Parse output for success/failure
+        if [ $EXIT_CODE -eq 0 ]; then
+            # Check for success indicators
+            if echo "$OUTPUT" | grep -qi "successfully\|success\|profile.*installed\|completed"; then
+                output_json "true" "Profile installed successfully" "$OUTPUT" ""
+                exit 0
+            elif echo "$OUTPUT" | grep -qi "error\|failed\|failure"; then
+                ERROR_MSG=$(echo "$OUTPUT" | grep -i "error" | head -n 1)
+                output_json "false" "" "$OUTPUT" "$ERROR_MSG"
+                exit 0
+            else
+                # Exit code 0 but no clear success message
+                output_json "true" "Operation completed" "$OUTPUT" ""
+                exit 0
+            fi
+        elif [ $EXIT_CODE -eq 124 ]; then
+            # Timeout occurred
+            output_json "false" "" "$OUTPUT" "Operation timed out after ${TIMEOUT}s"
+            exit 0
+        else
+            # Non-zero exit code
+            ERROR_MSG=$(echo "$OUTPUT" | grep -i "error" | head -n 1)
+            if [ -z "$ERROR_MSG" ]; then
+                ERROR_MSG="Installation failed (exit code: $EXIT_CODE)"
+            fi
+            output_json "false" "" "$OUTPUT" "$ERROR_MSG"
+            exit 0
+        fi
+        ;;
+
+    delete)
+        PROFILE_ID="$2"
+
+        # Validation
+        if [ -z "$PROFILE_ID" ]; then
+            output_json "false" "" "" "Profile ID is required"
+            exit 1
+        fi
+
+        # Validate profile ID range (1-16)
+        if ! echo "$PROFILE_ID" | grep -qE '^[0-9]+$' || [ "$PROFILE_ID" -lt 1 ] || [ "$PROFILE_ID" -gt 16 ]; then
+            output_json "false" "" "" "Invalid profile ID. Must be between 1 and 16"
+            exit 1
+        fi
+
+        # Build command
+        CMD="$LPAD_BIN -R $PROFILE_ID"
+
+        # Execute with timeout
+        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        EXIT_CODE=$?
+
+        # Strip ANSI codes
+        OUTPUT=$(strip_ansi "$OUTPUT")
+
+        # Parse output for success/failure
+        if [ $EXIT_CODE -eq 0 ]; then
+            # Check for success indicators
+            if echo "$OUTPUT" | grep -qi "successfully\|success\|deleted\|removed\|completed"; then
+                output_json "true" "Profile deleted successfully" "$OUTPUT" ""
+                exit 0
+            elif echo "$OUTPUT" | grep -qi "error\|failed\|failure"; then
+                ERROR_MSG=$(echo "$OUTPUT" | grep -i "error" | head -n 1)
+                output_json "false" "" "$OUTPUT" "$ERROR_MSG"
+                exit 0
+            else
+                # Exit code 0 but no clear success message
+                output_json "true" "Operation completed" "$OUTPUT" ""
+                exit 0
+            fi
+        elif [ $EXIT_CODE -eq 124 ]; then
+            # Timeout occurred
+            output_json "false" "" "$OUTPUT" "Operation timed out after ${TIMEOUT}s"
+            exit 0
+        else
+            # Non-zero exit code
+            ERROR_MSG=$(echo "$OUTPUT" | grep -i "error" | head -n 1)
+            if [ -z "$ERROR_MSG" ]; then
+                ERROR_MSG="Deletion failed (exit code: $EXIT_CODE)"
+            fi
+            output_json "false" "" "$OUTPUT" "$ERROR_MSG"
+            exit 0
+        fi
+        ;;
+
+    list)
+        # List installed eSIM profiles using qmicli, uqmi, or rqmi
+        OUTPUT=""
+        EXIT_CODE=1
+
+        # Try qmicli first (more detailed output)
+        if command -v qmicli >/dev/null 2>&1; then
+            OUTPUT=$(qmicli -d "$QMI_DEVICE" --uim-get-card-status 2>&1)
+            EXIT_CODE=$?
+        # Fallback to uqmi or rqmi (limited capabilities)
+        elif command -v uqmi >/dev/null 2>&1 || command -v rqmi >/dev/null 2>&1; then
+            # uqmi/rqmi only support basic ICCID retrieval, not full eSIM profile listing
+            QMI_CMD=$(command -v rqmi >/dev/null 2>&1 && echo "rqmi" || echo "uqmi")
+            ICCID=$($QMI_CMD -d "$QMI_DEVICE" --get-iccid 2>&1)
+            EXIT_CODE=$?
+
+            if [ $EXIT_CODE -ne 0 ]; then
+                echo "{"
+                echo "  \"success\": false,"
+                echo "  \"profiles\": [],"
+                echo "  \"error\": \"$(json_escape "$ICCID")\","
+                echo "  \"note\": \"For full eSIM profile listing, install libqmi-utils: opkg install libqmi-utils\""
+                echo "}"
+                exit 0
+            fi
+
+            # Return single ICCID as a profile
+            echo "{"
+            echo "  \"success\": true,"
+            echo "  \"profiles\": ["
+            echo "    {"
+            echo "      \"iccid\": \"$(echo "$ICCID" | tr -d '\"')\","
+            echo "      \"state\": \"active\","
+            echo "      \"slot\": 1"
+            echo "    }"
+            echo "  ],"
+            echo "  \"note\": \"Limited info: $QMI_CMD only shows active ICCID. For full eSIM listing, install libqmi-utils.\","
+            echo "  \"raw_output\": \"ICCID: $ICCID\""
+            echo "}"
+            exit 0
+        else
+            output_json "false" "" "" "No QMI command found. Please install qmicli (libqmi-utils), uqmi, or rqmi package."
+            exit 1
+        fi
+
+        # Parse qmicli output to extract profile information
+        # Output format will be JSON array of profiles
+        echo "{"
+        echo "  \"success\": true,"
+        echo "  \"profiles\": ["
+
+        # Extract slot information
+        FIRST=1
+        echo "$OUTPUT" | grep -A 50 "Primary GW:" | while IFS= read -r line; do
+            # Look for ICCID lines
+            if echo "$line" | grep -qi "ICCID"; then
+                ICCID=$(echo "$line" | sed -n 's/.*ICCID: \(.*\)/\1/p' | tr -d ' ')
+
+                # Try to get more info about this profile
+                STATE="unknown"
+                if echo "$OUTPUT" | grep -B 5 "$ICCID" | grep -qi "active.*state.*active"; then
+                    STATE="enabled"
+                elif echo "$OUTPUT" | grep -B 5 "$ICCID" | grep -qi "active.*state"; then
+                    STATE="disabled"
+                fi
+
+                if [ $FIRST -eq 0 ]; then
+                    echo "    ,"
+                fi
+                FIRST=0
+
+                echo "    {"
+                echo "      \"iccid\": \"$ICCID\","
+                echo "      \"state\": \"$STATE\","
+                echo "      \"slot\": 1"
+                echo "    }"
+            fi
+        done
+
+        echo "  ],"
+        echo "  \"raw_output\": \"$(json_escape "$OUTPUT")\""
+        echo "}"
+        exit 0
+        ;;
+
+    status)
+        # Get modem status using qmicli
+        if command -v qmicli >/dev/null 2>&1; then
+            OUTPUT=$(qmicli -d "$QMI_DEVICE" --uim-get-card-status 2>&1)
+            EXIT_CODE=$?
+
+            if [ $EXIT_CODE -eq 0 ]; then
+                output_json "true" "Modem status retrieved" "$OUTPUT" ""
+            else
+                output_json "false" "" "$OUTPUT" "Failed to query modem status"
+            fi
+        else
+            output_json "false" "" "" "qmicli command not found"
+        fi
+        exit 0
+        ;;
+
+    *)
+        output_json "false" "" "" "Invalid action: $ACTION. Valid actions: add, delete, list, status"
+        exit 1
+        ;;
+esac

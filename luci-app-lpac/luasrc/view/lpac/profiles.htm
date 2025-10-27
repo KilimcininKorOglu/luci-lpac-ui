@@ -1,0 +1,588 @@
+<%#
+ Copyright 2025 Kerem
+ Licensed under MIT
+-%>
+
+<%+header%>
+
+<style>
+.lpac-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.lpac-section {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.lpac-input {
+    width: 100%;
+    max-width: 600px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+}
+.lpac-button {
+    padding: 10px 20px;
+    font-size: 14px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.lpac-button-primary {
+    background: #0088cc;
+    color: white;
+}
+.lpac-button-primary:hover {
+    background: #006ba3;
+}
+.lpac-button-danger {
+    background: #dc3545;
+    color: white;
+}
+.lpac-button-danger:hover {
+    background: #c82333;
+}
+.lpac-button-secondary {
+    background: #6c757d;
+    color: white;
+}
+.lpac-button-secondary:hover {
+    background: #5a6268;
+}
+.lpac-status {
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 3px;
+    display: none;
+}
+.lpac-status.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    display: block;
+}
+.lpac-status.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    display: block;
+}
+.lpac-status.info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    display: block;
+}
+.lpac-progress {
+    width: 100%;
+    height: 30px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 10px;
+    display: none;
+}
+.lpac-progress-bar {
+    height: 100%;
+    background: #0088cc;
+    color: white;
+    text-align: center;
+    line-height: 30px;
+    transition: width 0.3s;
+    width: 0%;
+}
+.lpac-output {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+}
+.lpac-form-group {
+    margin-bottom: 15px;
+}
+.lpac-form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+.lpac-form-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+.lpac-select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+}
+</style>
+
+<div class="lpac-container">
+    <h2><%:eSIM Profile Management (LPAC)%></h2>
+    <p><%:Manage eSIM profiles on Quectel modems using LPA (Local Profile Assistant)%></p>
+
+    <!-- Device Selection Section -->
+    <div class="lpac-section">
+        <h3><%:Modem Device Selection%></h3>
+
+        <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-secondary" onclick="detectDevices()">
+                <%:Scan for Devices%>
+            </button>
+        </div>
+
+        <div id="device_selection_container" style="margin-top: 15px; display: none;">
+            <div class="lpac-form-group">
+                <label class="lpac-form-label"><%:QMI Device%> (<%:for eSIM management%>)</label>
+                <select id="qmi_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
+                    <option value=""><%:-- Select QMI Device --%></option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select /dev/cdc-wdm* device for QMI communication%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group">
+                <label class="lpac-form-label"><%:Serial Device%> (<%:optional, for AT commands%>)</label>
+                <select id="serial_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
+                    <option value=""><%:-- Select Serial Device --%></option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select /dev/ttyUSB* or /dev/ttyACM* device for AT+QESIM commands%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group">
+                <button class="lpac-button lpac-button-primary" onclick="saveDeviceSettings()">
+                    <%:Save Device Settings%>
+                </button>
+            </div>
+        </div>
+
+        <div id="device_status" class="lpac-status"></div>
+    </div>
+
+    <!-- Installed Profiles Section -->
+    <div class="lpac-section">
+        <h3><%:Installed Profiles%></h3>
+
+        <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-secondary" onclick="listProfiles()">
+                <%:Refresh Profile List%>
+            </button>
+        </div>
+
+        <div id="profiles_list_container" style="margin-top: 15px; display: none;">
+            <table id="profiles_table" style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:ICCID%></th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:Status%></th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:Slot%></th>
+                    </tr>
+                </thead>
+                <tbody id="profiles_tbody">
+                    <!-- Profiles will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="profiles_status" class="lpac-status"></div>
+        <div id="profiles_output" class="lpac-output"></div>
+    </div>
+
+    <!-- Add Profile Section -->
+    <div class="lpac-section">
+        <h3><%:Add New eSIM Profile%></h3>
+
+        <div class="lpac-form-group">
+            <label class="lpac-form-label" for="activation_code"><%:Activation Code%></label>
+            <input type="text"
+                   id="activation_code"
+                   class="lpac-input"
+                   placeholder="LPA:1$smdp.example.com$ACTIVATION_CODE"
+                   autocomplete="off"/>
+            <span class="lpac-form-hint">
+                <%:Format: LPA:1$SM-DP+_ADDRESS$ACTIVATION_CODE%>
+            </span>
+        </div>
+
+        <div class="lpac-form-group">
+            <label class="lpac-form-label" for="confirmation_code"><%:Confirmation Code%> (<%:optional%>)</label>
+            <input type="text"
+                   id="confirmation_code"
+                   class="lpac-input"
+                   style="max-width: 200px;"
+                   placeholder="1234"
+                   autocomplete="off"/>
+            <span class="lpac-form-hint">
+                <%:Enter confirmation code if required by your carrier%>
+            </span>
+        </div>
+
+        <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-primary" onclick="addProfile()">
+                <%:Install Profile%>
+            </button>
+        </div>
+
+        <div id="add_progress" class="lpac-progress">
+            <div id="add_progress_bar" class="lpac-progress-bar">0%</div>
+        </div>
+
+        <div id="add_status" class="lpac-status"></div>
+        <div id="add_output" class="lpac-output"></div>
+    </div>
+
+    <!-- Delete Profile Section -->
+    <div class="lpac-section">
+        <h3><%:Delete eSIM Profile%></h3>
+
+        <div class="lpac-form-group">
+            <label class="lpac-form-label" for="delete_profile_id"><%:Profile ID%></label>
+            <select id="delete_profile_id" class="lpac-select">
+                <% for i=1,16 do %>
+                <option value="<%=i%>">Profile <%=i%></option>
+                <% end %>
+            </select>
+            <span class="lpac-form-hint">
+                <%:Select profile ID to delete (1-16)%>
+            </span>
+        </div>
+
+        <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-danger" onclick="deleteProfile()">
+                <%:Delete Profile%>
+            </button>
+        </div>
+
+        <div id="delete_status" class="lpac-status"></div>
+        <div id="delete_output" class="lpac-output"></div>
+    </div>
+
+    <!-- Modem Status Section -->
+    <div class="lpac-section">
+        <h3><%:Modem Status%></h3>
+
+        <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-secondary" onclick="refreshStatus()">
+                <%:Refresh Status%>
+            </button>
+        </div>
+
+        <div id="status_output" class="lpac-output"></div>
+    </div>
+</div>
+
+<script>
+// Global device settings (loaded from UCI on page load)
+var selectedQmiDevice = '/dev/cdc-wdm0';
+var selectedSerialDevice = '';
+
+// Load device settings from UCI
+function loadDeviceSettings() {
+    XHR.get('<%=url("admin/network/lpac/get_settings")%>', null, function(x, data) {
+        if (data.success) {
+            selectedQmiDevice = data.qmi_device || '/dev/cdc-wdm0';
+            selectedSerialDevice = data.serial_device || '';
+        }
+    });
+}
+
+// Detect available modem devices
+function detectDevices() {
+    var statusDiv = document.getElementById('device_status');
+    var selectionContainer = document.getElementById('device_selection_container');
+    var qmiSelect = document.getElementById('qmi_device_select');
+    var serialSelect = document.getElementById('serial_device_select');
+
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Scanning for modem devices...%>';
+    selectionContainer.style.display = 'none';
+
+    XHR.get('<%=url("admin/network/lpac/detect_devices")%>', null, function(x, data) {
+        if (data.success) {
+            // Clear existing options
+            qmiSelect.innerHTML = '<option value=""><%:-- Select QMI Device --%></option>';
+            serialSelect.innerHTML = '<option value=""><%:-- Select Serial Device --%></option>';
+
+            // Populate QMI devices
+            if (data.qmi_devices && data.qmi_devices.length > 0) {
+                data.qmi_devices.forEach(function(device) {
+                    var option = document.createElement('option');
+                    option.value = device.path;
+                    var accessibleText = device.accessible ? ' ✓' : ' ✗';
+                    option.innerHTML = device.path + ' (' + device.name + ')' + accessibleText;
+                    option.disabled = !device.accessible;
+                    qmiSelect.appendChild(option);
+
+                    // Auto-select if matches saved preference
+                    if (device.path === selectedQmiDevice) {
+                        option.selected = true;
+                    }
+                });
+            }
+
+            // Populate serial devices
+            if (data.serial_devices && data.serial_devices.length > 0) {
+                data.serial_devices.forEach(function(device) {
+                    var option = document.createElement('option');
+                    option.value = device.path;
+                    var accessibleText = device.accessible ? ' ✓' : ' ✗';
+                    option.innerHTML = device.path + ' (' + device.name + ')' + accessibleText;
+                    option.disabled = !device.accessible;
+                    serialSelect.appendChild(option);
+
+                    // Auto-select if matches saved preference
+                    if (device.path === selectedSerialDevice) {
+                        option.selected = true;
+                    }
+                });
+            }
+
+            // Show results
+            selectionContainer.style.display = 'block';
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> <%:Found%> ' + data.total_devices + ' <%:device(s)%><br>' +
+                                 '<%:QMI:%> ' + (data.qmi_devices ? data.qmi_devices.length : 0) + ' | ' +
+                                 '<%:Serial:%> ' + (data.serial_devices ? data.serial_devices.length : 0);
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to detect devices%>';
+        }
+    });
+}
+
+// Save device settings to UCI
+function saveDeviceSettings() {
+    var qmiSelect = document.getElementById('qmi_device_select');
+    var serialSelect = document.getElementById('serial_device_select');
+    var statusDiv = document.getElementById('device_status');
+
+    selectedQmiDevice = qmiSelect.value || '/dev/cdc-wdm0';
+    selectedSerialDevice = serialSelect.value || '';
+
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Saving device settings to UCI...%>';
+
+    // Save to UCI via backend
+    XHR.post('<%=url("admin/network/lpac/save_settings")%>', {
+        qmi_device: selectedQmiDevice,
+        serial_device: selectedSerialDevice
+    }, function(x, data) {
+        if (data.success) {
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> ' + data.message + '<br>' +
+                                 '<%:QMI:%> ' + data.qmi_device + '<br>' +
+                                 (data.serial_device ? '<%:Serial:%> ' + data.serial_device : '<%:Serial:%> <%:Not selected%>');
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to save settings:%> ' + (data.error || '<%:Unknown error%>');
+        }
+    });
+}
+
+// Add eSIM Profile
+function addProfile() {
+    var activation_code = document.getElementById('activation_code').value.trim();
+    var confirmation_code = document.getElementById('confirmation_code').value.trim();
+
+    var statusDiv = document.getElementById('add_status');
+    var outputDiv = document.getElementById('add_output');
+    var progressDiv = document.getElementById('add_progress');
+    var progressBar = document.getElementById('add_progress_bar');
+
+    // Validation
+    if (!activation_code || activation_code.length < 10) {
+        statusDiv.className = 'lpac-status error';
+        statusDiv.innerHTML = '<%:Please enter a valid activation code%>';
+        return;
+    }
+
+    // Reset UI
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Installing profile, please wait (this may take 30-60 seconds)...%>';
+    outputDiv.style.display = 'none';
+    progressDiv.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.innerHTML = '0%';
+
+    // Simulate progress (since we don't have real-time updates)
+    var progress = 0;
+    var progressInterval = setInterval(function() {
+        if (progress < 90) {
+            progress += 5;
+            progressBar.style.width = progress + '%';
+            progressBar.innerHTML = progress + '%';
+        }
+    }, 1000);
+
+    // Make AJAX request with device parameters
+    XHR.post('<%=url("admin/network/lpac/add")%>', {
+        activation_code: activation_code,
+        confirmation_code: confirmation_code,
+        qmi_device: selectedQmiDevice,
+        serial_device: selectedSerialDevice
+    }, function(x, data) {
+        clearInterval(progressInterval);
+        progressDiv.style.display = 'none';
+
+        if (data.success) {
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> <%:Profile installed successfully!%>';
+            document.getElementById('activation_code').value = '';
+            document.getElementById('confirmation_code').value = '';
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Installation failed:%> ' + (data.error || '<%:Unknown error%>');
+        }
+
+        if (data.output || data.raw_output) {
+            outputDiv.innerHTML = data.output || data.raw_output;
+            outputDiv.style.display = 'block';
+        }
+    });
+}
+
+// Delete eSIM Profile
+function deleteProfile() {
+    var profile_id = document.getElementById('delete_profile_id').value;
+
+    var statusDiv = document.getElementById('delete_status');
+    var outputDiv = document.getElementById('delete_output');
+
+    if (!confirm('<%:Are you sure you want to delete profile%> ' + profile_id + '?')) {
+        return;
+    }
+
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Deleting profile, please wait...%>';
+    outputDiv.style.display = 'none';
+
+    XHR.post('<%=url("admin/network/lpac/delete")%>', {
+        profile_id: profile_id,
+        qmi_device: selectedQmiDevice,
+        serial_device: selectedSerialDevice
+    }, function(x, data) {
+        if (data.success) {
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> <%:Profile deleted successfully!%>';
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Deletion failed:%> ' + (data.error || '<%:Unknown error%>');
+        }
+
+        if (data.output || data.raw_output) {
+            outputDiv.innerHTML = data.output || data.raw_output;
+            outputDiv.style.display = 'block';
+        }
+    });
+}
+
+// Refresh Modem Status
+function refreshStatus() {
+    var outputDiv = document.getElementById('status_output');
+
+    outputDiv.innerHTML = '<%:Loading modem status...%>';
+    outputDiv.style.display = 'block';
+
+    XHR.get('<%=url("admin/network/lpac/status")%>?qmi_device=' + encodeURIComponent(selectedQmiDevice), null, function(x, data) {
+        if (data.modem_available) {
+            outputDiv.innerHTML = data.status || '<%:No status available%>';
+        } else {
+            outputDiv.innerHTML = '<span style="color: red;"><%:Modem not accessible. Please check QMI device.%></span>\n\n' +
+                                 (data.status || '');
+        }
+    });
+}
+
+// List Installed Profiles
+function listProfiles() {
+    var statusDiv = document.getElementById('profiles_status');
+    var outputDiv = document.getElementById('profiles_output');
+    var listContainer = document.getElementById('profiles_list_container');
+    var tbody = document.getElementById('profiles_tbody');
+
+    // Reset UI
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Loading installed profiles...%>';
+    outputDiv.style.display = 'none';
+    listContainer.style.display = 'none';
+
+    XHR.get('<%=url("admin/network/lpac/list")%>?qmi_device=' + encodeURIComponent(selectedQmiDevice) + '&serial_device=' + encodeURIComponent(selectedSerialDevice), null, function(x, data) {
+        if (data.success && data.profiles && data.profiles.length > 0) {
+            // Clear table
+            tbody.innerHTML = '';
+
+            // Populate table
+            data.profiles.forEach(function(profile) {
+                var row = tbody.insertRow();
+
+                var cellIccid = row.insertCell(0);
+                var cellState = row.insertCell(1);
+                var cellSlot = row.insertCell(2);
+
+                cellIccid.style.padding = '10px';
+                cellIccid.style.border = '1px solid #ddd';
+                cellIccid.style.fontFamily = 'monospace';
+                cellIccid.innerHTML = profile.iccid || '<%:Unknown%>';
+
+                cellState.style.padding = '10px';
+                cellState.style.border = '1px solid #ddd';
+                var stateColor = profile.state === 'enabled' ? 'green' :
+                                 profile.state === 'disabled' ? 'orange' : 'gray';
+                cellState.innerHTML = '<span style="color: ' + stateColor + '; font-weight: bold;">' +
+                                     (profile.state || '<%:Unknown%>').toUpperCase() + '</span>';
+
+                cellSlot.style.padding = '10px';
+                cellSlot.style.border = '1px solid #ddd';
+                cellSlot.style.textAlign = 'center';
+                cellSlot.innerHTML = profile.slot || '1';
+            });
+
+            // Show table
+            listContainer.style.display = 'block';
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> <%:Found%> ' + data.profiles.length + ' <%:profile(s)%>';
+        } else if (data.success && data.profiles && data.profiles.length === 0) {
+            statusDiv.className = 'lpac-status info';
+            statusDiv.innerHTML = '<%:No profiles installed on the modem%>';
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to list profiles:%> ' + (data.error || '<%:Unknown error%>');
+        }
+
+        // Show raw output if available
+        if (data.raw_output) {
+            outputDiv.innerHTML = data.raw_output;
+            outputDiv.style.display = 'block';
+        }
+    });
+}
+
+// Auto-refresh status on page load
+window.addEventListener('load', function() {
+    // Load device settings from UCI first
+    loadDeviceSettings();
+
+    // Auto-refresh profile list on page load
+    listProfiles();
+});
+</script>
+
+<%+footer%>

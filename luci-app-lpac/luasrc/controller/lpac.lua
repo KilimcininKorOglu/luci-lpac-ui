@@ -1,502 +1,317 @@
---[[
-LuCI Controller for lpac eSIM Management
-
-This controller provides HTTP API endpoints for managing eSIM profiles
-on OpenWrt routers using the lpac command-line tool.
-
-Architecture:
-- Uses Modern LuCI (LuCI ng) with view() for frontend pages
-- HTTP API endpoints via call() functions (NOT ubus RPC)
-- JSON request/response format
-- Delegates business logic to luci.model.lpac modules
-
-Copyright (C) 2025
-Licensed under GPL-3.0
---]]
+-- Copyright 2025 Kerem
+-- Licensed under the MIT License
 
 module("luci.controller.lpac", package.seeall)
 
+-- Helper function to get device settings from UCI
+local function get_device_settings()
+	local uci = require "luci.model.uci".cursor()
+	local qmi_device = uci:get("lpac", "device", "qmi_device") or "/dev/cdc-wdm0"
+	local serial_device = uci:get("lpac", "device", "serial_device") or ""
+	return qmi_device, serial_device
+end
+
+-- Helper function to save device settings to UCI
+local function save_device_settings(qmi_device, serial_device)
+	local uci = require "luci.model.uci".cursor()
+	uci:set("lpac", "device", "settings")
+	uci:set("lpac", "device", "qmi_device", qmi_device or "/dev/cdc-wdm0")
+	uci:set("lpac", "device", "serial_device", serial_device or "")
+	uci:commit("lpac")
+	return true
+end
+
 function index()
-	-- Main menu entry
-	entry({"admin", "network", "lpac"},
-		alias("admin", "network", "lpac", "dashboard"),
-		_("eSIM Management"), 60)
-
-	-- View pages
-	entry({"admin", "network", "lpac", "dashboard"},
-		view("lpac/dashboard"),
-		_("Dashboard"), 1)
-
-	entry({"admin", "network", "lpac", "chip"},
-		view("lpac/chip"),
-		_("Chip Info"), 2)
-
-	entry({"admin", "network", "lpac", "profiles"},
-		view("lpac/profiles"),
-		_("Profiles"), 3)
-
-	entry({"admin", "network", "lpac", "download"},
-		view("lpac/download"),
-		_("Download"), 4)
-
-	entry({"admin", "network", "lpac", "notifications"},
-		view("lpac/notifications"),
-		_("Notifications"), 5)
-
-	entry({"admin", "network", "lpac", "settings"},
-		view("lpac/settings"),
-		_("Settings"), 6)
-
-	entry({"admin", "network", "lpac", "about"},
-		view("lpac/about"),
-		_("About"), 7)
-
-	-- API endpoints
-	entry({"admin", "network", "lpac", "api", "system_info"},
-		call("action_system_info")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "dashboard_summary"},
-		call("action_dashboard_summary")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "chip_info"},
-		call("action_chip_info")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "get_eid"},
-		call("action_get_eid")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "list_profiles"},
-		call("action_list_profiles")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "get_profile"},
-		call("action_get_profile")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "enable_profile"},
-		call("action_enable_profile")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "disable_profile"},
-		call("action_disable_profile")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "delete_profile"},
-		call("action_delete_profile")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "set_nickname"},
-		call("action_set_nickname")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "download_profile"},
-		call("action_download_profile")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "list_notifications"},
-		call("action_list_notifications")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "process_notification"},
-		call("action_process_notification")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "remove_notification"},
-		call("action_remove_notification")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "process_all_notifications"},
-		call("action_process_all_notifications")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "remove_all_notifications"},
-		call("action_remove_all_notifications")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "discover_profiles"},
-		call("action_discover_profiles")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "set_default_smdp"},
-		call("action_set_default_smdp")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "factory_reset"},
-		call("action_factory_reset")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "list_apdu_drivers"},
-		call("action_list_apdu_drivers")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "list_http_drivers"},
-		call("action_list_http_drivers")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "check_lpac"},
-		call("action_check_lpac")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "get_config"},
-		call("action_get_config")).leaf = true
-
-	entry({"admin", "network", "lpac", "api", "update_config"},
-		call("action_update_config")).leaf = true
+	entry({"admin", "network", "lpac"}, alias("admin", "network", "lpac", "profiles"), _("eSIM (LPAC)"), 60).dependent = false
+	entry({"admin", "network", "lpac", "profiles"}, template("lpac/profiles"), _("Profile Management"), 1)
+	entry({"admin", "network", "lpac", "add"}, call("action_add_profile"), nil).leaf = true
+	entry({"admin", "network", "lpac", "delete"}, call("action_delete_profile"), nil).leaf = true
+	entry({"admin", "network", "lpac", "list"}, call("action_list_profiles"), nil).leaf = true
+	entry({"admin", "network", "lpac", "status"}, call("action_get_status"), nil).leaf = true
+	entry({"admin", "network", "lpac", "detect_devices"}, call("action_detect_devices"), nil).leaf = true
+	entry({"admin", "network", "lpac", "get_settings"}, call("action_get_settings"), nil).leaf = true
+	entry({"admin", "network", "lpac", "save_settings"}, call("action_save_settings"), nil).leaf = true
 end
 
--- Helper function to send JSON response
--- @param data table Data to serialize and send as JSON
-local function send_json(data)
+-- Add eSIM Profile
+function action_add_profile()
 	local http = require "luci.http"
-	http.prepare_content("application/json")
-	http.write_json(data)
-end
-
--- Helper function to get POST data
--- Parses JSON request body from HTTP POST request
--- @return table|nil Parsed JSON data or nil if no content
-local function get_post_data()
-	local http = require "luci.http"
+	local util = require "luci.util"
 	local json = require "luci.jsonc"
 
-	local content = http.content()
-	if not content or content == "" then
-		return nil
+	local activation_code = http.formvalue("activation_code")
+	local confirmation_code = http.formvalue("confirmation_code")
+
+	-- Get device settings from UCI (or use form values as override)
+	local qmi_device, serial_device = get_device_settings()
+	qmi_device = http.formvalue("qmi_device") or qmi_device
+	serial_device = http.formvalue("serial_device") or serial_device
+
+	if not activation_code or activation_code == "" then
+		http.prepare_content("application/json")
+		http.write_json({
+			success = false,
+			error = "Activation code is required"
+		})
+		return
 	end
 
-	return json.parse(content)
-end
+	-- Build command with wrapper script and device options
+	local cmd = string.format("/usr/bin/quectel_lpad_json -q %s", util.shellquote(qmi_device))
 
--- Get system information
--- Returns application version, lpac version, and system details
--- @return JSON response with system information
-function action_system_info()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.get_system_info()
-	send_json(result)
-end
+	if serial_device ~= "" then
+		cmd = cmd .. string.format(" -s %s", util.shellquote(serial_device))
+	end
 
--- Get dashboard summary
--- Returns overview of eUICC status, profiles, and notifications
--- @return JSON response with dashboard data
-function action_dashboard_summary()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.get_dashboard_summary()
-	send_json(result)
-end
+	cmd = cmd .. string.format(" add %s", util.shellquote(activation_code))
 
--- Get chip information
--- Returns detailed eUICC chip information and capabilities
--- @return JSON response with formatted chip data
-function action_chip_info()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.get_chip_info_formatted()
-	send_json(result)
-end
+	if confirmation_code and confirmation_code ~= "" then
+		cmd = cmd .. " " .. util.shellquote(confirmation_code)
+	end
 
--- Get EID (eUICC Identifier)
--- @return JSON response with EID or error message
-function action_get_eid()
-	local lpac = require "luci.model.lpac.lpac_interface"
-	local util = require "luci.model.lpac.lpac_util"
+	-- Execute command
+	local output = util.exec(cmd .. " 2>&1")
 
-	local eid = lpac.get_eid()
-	if eid then
-		send_json(util.create_result(true, "Success", {eid = eid}))
+	-- Parse JSON output from wrapper
+	local result = json.parse(output)
+
+	http.prepare_content("application/json")
+	if result then
+		http.write_json(result)
 	else
-		send_json(util.create_result(false, "Failed to get EID", nil))
+		http.write_json({
+			success = false,
+			error = "Failed to parse response",
+			raw_output = output
+		})
 	end
 end
 
--- List all eSIM profiles
--- Returns array of profiles with state, nickname, provider info
--- @return JSON response with profiles array
-function action_list_profiles()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.list_profiles_enhanced()
-	send_json(result)
-end
-
--- Get single profile by ICCID
--- Query parameter: iccid (string) - Profile ICCID
--- @return JSON response with profile details or error
-function action_get_profile()
-	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
-
-	local iccid = http.formvalue("iccid")
-	if not iccid then
-		send_json(util.create_result(false, "ICCID parameter is required", nil))
-		return
-	end
-
-	local result = model.get_profile_by_iccid(iccid)
-	send_json(result)
-end
-
--- Enable profile
--- POST data: {iccid: string, refresh: boolean?}
--- Activates the specified profile on the eUICC
--- @return JSON response with success/failure status
-function action_enable_profile()
-	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
-
-	local data = get_post_data()
-	if not data or not data.iccid then
-		send_json(util.create_result(false, "ICCID is required", nil))
-		return
-	end
-
-	local refresh = data.refresh ~= false  -- Default to true
-	local result = model.enable_profile_safe(data.iccid, refresh)
-	send_json(result)
-end
-
--- Disable profile
--- POST data: {iccid: string, refresh: boolean?}
--- Deactivates the specified profile on the eUICC
--- @return JSON response with success/failure status
-function action_disable_profile()
-	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
-
-	local data = get_post_data()
-	if not data or not data.iccid then
-		send_json(util.create_result(false, "ICCID is required", nil))
-		return
-	end
-
-	local refresh = data.refresh ~= false  -- Default to true
-	local result = model.disable_profile_safe(data.iccid, refresh)
-	send_json(result)
-end
-
--- Delete profile
--- POST data: {iccid: string, confirmed: boolean}
--- Permanently removes the profile from the eUICC
--- @return JSON response with success/failure status
+-- Delete eSIM Profile
 function action_delete_profile()
 	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
+	local util = require "luci.util"
+	local json = require "luci.jsonc"
 
-	local data = get_post_data()
-	if not data or not data.iccid then
-		send_json(util.create_result(false, "ICCID is required", nil))
+	local profile_id = tonumber(http.formvalue("profile_id"))
+
+	-- Get device settings from UCI (or use form values as override)
+	local qmi_device, serial_device = get_device_settings()
+	qmi_device = http.formvalue("qmi_device") or qmi_device
+	serial_device = http.formvalue("serial_device") or serial_device
+
+	if not profile_id or profile_id < 1 or profile_id > 16 then
+		http.prepare_content("application/json")
+		http.write_json({
+			success = false,
+			error = "Invalid profile ID (1-16)"
+		})
 		return
 	end
 
-	local confirmed = data.confirmed == true
-	local result = model.delete_profile_safe(data.iccid, confirmed)
-	send_json(result)
+	-- Build command with wrapper script and device options
+	local cmd = string.format("/usr/bin/quectel_lpad_json -q %s", util.shellquote(qmi_device))
+
+	if serial_device ~= "" then
+		cmd = cmd .. string.format(" -s %s", util.shellquote(serial_device))
+	end
+
+	cmd = cmd .. string.format(" delete %d", profile_id)
+
+	-- Execute command
+	local output = util.exec(cmd .. " 2>&1")
+
+	-- Parse JSON output from wrapper
+	local result = json.parse(output)
+
+	http.prepare_content("application/json")
+	if result then
+		http.write_json(result)
+	else
+		http.write_json({
+			success = false,
+			error = "Failed to parse response",
+			raw_output = output
+		})
+	end
 end
 
--- Set profile nickname
--- POST data: {iccid: string, nickname: string}
--- Updates the custom nickname for a profile
--- @return JSON response with success/failure status
-function action_set_nickname()
+-- List installed profiles (using wrapper script)
+function action_list_profiles()
 	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
+	local util = require "luci.util"
+	local json = require "luci.jsonc"
 
-	local data = get_post_data()
-	if not data or not data.iccid or not data.nickname then
-		send_json(util.create_result(false, "ICCID and nickname are required", nil))
-		return
+	-- Get device settings from UCI (or use form values as override)
+	local qmi_device, serial_device = get_device_settings()
+	qmi_device = http.formvalue("qmi_device") or qmi_device
+	serial_device = http.formvalue("serial_device") or serial_device
+
+	-- Build command with device options
+	local cmd = string.format("/usr/bin/quectel_lpad_json -q %s", util.shellquote(qmi_device))
+
+	if serial_device ~= "" then
+		cmd = cmd .. string.format(" -s %s", util.shellquote(serial_device))
 	end
 
-	local result = model.set_nickname_safe(data.iccid, data.nickname)
-	send_json(result)
+	cmd = cmd .. " list 2>&1"
+
+	local output = util.exec(cmd)
+
+	-- Parse JSON output from wrapper
+	local result = json.parse(output)
+
+	http.prepare_content("application/json")
+	if result then
+		http.write_json(result)
+	else
+		http.write_json({
+			success = false,
+			error = "Failed to parse response",
+			raw_output = output
+		})
+	end
 end
 
--- Download profile
--- POST data: {activation_code?: string, smdp?: string, matching_id?: string, confirmation_code?: string, imei?: string}
--- Downloads and installs an eSIM profile using activation code or manual parameters
--- @return JSON response with success status and profile ICCID
-function action_download_profile()
+-- Get modem status
+function action_get_status()
 	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
+	local util = require "luci.util"
 
-	local data = get_post_data()
-	if not data then
-		send_json(util.create_result(false, "Download options are required", nil))
-		return
-	end
+	-- Get device settings from UCI (or use form values as override)
+	local qmi_device, _ = get_device_settings()
+	qmi_device = http.formvalue("qmi_device") or qmi_device
 
-	local opts = {
-		activation_code = data.activation_code,
-		smdp = data.smdp,
-		matching_id = data.matching_id,
-		confirmation_code = data.confirmation_code,
-		imei = data.imei
+	-- Get modem status
+	local cmd = string.format("qmicli -d %s --uim-get-card-status 2>&1", util.shellquote(qmi_device))
+	local output = util.exec(cmd)
+
+	-- Check if modem is accessible
+	local modem_available = not output:match("error") and not output:match("couldn't find")
+
+	http.prepare_content("application/json")
+	http.write_json({
+		success = modem_available,
+		status = output,
+		modem_available = modem_available,
+		device = qmi_device
+	})
+end
+
+-- Detect available modem devices
+function action_detect_devices()
+	local http = require "luci.http"
+	local util = require "luci.util"
+	local nixio = require "nixio"
+	local fs = require "nixio.fs"
+
+	local devices = {
+		qmi_devices = {},
+		serial_devices = {}
 	}
 
-	-- Wrap in pcall to catch any Lua errors
-	local success, result = pcall(function()
-		return model.download_profile_safe(opts)
-	end)
+	-- Detect QMI devices (/dev/cdc-wdm*)
+	local qmi_pattern = "/dev/cdc-wdm"
+	for i = 0, 9 do
+		local dev = qmi_pattern .. i
+		if fs.stat(dev, "type") == "chr" then
+			-- Check if device is accessible
+			local test_cmd = string.format("qmicli -d %s --get-service-version-info 2>&1 || uqmi -d %s --get-versions 2>&1 || rqmi -d %s --get-versions 2>&1", dev, dev, dev)
+			local output = util.exec(test_cmd)
+			local accessible = not output:match("error opening device") and not output:match("No such file")
 
-	if not success then
-		-- Lua error occurred (exception)
-		send_json(util.create_result(false, "Internal error: " .. tostring(result), nil))
-		return
+			table.insert(devices.qmi_devices, {
+				path = dev,
+				name = "cdc-wdm" .. i,
+				accessible = accessible,
+				type = "QMI"
+			})
+		end
 	end
 
-	send_json(result)
+	-- Detect serial/AT devices (/dev/ttyUSB*)
+	local serial_pattern = "/dev/ttyUSB"
+	for i = 0, 9 do
+		local dev = serial_pattern .. i
+		if fs.stat(dev, "type") == "chr" then
+			-- Try to identify if it's an AT command interface
+			local at_test = string.format("echo 'AT' > %s 2>&1", dev)
+			local output = util.exec(at_test)
+			local accessible = not output:match("Permission denied") and not output:match("No such file")
+
+			table.insert(devices.serial_devices, {
+				path = dev,
+				name = "ttyUSB" .. i,
+				accessible = accessible,
+				type = "Serial/AT"
+			})
+		end
+	end
+
+	-- Also check /dev/ttyACM* (some modems use ACM)
+	local acm_pattern = "/dev/ttyACM"
+	for i = 0, 9 do
+		local dev = acm_pattern .. i
+		if fs.stat(dev, "type") == "chr" then
+			local at_test = string.format("echo 'AT' > %s 2>&1", dev)
+			local output = util.exec(at_test)
+			local accessible = not output:match("Permission denied") and not output:match("No such file")
+
+			table.insert(devices.serial_devices, {
+				path = dev,
+				name = "ttyACM" .. i,
+				accessible = accessible,
+				type = "Serial/AT"
+			})
+		end
+	end
+
+	http.prepare_content("application/json")
+	http.write_json({
+		success = true,
+		qmi_devices = devices.qmi_devices,
+		serial_devices = devices.serial_devices,
+		total_devices = #devices.qmi_devices + #devices.serial_devices
+	})
 end
 
--- List notifications
--- Returns array of pending eUICC notifications from SM-DP+ servers
--- @return JSON response with notifications array
-function action_list_notifications()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.list_notifications_enhanced()
-	send_json(result)
-end
-
--- Process notification
--- POST data: {seq_number: number, remove?: boolean}
--- Processes a pending notification (install/enable/disable/delete)
--- @return JSON response with processing result
-function action_process_notification()
+-- Get device settings from UCI
+function action_get_settings()
 	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
 
-	local data = get_post_data()
-	if not data or not data.seq_number then
-		send_json(util.create_result(false, "Sequence number is required", nil))
-		return
-	end
+	local qmi_device, serial_device = get_device_settings()
 
-	local remove = data.remove == true
-	local result = model.process_notification_safe(data.seq_number, remove)
-	send_json(result)
+	http.prepare_content("application/json")
+	http.write_json({
+		success = true,
+		qmi_device = qmi_device,
+		serial_device = serial_device
+	})
 end
 
--- Remove notification
--- POST data: {seq_number: number}
--- Removes a pending notification without processing it
--- @return JSON response with success/failure status
-function action_remove_notification()
+-- Save device settings to UCI
+function action_save_settings()
 	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
 
-	local data = get_post_data()
-	if not data or not data.seq_number then
-		send_json(util.create_result(false, "Sequence number is required", nil))
+	local qmi_device = http.formvalue("qmi_device")
+	local serial_device = http.formvalue("serial_device")
+
+	if not qmi_device or qmi_device == "" then
+		http.prepare_content("application/json")
+		http.write_json({
+			success = false,
+			error = "QMI device is required"
+		})
 		return
 	end
 
-	local result = model.remove_notification_safe(data.seq_number)
-	send_json(result)
-end
+	local success = save_device_settings(qmi_device, serial_device)
 
--- Process all notifications
--- Processes all pending notifications in batch
--- @return JSON response with results for each notification
-function action_process_all_notifications()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.process_all_notifications_safe()
-	send_json(result)
-end
-
--- Remove all notifications
--- Removes all pending notifications without processing
--- @return JSON response with success/failure status
-function action_remove_all_notifications()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.remove_all_notifications_safe()
-	send_json(result)
-end
-
--- Discover profiles from SM-DS
--- Queries the SM-DS server for available profiles
--- @return JSON response with discovered profiles array
-function action_discover_profiles()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.discover_profiles_safe()
-	send_json(result)
-end
-
--- Set default SM-DP+ address
--- POST data: {address: string}
--- Configures the default SM-DP+ server for profile discovery
--- @return JSON response with success/failure status
-function action_set_default_smdp()
-	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
-
-	local data = get_post_data()
-	if not data or not data.address then
-		send_json(util.create_result(false, "SM-DP+ address is required", nil))
-		return
-	end
-
-	local result = model.set_default_smdp_safe(data.address)
-	send_json(result)
-end
-
--- Factory reset
--- POST data: {confirmation: string}
--- Permanently deletes all profiles and resets eUICC to factory state
--- Requires confirmation="RESET" for safety
--- @return JSON response with success/failure status
-function action_factory_reset()
-	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
-
-	local data = get_post_data()
-	if not data or not data.confirmation then
-		send_json(util.create_result(false, "Confirmation is required", nil))
-		return
-	end
-
-	local result = model.factory_reset_safe(data.confirmation)
-	send_json(result)
-end
-
--- List available APDU drivers
--- Returns array of available APDU interface drivers
--- @return JSON response with drivers array
-function action_list_apdu_drivers()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.list_apdu_drivers_safe()
-	send_json(result)
-end
-
--- List available HTTP drivers
--- Returns array of available HTTP interface drivers
--- @return JSON response with drivers array
-function action_list_http_drivers()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.list_http_drivers_safe()
-	send_json(result)
-end
-
--- Check if lpac is available
--- Verifies lpac binary installation and execution
--- @return JSON response with installed status and version
-function action_check_lpac()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.check_lpac_available()
-	send_json(result)
-end
-
--- Get configuration
--- Returns current UCI configuration (APDU driver, default SM-DP+)
--- @return JSON response with configuration object
-function action_get_config()
-	local model = require "luci.model.lpac.lpac_model"
-	local result = model.get_config()
-	send_json(result)
-end
-
--- Update configuration
--- POST data: {apdu_driver?: string, default_smdp?: string}
--- Updates UCI configuration with new settings
--- @return JSON response with success/failure status
-function action_update_config()
-	local http = require "luci.http"
-	local model = require "luci.model.lpac.lpac_model"
-	local util = require "luci.model.lpac.lpac_util"
-
-	local data = get_post_data()
-	if not data then
-		send_json(util.create_result(false, "Configuration data is required", nil))
-		return
-	end
-
-	local result = model.update_config(data)
-	send_json(result)
+	http.prepare_content("application/json")
+	http.write_json({
+		success = success,
+		qmi_device = qmi_device,
+		serial_device = serial_device,
+		message = "Device settings saved to UCI configuration"
+	})
 end
