@@ -32,7 +32,9 @@ OPENWRT_SUBTARGET="generic"
 # SDK directory - in WSL home directory
 SDK_DIR="${HOME}/xe300-19.07.10-sdk/sdk"
 OUTPUT_DIR="${SCRIPT_DIR}/output"
-BUILD_DIR="${SCRIPT_DIR}/build-lpac"
+
+# Build on native Linux filesystem to avoid Windows symlink issues
+BUILD_DIR="${HOME}/.local/build/lpac-xe300-19.07.10"
 
 # LPAC source directory
 LPAC_SOURCE_DIR="${PROJECT_ROOT}/lpac"
@@ -281,14 +283,23 @@ prepare_source() {
     log_info "Source code ready ✓"
 }
 
-# Create CMake toolchain file
-create_toolchain_file() {
-    log_step "Creating CMake toolchain file..."
+# Compilation with CMake
+compile() {
+    log_step "Building lpac (CMake)..."
 
-    local TOOLCHAIN_FILE="${BUILD_DIR}/openwrt-mips.cmake"
     local target_dir="${SDK_DIR}/staging_dir/target-mips_24kc_musl"
+
+    # Copy source to build directory to avoid Windows filesystem issues
+    log_info "Copying source to native Linux filesystem..."
+    rm -rf "$BUILD_DIR"
+    mkdir -p "$BUILD_DIR"
+    cp -r "$LPAC_SOURCE_DIR"/* "$BUILD_DIR/"
+
+    # Now create toolchain file in the new location
+    local TOOLCHAIN_FILE="${BUILD_DIR}/openwrt-mips.cmake"
     local toolchain_dir="${SDK_DIR}/staging_dir/toolchain-mips_24kc_gcc-7.5.0_musl"
 
+    log_info "Creating CMake toolchain file..."
     cat > "$TOOLCHAIN_FILE" << EOF
 # CMake toolchain file for OpenWrt MIPS 24Kc cross-compilation
 set(CMAKE_SYSTEM_NAME Linux)
@@ -324,21 +335,11 @@ set(ENV{STAGING_DIR} "${SDK_DIR}/staging_dir")
 set(ENV{PATH} "${toolchain_dir}/bin:\$ENV{PATH}")
 EOF
 
-    log_info "Toolchain file created: $TOOLCHAIN_FILE"
-}
-
-# Compilation with CMake
-compile() {
-    log_step "Building lpac (CMake)..."
-
-    cd "$LPAC_SOURCE_DIR"
-
-    local TOOLCHAIN_FILE="${BUILD_DIR}/openwrt-mips.cmake"
-    local target_dir="${SDK_DIR}/staging_dir/target-mips_24kc_musl"
+    cd "$BUILD_DIR"
 
     # Configure with CMake
     log_info "CMake configuration..."
-    cmake -B "$BUILD_DIR" \
+    cmake -B build \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN_FILE" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
@@ -352,41 +353,43 @@ compile() {
 
     # Build
     log_info "Building lpac..."
-    cmake --build "$BUILD_DIR" -j$(($(nproc)-1)) || {
+    cmake --build build -j$(($(nproc)-1)) || {
         log_error "Compilation failed!"
         exit 1
     }
 
     # Check if binary exists
-    if [ ! -f "$BUILD_DIR/src/lpac" ]; then
+    if [ ! -f "build/src/lpac" ]; then
         log_error "Binary creation failed!"
         exit 1
     fi
 
     log_info "Compilation successful ✓"
+
+    cd - > /dev/null
 }
 
 # Strip and analyze
 post_process() {
     log_step "Processing binary..."
 
-    cd "$BUILD_DIR/src"
+    local BINARY_PATH="$BUILD_DIR/build/src/lpac"
 
     # Binary information
     log_info "Binary information (before strip):"
-    ls -lh lpac
-    file lpac
+    ls -lh "$BINARY_PATH"
+    file "$BINARY_PATH"
 
     # Apply strip
     log_info "Removing debug symbols (strip)..."
-    "${CROSS_COMPILE}strip" lpac
+    "${CROSS_COMPILE}strip" "$BINARY_PATH"
 
     log_info "Binary information (after strip):"
-    ls -lh lpac
+    ls -lh "$BINARY_PATH"
 
     # Architecture check
     local arch_info
-    arch_info=$(file lpac)
+    arch_info=$(file "$BINARY_PATH")
     if [[ ! "$arch_info" =~ "MIPS" ]]; then
         log_error "Binary is not MIPS architecture!"
         log_error "Info: $arch_info"
@@ -409,13 +412,15 @@ package_output() {
     mkdir -p "$OUTPUT_DIR"
 
     # Copy binary
-    cp "$BUILD_DIR/src/lpac" "$OUTPUT_DIR/"
+    cp "$BUILD_DIR/build/src/lpac" "$OUTPUT_DIR/"
 
     # Copy drivers if built
-    if [ -d "$BUILD_DIR/driver" ]; then
+    if [ -d "$BUILD_DIR/build/driver" ]; then
         mkdir -p "$OUTPUT_DIR/driver"
-        find "$BUILD_DIR/driver" -name "*.so" -exec cp {} "$OUTPUT_DIR/driver/" \; 2>/dev/null || true
-        log_info "Drivers copied to output/driver/"
+        find "$BUILD_DIR/build/driver" -name "*.so*" -type f -exec cp {} "$OUTPUT_DIR/driver/" \; 2>/dev/null || true
+        if [ "$(ls -A $OUTPUT_DIR/driver 2>/dev/null)" ]; then
+            log_info "Drivers copied to output/driver/"
+        fi
     fi
 
     # Create README
@@ -588,17 +593,17 @@ DEPLOYEOF
     echo "2.0" > "$IPK_BUILD_DIR/debian-binary"
 
     # Copy binary to data folder
-    cp "$BUILD_DIR/src/lpac" "$IPK_BUILD_DIR/data/usr/bin/"
+    cp "$BUILD_DIR/build/src/lpac" "$IPK_BUILD_DIR/data/usr/bin/"
     chmod +x "$IPK_BUILD_DIR/data/usr/bin/lpac"
 
     # Copy drivers if exist
-    if [ -d "$OUTPUT_DIR/driver" ] && [ "$(ls -A $OUTPUT_DIR/driver/*.so 2>/dev/null)" ]; then
+    if [ -d "$OUTPUT_DIR/driver" ] && [ "$(ls -A $OUTPUT_DIR/driver 2>/dev/null)" ]; then
         mkdir -p "$IPK_BUILD_DIR/data/usr/lib/lpac/driver"
-        cp "$OUTPUT_DIR/driver"/*.so "$IPK_BUILD_DIR/data/usr/lib/lpac/driver/" 2>/dev/null || true
+        cp "$OUTPUT_DIR/driver"/* "$IPK_BUILD_DIR/data/usr/lib/lpac/driver/" 2>/dev/null || true
     fi
 
     # Calculate binary size
-    local BINARY_SIZE=$(stat -c%s "$BUILD_DIR/src/lpac" 2>/dev/null || stat -f%z "$BUILD_DIR/src/lpac" 2>/dev/null)
+    local BINARY_SIZE=$(stat -c%s "$BUILD_DIR/build/src/lpac" 2>/dev/null || stat -f%z "$BUILD_DIR/build/src/lpac" 2>/dev/null)
 
     # Create control file
     cat > "$IPK_BUILD_DIR/control/control" << CTRLEOF
@@ -765,7 +770,6 @@ main() {
     setup_toolchain
     setup_dependencies
     prepare_source
-    create_toolchain_file
     compile
     post_process
     package_output
