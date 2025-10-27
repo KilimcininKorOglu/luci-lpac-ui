@@ -295,6 +295,22 @@ compile() {
     mkdir -p "$BUILD_DIR"
     cp -r "$LPAC_SOURCE_DIR"/* "$BUILD_DIR/"
 
+    # Apply patches for OpenWrt 19.07.10 compatibility
+    local PATCHES_DIR="${SCRIPT_DIR}/patches"
+    if [ -d "$PATCHES_DIR" ]; then
+        log_info "Applying patches for musl 1.1.19 compatibility..."
+        for patch in "$PATCHES_DIR"/*.patch; do
+            if [ -f "$patch" ]; then
+                log_info "  - $(basename "$patch")"
+                patch -p1 -d "$BUILD_DIR" < "$patch" || {
+                    log_error "Failed to apply patch: $(basename "$patch")"
+                    exit 1
+                }
+            fi
+        done
+        log_info "Patches applied successfully ✓"
+    fi
+
     # Now create toolchain file in the new location
     local TOOLCHAIN_FILE="${BUILD_DIR}/openwrt-mips.cmake"
     local toolchain_dir="${SDK_DIR}/staging_dir/toolchain-mips_24kc_gcc-7.5.0_musl"
@@ -631,8 +647,10 @@ MBIM_DEVICE="$(uci_get lpac device mbim_device /dev/cdc-wdm0)"
 QMI_DEVICE="$(uci_get lpac device qmi_device /dev/cdc-wdm0)"
 HTTP_CLIENT="$(uci_get lpac device http_client curl)"
 
-# Set library search path for driver discovery
-# This ensures drivers are found even if RPATH is not working on old musl
+# Set driver discovery paths for musl 1.1.19 compatibility
+# LPAC_DRIVER: Direct path to driver directory (fallback if RPATH fails)
+# LD_LIBRARY_PATH: Dynamic linker search path (additional fallback)
+export LPAC_DRIVER="/usr/lib/driver"
 export LD_LIBRARY_PATH="/usr/lib/driver:${LD_LIBRARY_PATH}"
 
 # Export HTTP client

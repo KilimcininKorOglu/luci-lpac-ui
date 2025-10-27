@@ -1,0 +1,22 @@
+--- a/driver/euicc-driver-loader.c
++++ b/driver/euicc-driver-loader.c
+@@ -210,10 +210,17 @@ static char *get_first_runpath() {
+     }
+ }
+
+ static char *get_driver_path() {
+     _cleanup_free_ char *LPAC_DRIVER_HOME = get_first_runpath();
+-    if (LPAC_DRIVER_HOME == NULL)
+-        return NULL;
++    if (LPAC_DRIVER_HOME == NULL) {
++        // Fallback: Check for LPAC_DRIVER environment variable
++        // This is needed for OpenWrt 19.07.10's musl 1.1.19 where get_runpath() may fail
++        const char *env_driver_home = getenv("LPAC_DRIVER");
++        if (env_driver_home != NULL) {
++            return strdup(env_driver_home);
++        }
++        return NULL;
++    }
+     return path_concat(LPAC_DRIVER_HOME, "driver");
+ }
+
