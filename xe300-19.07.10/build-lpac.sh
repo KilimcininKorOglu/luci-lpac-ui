@@ -631,6 +631,10 @@ MBIM_DEVICE="$(uci_get lpac device mbim_device /dev/cdc-wdm0)"
 QMI_DEVICE="$(uci_get lpac device qmi_device /dev/cdc-wdm0)"
 HTTP_CLIENT="$(uci_get lpac device http_client curl)"
 
+# Set library search path for driver discovery
+# This ensures drivers are found even if RPATH is not working on old musl
+export LD_LIBRARY_PATH="/usr/lib/driver:${LD_LIBRARY_PATH}"
+
 # Export HTTP client
 export LPAC_HTTP="$HTTP_CLIENT"
 
