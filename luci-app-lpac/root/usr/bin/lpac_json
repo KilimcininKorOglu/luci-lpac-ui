@@ -86,39 +86,51 @@ convert_lpac_json() {
 extract_profiles() {
     local lpac_output="$1"
 
-    # Check if successful
+    # lpac v2.x returns: {"type":"lpa","payload":{"code":0,"message":"success","data":[...]}}
+    # Extract code from payload
     local code=$(echo "$lpac_output" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
 
     if [ "$code" != "0" ]; then
+        local message=$(echo "$lpac_output" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
         echo "{"
         echo "  \"success\": false,"
         echo "  \"profiles\": [],"
-        echo "  \"error\": \"Failed to list profiles\""
+        echo "  \"error\": \"${message:-Failed to list profiles}\""
         echo "}"
         return
     fi
 
-    # Parse profiles from lpac data.profiles array
+    # Check if data array is empty
+    if echo "$lpac_output" | grep -q '"data"[[:space:]]*:[[:space:]]*\[\]'; then
+        echo "{"
+        echo "  \"success\": true,"
+        echo "  \"profiles\": [],"
+        echo "  \"message\": \"No profiles installed\""
+        echo "}"
+        return
+    fi
+
+    # Parse profiles from lpac data array
     echo "{"
     echo "  \"success\": true,"
     echo "  \"profiles\": ["
 
     # Extract ICCID, state, and nickname from each profile
-    # lpac format: "profiles": [{"iccid": "...", "state": 0/1, "nickname": "..."}, ...]
+    # lpac v2.x format: "data": [{"iccid": "...", "profileState": "enabled/disabled", "profileNickname": "..."}, ...]
     local first=1
     echo "$lpac_output" | grep -o '"iccid"[[:space:]]*:[[:space:]]*"[^"]*"' | while IFS= read -r iccid_line; do
         ICCID=$(echo "$iccid_line" | sed 's/.*"\([^"]*\)".*/\1/')
 
-        # Try to find state for this ICCID (0=disabled, 1=enabled)
+        # Try to find state for this ICCID
         STATE="unknown"
-        if echo "$lpac_output" | grep -A 3 "$ICCID" | grep -q '"state"[[:space:]]*:[[:space:]]*1'; then
+        if echo "$lpac_output" | grep -A 10 "$ICCID" | grep -q '"profileState"[[:space:]]*:[[:space:]]*"enabled"'; then
             STATE="enabled"
-        elif echo "$lpac_output" | grep -A 3 "$ICCID" | grep -q '"state"[[:space:]]*:[[:space:]]*0'; then
+        elif echo "$lpac_output" | grep -A 10 "$ICCID" | grep -q '"profileState"[[:space:]]*:[[:space:]]*"disabled"'; then
             STATE="disabled"
         fi
 
         # Extract nickname if present
-        NICKNAME=$(echo "$lpac_output" | grep -A 5 "$ICCID" | grep -o '"nickname"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/' | head -1)
+        NICKNAME=$(echo "$lpac_output" | grep -A 10 "$ICCID" | grep -o '"profileNickname"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/' | head -1)
 
         if [ $first -eq 0 ]; then
             echo "    ,"
@@ -134,8 +146,7 @@ extract_profiles() {
         echo "    }"
     done
 
-    echo "  ],"
-    echo "  \"raw_output\": $(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$/"/' | tr -d '\n')"
+    echo "  ]"
     echo "}"
 }
 
