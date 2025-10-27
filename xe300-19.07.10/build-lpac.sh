@@ -617,19 +617,34 @@ DEPLOYEOF
 # lpac wrapper script - reads UCI config and calls the real binary
 # Based on official OpenWrt lpac package structure
 
-# Default values
-APDU_DRIVER="${LPAC_APDU:-at}"
-AT_DEVICE="${LPAC_APDU_AT_DEVICE:-/dev/ttyUSB2}"
-HTTP_CLIENT="${LPAC_HTTP:-curl}"
+# Load UCI helper functions
+. /lib/config/uci.sh
 
-# Export environment variables for lpac binary
-export LPAC_APDU="$APDU_DRIVER"
+# Read driver configuration from UCI (with fallback defaults)
+APDU_DRIVER="$(uci_get lpac device driver at)"
+AT_DEVICE="$(uci_get lpac device at_device /dev/ttyUSB2)"
+MBIM_DEVICE="$(uci_get lpac device mbim_device /dev/cdc-wdm0)"
+QMI_DEVICE="$(uci_get lpac device qmi_device /dev/cdc-wdm0)"
+HTTP_CLIENT="$(uci_get lpac device http_client curl)"
+
+# Export HTTP client
 export LPAC_HTTP="$HTTP_CLIENT"
 
-# Set device path based on driver type
+# Export APDU driver and device path based on driver type
+export LPAC_APDU="$APDU_DRIVER"
+
 case "$APDU_DRIVER" in
     at|at_csim)
         export LPAC_APDU_AT_DEVICE="$AT_DEVICE"
+        ;;
+    mbim)
+        export MBIM_DEVICE="$MBIM_DEVICE"
+        ;;
+    qmi|uqmi)
+        export LPAC_QMI_DEV="$QMI_DEVICE"
+        ;;
+    qmi_qrtr)
+        # QMI QRTR doesn't need device path - uses Qualcomm IPC Router
         ;;
 esac
 
@@ -639,11 +654,13 @@ WRAPPEREOF
     chmod +x "$IPK_BUILD_DIR/data/usr/bin/lpac"
     log_info "Created wrapper script at /usr/bin/lpac"
 
-    # Create UCI config file (optional but recommended)
+    # Create UCI config file - shared with LuCI app
     cat > "$IPK_BUILD_DIR/data/etc/config/lpac" << 'UCIEOF'
-config device 'settings'
+config settings 'device'
 	option driver 'at'
 	option at_device '/dev/ttyUSB2'
+	option mbim_device '/dev/cdc-wdm0'
+	option qmi_device '/dev/cdc-wdm0'
 	option http_client 'curl'
 UCIEOF
     log_info "Created UCI config at /etc/config/lpac"
