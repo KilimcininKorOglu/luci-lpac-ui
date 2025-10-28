@@ -99,7 +99,7 @@ rm -rf /tmp/luci-modulecache/* /tmp/luci-indexcache/*
 
 The package uses UCI for configuration. Edit `/etc/config/lpac`:
 
-```
+```bash
 config lpac 'config'
     option apdu_driver 'AT'
     option device '/dev/ttyUSB2'
