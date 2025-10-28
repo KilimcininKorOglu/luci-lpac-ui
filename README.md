@@ -6,6 +6,18 @@ A LuCI web interface for managing eSIM profiles on OpenWrt routers with Quectel 
 
 LuCI App LPAC provides a user-friendly web interface for eSIM profile management through the LPAC (Local Profile Assistant Client) binary. It enables administrators to manage eSIM profiles directly from the OpenWrt router's web interface, supporting operations such as adding, deleting, enabling, and disabling profiles.
 
+## Screenshots
+
+### Dashboard - Profile Management
+![Dashboard](screenshot/dashboard.png)
+
+The main dashboard displays all eSIM profiles with their status, ICCID, provider, and nickname. Each profile has action buttons for editing, enabling/disabling, and deletion.
+
+### About Page
+![About Page](screenshot/about.png)
+
+The About page shows package information, version details, and recent changelog entries.
+
 ## Features
 
 ### Core Functionality
