@@ -378,29 +378,6 @@
         <div id="add_output" class="lpac-output"></div>
     </div>
 
-    <!-- Delete Profile Section -->
-    <div class="lpac-section">
-        <h3><%:Delete eSIM Profile%></h3>
-
-        <div class="lpac-form-group">
-            <label class="lpac-form-label" for="delete_iccid"><%:Select Profile to Delete%></label>
-            <select id="delete_iccid" class="lpac-select" style="width: 100%; max-width: 500px;">
-                <option value=""><%:-- No profiles loaded, click Refresh Profile List --%></option>
-            </select>
-            <span class="lpac-form-hint">
-                <%:Select profile by ICCID. Refresh profile list to populate this dropdown.%>
-            </span>
-        </div>
-
-        <div class="lpac-form-group">
-            <button class="lpac-button lpac-button-danger" onclick="deleteProfile()">
-                <%:Delete Selected Profile%>
-            </button>
-        </div>
-
-        <div id="delete_status" class="lpac-status"></div>
-        <div id="delete_output" class="lpac-output"></div>
-    </div>
 
     <!-- Modem Status Section -->
     <div class="lpac-section">
@@ -654,21 +631,19 @@ function addProfile() {
 }
 
 // Delete eSIM Profile
-function deleteProfile() {
-    var iccid = document.getElementById('delete_iccid').value;
-
-    var statusDiv = document.getElementById('delete_status');
-    var outputDiv = document.getElementById('delete_output');
-
-    if (!iccid || iccid === '') {
-        statusDiv.className = 'lpac-status error';
-        statusDiv.innerHTML = '<%:Please select a profile to delete%>';
+function deleteProfile(iccid, nickname) {
+    if (!iccid) {
+        alert('<%:Invalid ICCID%>');
         return;
     }
 
-    if (!confirm('<%:Are you sure you want to delete profile with ICCID:%> ' + iccid + '?')) {
+    var displayName = nickname ? (nickname + ' (' + iccid + ')') : iccid;
+    if (!confirm('<%:Are you sure you want to delete profile:%> ' + displayName + '?')) {
         return;
     }
+
+    var statusDiv = document.getElementById('profiles_status');
+    var outputDiv = document.getElementById('profiles_output');
 
     statusDiv.className = 'lpac-status info';
     statusDiv.innerHTML = '<%:Deleting profile, please wait...%>';
@@ -762,7 +737,6 @@ function listProfiles() {
     var outputDiv = document.getElementById('profiles_output');
     var listContainer = document.getElementById('profiles_list_container');
     var tbody = document.getElementById('profiles_tbody');
-    var deleteSelect = document.getElementById('delete_iccid');
 
     // Reset UI
     statusDiv.className = 'lpac-status info';
@@ -784,10 +758,7 @@ function listProfiles() {
             // Clear table
             tbody.innerHTML = '';
 
-            // Clear delete dropdown and add placeholder
-            deleteSelect.innerHTML = '<option value=""><%:-- Select Profile to Delete --%></option>';
-
-            // Populate table and delete dropdown
+            // Populate table
             data.profiles.forEach(function(profile) {
                 var row = tbody.insertRow();
 
@@ -810,24 +781,25 @@ function listProfiles() {
                 cellState.innerHTML = '<span style="color: ' + stateColor + '; font-weight: bold;">' +
                                      (state || '<%:Unknown%>').toUpperCase() + '</span>';
 
-                // Add edit button
+                // Actions: Edit and Delete buttons
+                // Edit button
                 var editBtn = document.createElement('button');
                 editBtn.className = 'lpac-button lpac-button-secondary';
                 editBtn.style.padding = '5px 10px';
                 editBtn.style.fontSize = '12px';
+                editBtn.style.marginRight = '5px';
                 editBtn.innerHTML = '✏️ <%:Edit%>';
                 editBtn.onclick = function() { editNickname(profile.iccid, nickname); };
                 cellActions.appendChild(editBtn);
 
-                // Add to delete dropdown
-                var option = document.createElement('option');
-                option.value = profile.iccid;
-                var displayText = profile.iccid;
-                if (nickname) {
-                    displayText = nickname + ' (' + profile.iccid + ')';
-                }
-                option.text = displayText;
-                deleteSelect.add(option);
+                // Delete button
+                var deleteBtn = document.createElement('button');
+                deleteBtn.className = 'lpac-button lpac-button-danger';
+                deleteBtn.style.padding = '5px 10px';
+                deleteBtn.style.fontSize = '12px';
+                deleteBtn.innerHTML = '🗑️ <%:Delete%>';
+                deleteBtn.onclick = function() { deleteProfile(profile.iccid, nickname); };
+                cellActions.appendChild(deleteBtn);
             });
 
             // Show table
