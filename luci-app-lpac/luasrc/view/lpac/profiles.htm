@@ -768,12 +768,16 @@ function listProfiles() {
                 cellIccid.style.fontFamily = 'monospace';
                 cellIccid.innerHTML = profile.iccid || '<%:Unknown%>';
 
-                cellNickname.innerHTML = '<span class="nickname-display">' + (profile.nickname || '<%:No name%>') + '</span>';
+                // lpac v2.x uses profileNickname field
+                var nickname = profile.profileNickname || profile.nickname || '';
+                cellNickname.innerHTML = '<span class="nickname-display">' + (nickname || '<%:No name%>') + '</span>';
 
-                var stateColor = profile.state === 'enabled' ? 'green' :
-                                 profile.state === 'disabled' ? 'orange' : 'gray';
+                // lpac v2.x uses profileState field (enabled/disabled as strings)
+                var state = profile.profileState || profile.state || 'unknown';
+                var stateColor = state === 'enabled' ? 'green' :
+                                 state === 'disabled' ? 'orange' : 'gray';
                 cellState.innerHTML = '<span style="color: ' + stateColor + '; font-weight: bold;">' +
-                                     (profile.state || '<%:Unknown%>').toUpperCase() + '</span>';
+                                     (state || '<%:Unknown%>').toUpperCase() + '</span>';
 
                 // Add edit button
                 var editBtn = document.createElement('button');
@@ -781,15 +785,15 @@ function listProfiles() {
                 editBtn.style.padding = '5px 10px';
                 editBtn.style.fontSize = '12px';
                 editBtn.innerHTML = '✏️ <%:Edit%>';
-                editBtn.onclick = function() { editNickname(profile.iccid, profile.nickname || ''); };
+                editBtn.onclick = function() { editNickname(profile.iccid, nickname); };
                 cellActions.appendChild(editBtn);
 
                 // Add to delete dropdown
                 var option = document.createElement('option');
                 option.value = profile.iccid;
                 var displayText = profile.iccid;
-                if (profile.nickname) {
-                    displayText = profile.nickname + ' (' + profile.iccid + ')';
+                if (nickname) {
+                    displayText = nickname + ' (' + profile.iccid + ')';
                 }
                 option.text = displayText;
                 deleteSelect.add(option);

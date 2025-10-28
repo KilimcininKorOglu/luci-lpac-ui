@@ -321,7 +321,7 @@ case "$ACTION" in
         ;;
 
     list)
-        # List profiles using lpac
+        # List profiles using lpac - lpac v2.x returns proper JSON directly
         OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN profile list 2>&1)
         EXIT_CODE=$?
 
@@ -330,8 +330,18 @@ case "$ACTION" in
             exit 0
         fi
 
-        # Extract profiles from lpac JSON
-        extract_profiles "$OUTPUT"
+        # lpac returns: {"type":"lpa","payload":{"code":0,"message":"success","data":[...]}}
+        # Check if it's valid JSON with code=0
+        if echo "$OUTPUT" | grep -q '"code"[[:space:]]*:[[:space:]]*0'; then
+            # Success - return lpac's JSON directly with success wrapper
+            echo "{"
+            echo "  \"success\": true,"
+            echo "  \"profiles\": $(echo "$OUTPUT" | sed -n 's/.*"data"[[:space:]]*:[[:space:]]*\(\[.*\]\).*/\1/p')"
+            echo "}"
+        else
+            # Error
+            echo "{\"success\": false, \"error\": \"Failed to list profiles\", \"profiles\": []}"
+        fi
         exit 0
         ;;
 
