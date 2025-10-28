@@ -1,10 +1,10 @@
-# LuCI App for LPAC (eSIM Profile Management)
+# LuCI App LPAC
 
-Web interface for managing eSIM profiles on Quectel modems via OpenWrt's LuCI.
+A LuCI web interface for managing eSIM profiles on OpenWrt routers with Quectel modems.
 
 ## Overview
 
-`luci-app-lpac` provides a user-friendly web interface for the `lpac` command-line tool, enabling eSIM profile installation and management directly from the OpenWrt router's admin panel.
+LuCI App LPAC provides a user-friendly web interface for eSIM profile management through the LPAC (Local Profile Assistant Client) binary. It enables administrators to manage eSIM profiles directly from the OpenWrt router's web interface, supporting operations such as adding, deleting, enabling, and disabling profiles.
 
 ## Features
 

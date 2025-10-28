@@ -62,3 +62,5 @@ xe*300-openwrt/
 *.ipk
 /docs/
 esim.txt
+lpac.md
+lpac-*.md
