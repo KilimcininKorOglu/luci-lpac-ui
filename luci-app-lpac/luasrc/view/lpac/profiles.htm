@@ -311,7 +311,8 @@
         <div id="add_output" class="lpac-output"></div>
     </div>
 
-    <!-- Notifications Section -->
+    <!-- Notifications Section - COMMENTED OUT -->
+    <!--
     <div class="lpac-section">
         <h3><%:Pending Notifications%></h3>
         <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
@@ -329,7 +330,6 @@
 
         <div id="notifications_status" class="lpac-status" style="display: none;"></div>
 
-        <!-- Notifications Table -->
         <div id="notifications_list_container" style="margin-top: 15px; display: none;">
             <table class="lpac-table">
                 <thead>
@@ -341,11 +341,11 @@
                     </tr>
                 </thead>
                 <tbody id="notifications_tbody">
-                    <!-- Notifications will be loaded here -->
                 </tbody>
             </table>
         </div>
     </div>
+    -->
 
     <!-- Modem Device & Status Section -->
     <div class="lpac-section">
@@ -812,7 +812,8 @@ function disableProfile(iccid, nickname) {
     });
 }
 
-// List Pending Notifications
+// List Pending Notifications - COMMENTED OUT
+/*
 function listNotifications() {
     var statusDiv = document.getElementById('notifications_status');
     var listContainer = document.getElementById('notifications_list_container');
@@ -881,7 +882,7 @@ function listNotifications() {
     });
 }
 
-// Manual Process All Notifications
+// Manual Process All Notifications - COMMENTED OUT
 function manualProcessNotifications() {
     var statusDiv = document.getElementById('notifications_status');
     var listContainer = document.getElementById('notifications_list_container');
@@ -915,6 +916,7 @@ function manualProcessNotifications() {
         }
     });
 }
+*/
 
 // Refresh Modem Status
 function refreshStatus() {
