@@ -238,73 +238,6 @@
     <h2><%:eSIM Profile Management (LPAC)%></h2>
     <p><%:Manage eSIM profiles on Quectel modems using LPA (Local Profile Assistant)%></p>
 
-    <!-- Device Selection Section -->
-    <div class="lpac-section">
-        <h3><%:Modem Device & Driver Selection%></h3>
-
-        <div class="lpac-form-group">
-            <button class="lpac-button lpac-button-secondary" onclick="detectDevices()">
-                <%:Scan for Devices%>
-            </button>
-        </div>
-
-        <div id="device_selection_container" style="margin-top: 15px; display: none;">
-            <div class="lpac-form-group">
-                <label class="lpac-form-label"><%:APDU Driver%></label>
-                <select id="driver_select" class="lpac-select" style="width: 100%; max-width: 400px;" onchange="updateDeviceInputs()">
-                    <option value="at">AT (ETSI TS 127 007) - Recommended for EP06-E</option>
-                    <option value="at_csim">AT_CSIM (Faster, may not work on all modems)</option>
-                    <option value="mbim">MBIM (USB Mobile Broadband Interface)</option>
-                    <option value="qmi">QMI (Qualcomm MSM Interface)</option>
-                    <option value="qmi_qrtr">QMI QRTR (QMI over QRTR)</option>
-                    <option value="uqmi">uQMI (OpenWrt QMI command line tool)</option>
-                </select>
-                <span class="lpac-form-hint">
-                    <%:Select APDU driver based on your modem type%>
-                </span>
-            </div>
-
-            <div class="lpac-form-group" id="at_device_group">
-                <label class="lpac-form-label"><%:AT Serial Device%></label>
-                <select id="at_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
-                    <option value=""><%:-- Select AT Device --%></option>
-                </select>
-                <span class="lpac-form-hint">
-                    <%:Select /dev/ttyUSB* or /dev/ttyACM* device for AT driver%>
-                </span>
-            </div>
-
-            <div class="lpac-form-group" id="mbim_device_group" style="display: none;">
-                <label class="lpac-form-label"><%:MBIM Device%></label>
-                <select id="mbim_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
-                    <option value=""><%:-- Select MBIM Device --%></option>
-                </select>
-                <span class="lpac-form-hint">
-                    <%:Select /dev/cdc-wdm* device for MBIM driver%>
-                </span>
-            </div>
-
-            <div class="lpac-form-group">
-                <label class="lpac-form-label"><%:HTTP Client%></label>
-                <select id="http_client_select" class="lpac-select" style="width: 100%; max-width: 200px;">
-                    <option value="curl">curl</option>
-                    <option value="wget">wget</option>
-                </select>
-                <span class="lpac-form-hint">
-                    <%:Select HTTP client for SM-DP+ communication%>
-                </span>
-            </div>
-
-            <div class="lpac-form-group">
-                <button class="lpac-button lpac-button-primary" onclick="saveDeviceSettings()">
-                    <%:Save Device Settings%>
-                </button>
-            </div>
-        </div>
-
-        <div id="device_status" class="lpac-status"></div>
-    </div>
-
     <!-- Installed Profiles Section -->
     <div class="lpac-section">
         <h3><%:Installed Profiles%></h3>
@@ -413,16 +346,74 @@
         </div>
     </div>
 
-    <!-- Modem Status Section -->
+    <!-- Modem Device & Status Section -->
     <div class="lpac-section">
-        <h3><%:Modem Status%></h3>
+        <h3><%:Modem Device & Status%></h3>
 
         <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-secondary" onclick="detectDevices()" style="margin-right: 10px;">
+                <%:Scan for Devices%>
+            </button>
             <button class="lpac-button lpac-button-secondary" onclick="refreshStatus()">
                 <%:Refresh Status%>
             </button>
         </div>
 
+        <div id="device_selection_container" style="margin-top: 15px; display: none;">
+            <div class="lpac-form-group">
+                <label class="lpac-form-label"><%:APDU Driver%></label>
+                <select id="driver_select" class="lpac-select" style="width: 100%; max-width: 400px;" onchange="updateDeviceInputs()">
+                    <option value="at">AT (ETSI TS 127 007) - Recommended for EP06-E</option>
+                    <option value="at_csim">AT_CSIM (Faster, may not work on all modems)</option>
+                    <option value="mbim">MBIM (USB Mobile Broadband Interface)</option>
+                    <option value="qmi">QMI (Qualcomm MSM Interface)</option>
+                    <option value="qmi_qrtr">QMI QRTR (QMI over QRTR)</option>
+                    <option value="uqmi">uQMI (OpenWrt QMI command line tool)</option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select APDU driver based on your modem type%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group" id="at_device_group">
+                <label class="lpac-form-label"><%:AT Serial Device%></label>
+                <select id="at_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
+                    <option value=""><%:-- Select AT Device --%></option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select /dev/ttyUSB* or /dev/ttyACM* device for AT driver%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group" id="mbim_device_group" style="display: none;">
+                <label class="lpac-form-label"><%:MBIM Device%></label>
+                <select id="mbim_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
+                    <option value=""><%:-- Select MBIM Device --%></option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select /dev/cdc-wdm* device for MBIM driver%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group">
+                <label class="lpac-form-label"><%:HTTP Client%></label>
+                <select id="http_client_select" class="lpac-select" style="width: 100%; max-width: 200px;">
+                    <option value="curl">curl</option>
+                    <option value="wget">wget</option>
+                </select>
+                <span class="lpac-form-hint">
+                    <%:Select HTTP client for SM-DP+ communication%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group">
+                <button class="lpac-button lpac-button-primary" onclick="saveDeviceSettings()">
+                    <%:Save Device Settings%>
+                </button>
+            </div>
+        </div>
+
+        <div id="device_status" class="lpac-status"></div>
         <div id="status_output" class="lpac-output"></div>
     </div>
 </div>
