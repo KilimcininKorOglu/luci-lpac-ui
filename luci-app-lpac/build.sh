@@ -54,6 +54,37 @@ PKG_MAINTAINER=$(grep '^PKG_MAINTAINER:=' "$PROJECT_DIR/Makefile" | cut -d'=' -f
 # Extract developer name from maintainer (e.g., "Name <email>" -> "Name")
 DEVELOPER_NAME=$(echo "$PKG_MAINTAINER" | sed 's/<.*//' | sed 's/[[:space:]]*$//')
 
+# Generate changelog from recent git commits (excluding version bump commits)
+generate_changelog() {
+    local changelog_items=""
+    local count=0
+
+    # Get last 10 commits, filter out version bumps and chore commits, take first 5
+    while IFS= read -r commit_msg; do
+        # Skip version bump commits
+        if echo "$commit_msg" | grep -q "bump version\|chore:"; then
+            continue
+        fi
+
+        # Extract the description after emoji and type
+        # Format: "🔧 feat(build): description" -> "description"
+        local desc=$(echo "$commit_msg" | sed -E 's/^[^ ]+ [^:]+: (.+)$/\1/')
+
+        # Capitalize first letter
+        desc="$(echo ${desc:0:1} | tr '[:lower:]' '[:upper:]')${desc:1}"
+
+        changelog_items="${changelog_items}        <li><%:${desc}%></li>\n"
+        count=$((count + 1))
+
+        # Stop after 5 items
+        if [ $count -ge 5 ]; then
+            break
+        fi
+    done < <(git log --pretty=format:"%s" -10)
+
+    echo -e "$changelog_items"
+}
+
 # Update about.htm with package information from Makefile
 if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
     # Update version number
@@ -70,6 +101,17 @@ if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
 
     # Update developer name
     sed -i "s/<td class=\"cbi-value-field\">Kilimcinin Kör Oğlu<\/td>/<td class=\"cbi-value-field\">$DEVELOPER_NAME<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
+    # Update changelog items with recent commits
+    CHANGELOG_ITEMS=$(generate_changelog)
+    # Replace the changelog items section (between <ul> and </ul>)
+    awk -v changelog="$CHANGELOG_ITEMS" '
+        /<legend><%:What.*New in v/ {print; in_changelog=1; next}
+        in_changelog && /<ul>/ {print; print changelog; skip=1; next}
+        in_changelog && /<\/ul>/ {print; in_changelog=0; skip=0; next}
+        !skip {print}
+    ' "$PROJECT_DIR/luasrc/view/lpac/about.htm" > "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp"
+    mv "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
 fi
 
 if [ $LATEST_BUILD -eq 0 ]; then
@@ -79,6 +121,7 @@ else
 fi
 echo -e "${BLUE}Makefile:${NC}     Updated PKG_RELEASE=$NEW_BUILD"
 echo -e "${BLUE}About page:${NC}   Updated version to $FULL_VERSION"
+echo -e "${BLUE}Changelog:${NC}    Auto-generated from recent git commits"
 
 # Build date
 BUILD_DATE=$(date +%Y%m%d)
