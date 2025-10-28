@@ -58,7 +58,7 @@ openeuicc/
 /lpac/
 euicc-go/
 euicc/wget-log*
-xe*300-openwrt/
+xe300-*/
 *.ipk
 /docs/
 esim.txt

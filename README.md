@@ -9,6 +9,7 @@ LuCI App LPAC provides a user-friendly web interface for eSIM profile management
 ## Features
 
 ### Core Functionality
+
 - List all eSIM profiles with detailed information (ICCID, state, nickname, provider)
 - Enable and disable eSIM profiles
 - Delete profiles from the eUICC
@@ -18,11 +19,13 @@ LuCI App LPAC provides a user-friendly web interface for eSIM profile management
 - Automatic GSMA notification processing
 
 ### Driver Support
+
 - AT (Standard AT commands)
 - AT_CSIM (AT+CSIM commands)
 - MBIM (Mobile Broadband Interface Model)
 
 ### Architecture
+
 - Classic LuCI template-based design
 - Seamless integration with OpenWrt themes
 - Standard fieldset structure following OpenWrt UI guidelines
@@ -32,6 +35,7 @@ LuCI App LPAC provides a user-friendly web interface for eSIM profile management
 ## Requirements
 
 ### Runtime Dependencies
+
 - OpenWrt 21.02 or later
 - luci-base
 - luci-compat
@@ -40,6 +44,7 @@ LuCI App LPAC provides a user-friendly web interface for eSIM profile management
 - Quectel modem with eSIM support
 
 ### Build Dependencies
+
 - bash
 - tar
 - gzip
@@ -102,11 +107,13 @@ config lpac 'config'
 The build system includes comprehensive automation to ensure consistency and reduce manual maintenance:
 
 #### 1. Version Management
+
 - Auto-increments build number based on existing IPK files
 - Updates PKG_RELEASE in Makefile
 - Synchronizes version across all files before building
 
 #### 2. Metadata Synchronization
+
 - Extracts package information from Makefile (single source of truth)
 - Automatically updates about.htm with:
   - Package name
@@ -115,6 +122,7 @@ The build system includes comprehensive automation to ensure consistency and red
   - Developer name
 
 #### 3. Changelog Generation
+
 - Parses recent git commit messages
 - Filters meaningful commits (excludes version bumps and chores)
 - Extracts descriptions from conventional commit format
@@ -147,7 +155,7 @@ The script performs the following steps:
 
 The build creates an IPK package in the project root:
 
-```
+```bash
 luci-app-lpac_1.0.1-N_all.ipk
 ```
 
@@ -155,7 +163,7 @@ Where N is the auto-incremented build number.
 
 ## File Structure
 
-```
+```bash
 luci-app-lpac/
 ├── build.sh                          # Automated build script
 ├── Makefile                          # OpenWrt package definition
@@ -188,7 +196,7 @@ luci-app-lpac/
 
 This project uses conventional commits for automated changelog generation:
 
-```
+```bash
 emoji type(scope): description
 
 Examples:
@@ -213,8 +221,8 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 Kilimcinin Kör Oğlu
 
-- Email: k@keremgok.tr
-- GitHub: https://github.com/KilimcininKorOglu/luci-lpac-ui
+- Email: <k@keremgok.tr>
+- GitHub: <https://github.com/KilimcininKorOglu/luci-lpac-ui>
 - X (Twitter): @KorOglan
 
 ## Acknowledgments
@@ -227,7 +235,7 @@ Kilimcinin Kör Oğlu
 ## Support
 
 For issues, questions, or contributions, please visit:
-https://github.com/KilimcininKorOglu/luci-lpac-ui/issues
+<https://github.com/KilimcininKorOglu/luci-lpac-ui/issues>
 
 ## Changelog
 
