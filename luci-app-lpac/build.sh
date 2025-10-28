@@ -89,8 +89,9 @@ echo -e "${YELLOW}[3/6]${NC} Copying LuCI files..."
 echo "  → Controller (lpac.lua)"
 cp "$PROJECT_DIR/luasrc/controller/lpac.lua" "$DATA_DIR/usr/lib/lua/luci/controller/"
 
-echo "  → Template view (profiles.htm)"
+echo "  → Template views (profiles.htm, about.htm)"
 cp "$PROJECT_DIR/luasrc/view/lpac/profiles.htm" "$DATA_DIR/usr/lib/lua/luci/view/lpac/"
+cp "$PROJECT_DIR/luasrc/view/lpac/about.htm" "$DATA_DIR/usr/lib/lua/luci/view/lpac/"
 
 echo "  → Wrapper script (lpac_json)"
 cp "$PROJECT_DIR/root/usr/bin/lpac_json" "$DATA_DIR/usr/bin/"
