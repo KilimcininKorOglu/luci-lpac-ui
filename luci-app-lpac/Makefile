@@ -13,7 +13,7 @@ PKG_NAME:=luci-app-lpac
 PKG_VERSION:=1.0.1
 PKG_RELEASE:=38
 PKG_LICENSE:=MIT
-PKG_MAINTAINER:=Kerem <kerem@example.com>
+PKG_MAINTAINER:=Kilimcinin Kör Oğlu <k@keremgok.tr>
 
 define Package/luci-app-lpac/conffiles
 /etc/config/lpac

@@ -48,10 +48,28 @@ FULL_VERSION="${PKG_VERSION}-${PKG_RELEASE}"
 # Update Makefile with new build number
 sed -i "s/^PKG_RELEASE:=.*/PKG_RELEASE:=$NEW_BUILD/" "$PROJECT_DIR/Makefile"
 
-# Update about.htm with new version number
+# Extract package information from Makefile
+PKG_LICENSE=$(grep '^PKG_LICENSE:=' "$PROJECT_DIR/Makefile" | cut -d'=' -f2)
+PKG_MAINTAINER=$(grep '^PKG_MAINTAINER:=' "$PROJECT_DIR/Makefile" | cut -d'=' -f2)
+# Extract developer name from maintainer (e.g., "Name <email>" -> "Name")
+DEVELOPER_NAME=$(echo "$PKG_MAINTAINER" | sed 's/<.*//' | sed 's/[[:space:]]*$//')
+
+# Update about.htm with package information from Makefile
 if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
+    # Update version number
     sed -i "s/<td class=\"cbi-value-field\">1\.0\.1-[0-9]*<\/td>/<td class=\"cbi-value-field\">$FULL_VERSION<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
+    # Update changelog version
     sed -i "s/<legend><%:What's New in v1\.0\.1-[0-9]*%><\/legend>/<legend><%:What's New in v$FULL_VERSION%><\/legend>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
+    # Update package name
+    sed -i "s/<td class=\"cbi-value-field\">luci-app-lpac<\/td>/<td class=\"cbi-value-field\">$PKG_NAME<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
+    # Update license
+    sed -i "s/<td class=\"cbi-value-field\">MIT License<\/td>/<td class=\"cbi-value-field\">$PKG_LICENSE<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
+    # Update developer name
+    sed -i "s/<td class=\"cbi-value-field\">Kilimcinin Kör Oğlu<\/td>/<td class=\"cbi-value-field\">$DEVELOPER_NAME<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
 fi
 
 if [ $LATEST_BUILD -eq 0 ]; then
