@@ -12,6 +12,31 @@ QMI_DEVICE="${LPAC_APDU_QMI_DEVICE:-/dev/cdc-wdm0}"
 HTTP_CLIENT="${LPAC_HTTP:-curl}"
 TIMEOUT=90
 
+# Lock file for preventing concurrent access
+LOCKFILE="/var/run/lpac_json.lock"
+LOCKFD=200
+
+# Acquire lock to prevent concurrent lpac operations
+acquire_lock() {
+    eval "exec $LOCKFD>$LOCKFILE"
+    if ! flock -n $LOCKFD 2>/dev/null; then
+        echo '{"success": false, "error": "Another lpac operation is in progress. Please wait and try again."}'
+        exit 1
+    fi
+}
+
+# Release lock on exit
+release_lock() {
+    flock -u $LOCKFD 2>/dev/null
+    rm -f "$LOCKFILE" 2>/dev/null
+}
+
+# Ensure lock is released on script exit (normal or error)
+trap release_lock EXIT INT TERM
+
+# Acquire lock at startup
+acquire_lock
+
 # Timeout wrapper function for systems without 'timeout' command (OpenWrt 19.07.10)
 run_with_timeout() {
     local timeout_duration="$1"
@@ -23,8 +48,25 @@ run_with_timeout() {
         return $?
     fi
 
-    # Fallback: Run without timeout on OpenWrt 19.07.10
-    # Note: This means operations may hang, but lpac usually completes quickly
+    # Fallback using perl (usually available on OpenWrt)
+    if command -v perl >/dev/null 2>&1; then
+        perl -e '
+            $SIG{ALRM} = sub { kill 9, $pid; exit 124; };
+            alarm shift @ARGV;
+            $pid = fork();
+            if ($pid == 0) {
+                exec @ARGV;
+                exit 1;
+            }
+            waitpid($pid, 0);
+            alarm 0;
+            exit($? >> 8);
+        ' "$timeout_duration" "$@"
+        return $?
+    fi
+
+    # Last resort: Run without timeout and log warning
+    logger -t lpac_json "WARNING: No timeout mechanism available, operation may hang indefinitely"
     "$@"
     return $?
 }
