@@ -48,12 +48,19 @@ FULL_VERSION="${PKG_VERSION}-${PKG_RELEASE}"
 # Update Makefile with new build number
 sed -i "s/^PKG_RELEASE:=.*/PKG_RELEASE:=$NEW_BUILD/" "$PROJECT_DIR/Makefile"
 
+# Update about.htm with new version number
+if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
+    sed -i "s/<td class=\"cbi-value-field\">1\.0\.1-[0-9]*<\/td>/<td class=\"cbi-value-field\">$FULL_VERSION<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+    sed -i "s/<legend><%:What's New in v1\.0\.1-[0-9]*%><\/legend>/<legend><%:What's New in v$FULL_VERSION%><\/legend>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+fi
+
 if [ $LATEST_BUILD -eq 0 ]; then
     echo -e "${BLUE}Build Number:${NC}  $NEW_BUILD (first build)"
 else
     echo -e "${BLUE}Build Number:${NC}  $LATEST_BUILD → ${GREEN}$NEW_BUILD${NC} (auto-incremented)"
 fi
 echo -e "${BLUE}Makefile:${NC}     Updated PKG_RELEASE=$NEW_BUILD"
+echo -e "${BLUE}About page:${NC}   Updated version to $FULL_VERSION"
 
 # Build date
 BUILD_DATE=$(date +%Y%m%d)
