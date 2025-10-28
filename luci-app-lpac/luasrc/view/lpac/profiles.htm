@@ -318,8 +318,19 @@
             <%:Notifications are automatically processed after profile operations. You can view and manually process pending notifications below.%>
         </p>
 
+        <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-secondary" onclick="listNotifications()" style="margin-right: 10px;">
+                <%:List Notifications%>
+            </button>
+            <button class="lpac-button lpac-button-primary" onclick="manualProcessNotifications()">
+                <%:Process All Notifications%>
+            </button>
+        </div>
+
+        <div id="notifications_status" class="lpac-status"></div>
+
         <!-- Notifications Table -->
-        <div id="notifications_list_container" style="margin-top: 15px;">
+        <div id="notifications_list_container" style="margin-top: 15px; display: none;">
             <table class="lpac-table">
                 <thead>
                     <tr>
@@ -333,14 +344,6 @@
                     <!-- Notifications will be loaded here -->
                 </tbody>
             </table>
-        </div>
-
-        <div id="notifications_status" class="lpac-status"></div>
-
-        <div class="lpac-form-group" style="margin-top: 15px;">
-            <button class="lpac-button lpac-button-primary" onclick="manualProcessNotifications()">
-                <%:Process All Notifications%>
-            </button>
         </div>
     </div>
 
@@ -857,17 +860,20 @@ function listNotifications() {
                                    (notif.notificationAddress || 'N/A') + '</span>';
             });
 
-            // Show status message
+            // Show table and status message
+            listContainer.style.display = 'block';
             statusDiv.className = 'lpac-status success';
             statusDiv.innerHTML = '<strong>✓</strong> <%:Found%> ' + data.notifications.length + ' <%:pending notification(s)%>';
         } else if (data.success) {
             // No notifications - show empty table message
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666; padding: 20px;"><%:No pending notifications%></td></tr>';
+            listContainer.style.display = 'block';
             statusDiv.className = 'lpac-status success';
             statusDiv.innerHTML = '<strong>✓</strong> <%:No pending notifications%>';
         } else {
             // Error - show error message in table
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #d44; padding: 20px;"><%:Failed to load notifications%></td></tr>';
+            listContainer.style.display = 'block';
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to list notifications:%> ' + (data.error || '<%:Unknown error%>');
         }
@@ -877,6 +883,7 @@ function listNotifications() {
 // Manual Process All Notifications
 function manualProcessNotifications() {
     var statusDiv = document.getElementById('notifications_status');
+    var listContainer = document.getElementById('notifications_list_container');
 
     if (!confirm('<%:Process and send all pending notifications to SM-DP+ servers?%>')) {
         return;
@@ -898,8 +905,8 @@ function manualProcessNotifications() {
             } else {
                 statusDiv.innerHTML = '<strong>✓</strong> <%:No notifications to process%>';
             }
-            // Refresh notifications list after processing
-            listNotifications();
+            // Hide the table after processing
+            listContainer.style.display = 'none';
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to process notifications:%> ' + (data.error || '<%:Unknown error%>');
