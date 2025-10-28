@@ -1,203 +1,72 @@
 <%#
 LuCI - LPAC About Page
-Copyright 2025 Kerem
+Copyright 2025 Kilimcinin Kör Oğlu
 Licensed under the MIT License
 -%>
 
 <%+header%>
 
-<style>
-.about-container {
-    max-width: 800px;
-    margin: 20px auto;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
+<h2 name="content"><%:LuCI App LPAC%></h2>
 
-.about-header {
-    text-align: center;
-    padding: 40px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    color: white;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
+<fieldset class="cbi-section">
+    <legend><%:Package Information%></legend>
+    <table class="cbi-section-table" style="width:100%">
+        <tr class="cbi-section-table-row">
+            <td class="cbi-value-field" style="width:30%"><strong><%:Package Name%></strong></td>
+            <td class="cbi-value-field">luci-app-lpac</td>
+        </tr>
+        <tr class="cbi-section-table-row">
+            <td class="cbi-value-field"><strong><%:Version%></strong></td>
+            <td class="cbi-value-field">1.0.1-34</td>
+        </tr>
+        <tr class="cbi-section-table-row">
+            <td class="cbi-value-field"><strong><%:License%></strong></td>
+            <td class="cbi-value-field">MIT License</td>
+        </tr>
+        <tr class="cbi-section-table-row">
+            <td class="cbi-value-field"><strong><%:Developer%></strong></td>
+            <td class="cbi-value-field">Kilimcinin Kör Oğlu</td>
+        </tr>
+    </table>
+</fieldset>
 
-.about-header h1 {
-    margin: 0 0 10px 0;
-    font-size: 32px;
-    font-weight: 600;
-}
+<fieldset class="cbi-section">
+    <legend><%:Links%></legend>
+    <table class="cbi-section-table" style="width:100%">
+        <tr class="cbi-section-table-row">
+            <td class="cbi-value-field" style="width:30%"><strong><%:GitHub Repository%></strong></td>
+            <td class="cbi-value-field"><a href="https://github.com/KilimcininKorOglu/luci-lpac-ui" target="_blank">https://github.com/KilimcininKorOglu/luci-lpac-ui</a></td>
+        </tr>
+        <tr class="cbi-section-table-row">
+            <td class="cbi-value-field"><strong><%:X (Twitter)%></strong></td>
+            <td class="cbi-value-field"><a href="https://x.com/KorOglan" target="_blank">@KorOglan</a></td>
+        </tr>
+    </table>
+</fieldset>
 
-.about-header p {
-    margin: 5px 0;
-    font-size: 16px;
-    opacity: 0.95;
-}
+<fieldset class="cbi-section">
+    <legend><%:What's New in v1.0.1-34%></legend>
+    <ul>
+        <li><%:Fixed About page template missing from package build%></li>
+        <li><%:Notification status now hidden by default on page load%></li>
+        <li><%:Notifications table appears only when "List Notifications" button is clicked%></li>
+        <li><%:Cleaner UI with on-demand notification loading%></li>
+        <li><%:Updated About page with correct developer information and links%></li>
+    </ul>
+</fieldset>
 
-.about-section {
-    background: #fff;
-    padding: 25px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+<fieldset class="cbi-section">
+    <legend><%:About LPAC%></legend>
+    <p>
+        <%:LPAC (Local Profile Assistant Client) is an open-source eSIM profile management tool for Linux.
+        This LuCI application provides a web-based interface for managing eSIM profiles on OpenWrt routers
+        with Quectel modems supporting GSMA SGP.22 eSIM specification.%>
+    </p>
+</fieldset>
 
-.about-section h2 {
-    margin: 0 0 15px 0;
-    font-size: 20px;
-    color: #2d3748;
-    border-bottom: 2px solid #667eea;
-    padding-bottom: 8px;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: 140px 1fr;
-    gap: 12px;
-    margin: 15px 0;
-}
-
-.info-label {
-    font-weight: 600;
-    color: #4a5568;
-}
-
-.info-value {
-    color: #2d3748;
-}
-
-.info-value a {
-    color: #667eea;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.info-value a:hover {
-    color: #764ba2;
-    text-decoration: underline;
-}
-
-.changelog-list {
-    list-style: none;
-    padding: 0;
-    margin: 15px 0;
-}
-
-.changelog-list li {
-    padding: 8px 0;
-    border-bottom: 1px solid #edf2f7;
-    color: #4a5568;
-    line-height: 1.6;
-}
-
-.changelog-list li:last-child {
-    border-bottom: none;
-}
-
-.changelog-icon {
-    display: inline-block;
-    width: 24px;
-    margin-right: 8px;
-}
-
-.footer-note {
-    text-align: center;
-    color: #718096;
-    font-size: 14px;
-    margin-top: 30px;
-    padding: 20px;
-}
-
-.social-links {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin: 20px 0;
-}
-
-.social-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: #f7fafc;
-    border-radius: 6px;
-    color: #2d3748;
-    text-decoration: none;
-    transition: all 0.2s;
-    border: 1px solid #e2e8f0;
-}
-
-.social-link:hover {
-    background: #667eea;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-</style>
-
-<div class="about-container">
-    <div class="about-header">
-        <h1>LuCI App LPAC</h1>
-        <p><%:eSIM Profile Management for OpenWrt%></p>
-        <p style="font-size: 24px; margin-top: 15px;">v1.0.1-33</p>
-    </div>
-
-    <div class="about-section">
-        <h2><%:Package Information%></h2>
-        <div class="info-grid">
-            <div class="info-label"><%:Package Name%>:</div>
-            <div class="info-value">luci-app-lpac</div>
-
-            <div class="info-label"><%:Version%>:</div>
-            <div class="info-value">1.0.1-33</div>
-
-            <div class="info-label"><%:License%>:</div>
-            <div class="info-value">MIT License</div>
-
-            <div class="info-label"><%:Developer%>:</div>
-            <div class="info-value">Kilimcinin Kör Oğlu</div>
-        </div>
-    </div>
-
-    <div class="about-section">
-        <h2><%:Links%></h2>
-        <div class="social-links">
-            <a href="https://github.com/KilimcininKorOglu/luci-lpac-ui" target="_blank" class="social-link">
-                <span>GitHub</span>
-            </a>
-            <a href="https://x.com/KorOglan" target="_blank" class="social-link">
-                <span>@KorOglan on X</span>
-            </a>
-        </div>
-    </div>
-
-    <div class="about-section">
-        <h2><%:What's New in v1.0.1-33%></h2>
-        <ul class="changelog-list">
-            <li><span class="changelog-icon">🐛</span> <%:Fixed About page template missing from package build%></li>
-            <li><span class="changelog-icon">🔧</span> <%:Notification status now hidden by default on page load%></li>
-            <li><span class="changelog-icon">✨</span> <%:Notifications table appears only when "List Notifications" button is clicked%></li>
-            <li><span class="changelog-icon">🎨</span> <%:Cleaner UI with on-demand notification loading%></li>
-            <li><span class="changelog-icon">📋</span> <%:Manual notification management with list and process buttons%></li>
-        </ul>
-    </div>
-
-    <div class="about-section">
-        <h2><%:About LPAC%></h2>
-        <p style="line-height: 1.8; color: #4a5568;">
-            <%:LPAC (Local Profile Assistant Client) is an open-source eSIM profile management tool for Linux.
-            This LuCI application provides a web-based interface for managing eSIM profiles on OpenWrt routers
-            with Quectel modems supporting GSMA SGP.22 eSIM specification.%>
-        </p>
-    </div>
-
-    <div class="footer-note">
-        <p><%:Made with%> ❤️ <%:for the OpenWrt community%></p>
-        <p style="margin-top: 10px; font-size: 12px;">© 2025 Kilimcinin Kör Oğlu. <%:All rights reserved.%></p>
-    </div>
-</div>
+<fieldset class="cbi-section">
+    <legend><%:Copyright%></legend>
+    <p>© 2025 Kilimcinin Kör Oğlu. <%:All rights reserved.%></p>
+</fieldset>
 
 <%+footer%>
