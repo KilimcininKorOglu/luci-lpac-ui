@@ -39,6 +39,7 @@ function index()
 	entry({"admin", "network", "lpac", "save_settings"}, call("action_save_settings"), nil).leaf = true
 	entry({"admin", "network", "lpac", "set_nickname"}, call("action_set_nickname"), nil).leaf = true
 	entry({"admin", "network", "lpac", "process_notifications"}, call("action_process_notifications"), nil).leaf = true
+	entry({"admin", "network", "lpac", "list_notifications"}, call("action_list_notifications"), nil).leaf = true
 	entry({"admin", "network", "lpac", "enable"}, call("action_enable_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "disable"}, call("action_disable_profile"), nil).leaf = true
 end
@@ -582,6 +583,52 @@ function action_disable_profile()
 
 	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
 	cmd = cmd .. string.format(" disable %s", util.shellquote(iccid))
+
+	-- Execute command
+	local output = util.exec(cmd .. " 2>&1")
+
+	-- Parse JSON output from wrapper
+	local result = json.parse(output)
+
+	http.prepare_content("application/json")
+	if result then
+		http.write_json(result)
+	else
+		http.write_json({
+			success = false,
+			error = "Failed to parse response",
+			raw_output = output
+		})
+	end
+end
+
+-- List Pending Notifications
+function action_list_notifications()
+	local http = require "luci.http"
+	local util = require "luci.util"
+	local json = require "luci.jsonc"
+
+	-- Get device settings from UCI (or use form values as override)
+	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	driver = http.formvalue("driver") or driver
+	at_device = http.formvalue("at_device") or at_device
+	mbim_device = http.formvalue("mbim_device") or mbim_device
+	qmi_device = http.formvalue("qmi_device") or qmi_device
+
+	-- Build command with lpac_json wrapper and device options
+	local cmd = string.format("/usr/bin/lpac_json -d %s", util.shellquote(driver))
+
+	-- Add device paths based on driver type
+	if driver == "at" or driver == "at_csim" then
+		cmd = cmd .. string.format(" -t %s", util.shellquote(at_device))
+	elseif driver == "mbim" then
+		cmd = cmd .. string.format(" -m %s", util.shellquote(mbim_device))
+	elseif driver == "qmi" or driver == "uqmi" then
+		cmd = cmd .. string.format(" -q %s", util.shellquote(qmi_device))
+	end
+
+	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
+	cmd = cmd .. " notification_list"
 
 	-- Execute command
 	local output = util.exec(cmd .. " 2>&1")

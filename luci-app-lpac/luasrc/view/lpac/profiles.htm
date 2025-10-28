@@ -378,6 +378,40 @@
         <div id="add_output" class="lpac-output"></div>
     </div>
 
+    <!-- Notifications Section -->
+    <div class="lpac-section">
+        <h3><%:Pending Notifications%></h3>
+        <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+            <%:Notifications are automatically processed after profile operations. You can manually check and process pending notifications here.%>
+        </p>
+
+        <div class="lpac-form-group">
+            <button class="lpac-button lpac-button-secondary" onclick="listNotifications()" style="margin-right: 10px;">
+                <%:List Notifications%>
+            </button>
+            <button class="lpac-button lpac-button-primary" onclick="manualProcessNotifications()">
+                <%:Process All Notifications%>
+            </button>
+        </div>
+
+        <div id="notifications_status" class="lpac-status"></div>
+
+        <!-- Notifications Table -->
+        <div id="notifications_list_container" style="display: none; margin-top: 15px;">
+            <table class="lpac-table">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;"><%:Seq Number%></th>
+                        <th style="width: 200px;"><%:Profile ICCID%></th>
+                        <th style="width: 150px;"><%:Operation%></th>
+                        <th><%:Address%></th>
+                    </tr>
+                </thead>
+                <tbody id="notifications_tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <!-- Modem Status Section -->
     <div class="lpac-section">
@@ -782,6 +816,104 @@ function disableProfile(iccid, nickname) {
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Disable failed:%> ' + (data.error || '<%:Unknown error%>');
+        }
+    });
+}
+
+// List Pending Notifications
+function listNotifications() {
+    var statusDiv = document.getElementById('notifications_status');
+    var listContainer = document.getElementById('notifications_list_container');
+    var tbody = document.getElementById('notifications_tbody');
+
+    // Reset UI
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Loading pending notifications...%>';
+    listContainer.style.display = 'none';
+
+    var url = '<%=url("admin/network/lpac/list_notifications")%>?' +
+              'driver=' + encodeURIComponent(selectedDriver) +
+              '&at_device=' + encodeURIComponent(selectedAtDevice) +
+              '&mbim_device=' + encodeURIComponent(selectedMbimDevice) +
+              '&http_client=' + encodeURIComponent(selectedHttpClient);
+
+    XHR.get(url, null, function(x, data) {
+        if (data.success && data.notifications && data.notifications.length > 0) {
+            // Clear table
+            tbody.innerHTML = '';
+
+            // Populate table
+            data.notifications.forEach(function(notif) {
+                var row = tbody.insertRow();
+
+                var cellSeq = row.insertCell(0);
+                var cellIccid = row.insertCell(1);
+                var cellOp = row.insertCell(2);
+                var cellAddr = row.insertCell(3);
+
+                cellSeq.innerHTML = notif.seqNumber || 'N/A';
+                cellIccid.innerHTML = notif.profileManagementOperation?.iccid || 'N/A';
+
+                // Operation type
+                var opType = 'Unknown';
+                if (notif.profileManagementOperation) {
+                    if (notif.profileManagementOperation.notificationInstall) opType = 'Install';
+                    else if (notif.profileManagementOperation.notificationEnable) opType = 'Enable';
+                    else if (notif.profileManagementOperation.notificationDisable) opType = 'Disable';
+                    else if (notif.profileManagementOperation.notificationDelete) opType = 'Delete';
+                }
+                cellOp.innerHTML = '<span style="font-weight: bold;">' + opType + '</span>';
+
+                cellAddr.innerHTML = '<span style="font-size: 11px; font-family: monospace;">' +
+                                   (notif.notificationAddress || 'N/A') + '</span>';
+            });
+
+            // Show table
+            listContainer.style.display = 'block';
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> <%:Found%> ' + data.notifications.length + ' <%:pending notification(s)%>';
+        } else if (data.success) {
+            // No notifications
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> <%:No pending notifications%>';
+            listContainer.style.display = 'none';
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to list notifications:%> ' + (data.error || '<%:Unknown error%>');
+            listContainer.style.display = 'none';
+        }
+    });
+}
+
+// Manual Process All Notifications
+function manualProcessNotifications() {
+    var statusDiv = document.getElementById('notifications_status');
+    var listContainer = document.getElementById('notifications_list_container');
+
+    if (!confirm('<%:Process and send all pending notifications to SM-DP+ servers?%>')) {
+        return;
+    }
+
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Processing all notifications, please wait...%>';
+    listContainer.style.display = 'none';
+
+    XHR.post('<%=url("admin/network/lpac/process_notifications")%>', {
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
+    }, function(x, data) {
+        if (data.success) {
+            statusDiv.className = 'lpac-status success';
+            if (data.count > 0) {
+                statusDiv.innerHTML = '<strong>✓</strong> <%:Successfully processed and sent%> ' + data.count + ' <%:notification(s)%>!';
+            } else {
+                statusDiv.innerHTML = '<strong>✓</strong> <%:No notifications to process%>';
+            }
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to process notifications:%> ' + (data.error || '<%:Unknown error%>');
         }
     });
 }
