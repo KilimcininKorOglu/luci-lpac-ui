@@ -6,6 +6,7 @@
 <%+header%>
 
 <style>
+/* OpenWrt dark mode compatible styles - using data-bs-theme attribute */
 .lpac-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -15,7 +16,14 @@
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+/* Dark mode overrides - using prefers-color-scheme with higher specificity */
+@media (prefers-color-scheme: dark) {
+    body .lpac-section {
+        background: #212529 !important;
+        border-color: rgba(255,255,255,0.1) !important;
+    }
 }
 .lpac-input {
     width: 100%;
@@ -24,6 +32,15 @@
     border: 1px solid #ddd;
     border-radius: 3px;
     font-size: 14px;
+    background: #fff;
+    color: #000;
+}
+@media (prefers-color-scheme: dark) {
+    body .lpac-input {
+        background: #2b3035 !important;
+        color: #fff !important;
+        border-color: #495057 !important;
+    }
 }
 .lpac-button {
     padding: 10px 20px;
@@ -35,21 +52,21 @@
 }
 .lpac-button-primary {
     background: #0088cc;
-    color: white;
+    color: #fff;
 }
 .lpac-button-primary:hover {
     background: #006ba3;
 }
 .lpac-button-danger {
     background: #dc3545;
-    color: white;
+    color: #fff;
 }
 .lpac-button-danger:hover {
     background: #c82333;
 }
 .lpac-button-secondary {
     background: #6c757d;
-    color: white;
+    color: #fff;
 }
 .lpac-button-secondary:hover {
     background: #5a6268;
@@ -61,27 +78,27 @@
     display: none;
 }
 .lpac-status.success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
+    background: var(--success-bg, #d4edda);
+    border: 1px solid var(--success-border, #c3e6cb);
+    color: var(--success-text, #155724);
     display: block;
 }
 .lpac-status.error {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
+    background: var(--danger-bg, #f8d7da);
+    border: 1px solid var(--danger-border, #f5c6cb);
+    color: var(--danger-text, #721c24);
     display: block;
 }
 .lpac-status.info {
-    background: #d1ecf1;
-    border: 1px solid #bee5eb;
-    color: #0c5460;
+    background: var(--info-bg, #d1ecf1);
+    border: 1px solid var(--info-border, #bee5eb);
+    color: var(--info-text, #0c5460);
     display: block;
 }
 .lpac-progress {
     width: 100%;
     height: 30px;
-    background: #f0f0f0;
+    background: var(--progress-bg, #e9ecef);
     border-radius: 3px;
     overflow: hidden;
     margin-top: 10px;
@@ -89,8 +106,8 @@
 }
 .lpac-progress-bar {
     height: 100%;
-    background: #0088cc;
-    color: white;
+    background: var(--primary, #0088cc);
+    color: #fff;
     text-align: center;
     line-height: 30px;
     transition: width 0.3s;
@@ -108,6 +125,89 @@
     max-height: 300px;
     overflow-y: auto;
     display: none;
+    color: #000;
+}
+@media (prefers-color-scheme: dark) {
+    body .lpac-output {
+        background: #1a1d20 !important;
+        border-color: #495057 !important;
+        color: #f8f9fa !important;
+    }
+    body .lpac-form-label {
+        color: #f8f9fa !important;
+    }
+    body .lpac-form-hint {
+        color: #adb5bd !important;
+    }
+    body .lpac-select {
+        background: #2b3035 !important;
+        color: #fff !important;
+        border-color: #495057 !important;
+    }
+    body .lpac-button-primary {
+        background: #0d6efd !important;
+    }
+    body .lpac-button-primary:hover {
+        background: #0b5ed7 !important;
+    }
+    body .lpac-button-danger {
+        background: #dc3545 !important;
+    }
+    body .lpac-button-danger:hover {
+        background: #bb2d3b !important;
+    }
+    body .lpac-button-secondary {
+        background: #6c757d !important;
+    }
+    body .lpac-button-secondary:hover {
+        background: #5c636a !important;
+    }
+    body .lpac-progress {
+        background: #343a40 !important;
+    }
+    body .lpac-progress-bar {
+        background: #0d6efd !important;
+    }
+    /* Table styles for dark mode */
+    body #profiles_table {
+        border-color: #495057 !important;
+    }
+    body #profiles_table thead tr {
+        background: #343a40 !important;
+    }
+    body #profiles_table th {
+        border-color: #495057 !important;
+        color: #f8f9fa !important;
+    }
+    body #profiles_table td {
+        border-color: #495057 !important;
+        color: #f8f9fa !important;
+    }
+    body #profiles_table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05) !important;
+    }
+}
+/* Table base styles */
+#profiles_table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+}
+#profiles_table thead tr {
+    background: #f5f5f5;
+}
+#profiles_table th {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+    color: #333;
+}
+#profiles_table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+#profiles_table tbody tr:hover {
+    background: #f9f9f9;
 }
 .lpac-form-group {
     margin-bottom: 15px;
@@ -122,13 +222,15 @@
     display: block;
     margin-top: 5px;
     font-size: 12px;
-    color: #666;
+    color: #6c757d;
 }
 .lpac-select {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 3px;
     font-size: 14px;
+    background: #fff;
+    color: #000;
 }
 </style>
 
@@ -214,12 +316,12 @@
         </div>
 
         <div id="profiles_list_container" style="margin-top: 15px; display: none;">
-            <table id="profiles_table" style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+            <table id="profiles_table">
                 <thead>
-                    <tr style="background: #f5f5f5;">
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:ICCID%></th>
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:Nickname%></th>
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;"><%:Status%></th>
+                    <tr>
+                        <th><%:ICCID%></th>
+                        <th><%:Nickname%></th>
+                        <th><%:Status%></th>
                     </tr>
                 </thead>
                 <tbody id="profiles_tbody">
@@ -510,6 +612,9 @@ function addProfile() {
             statusDiv.innerHTML = '<strong>✓</strong> <%:Profile installed successfully!%>';
             document.getElementById('activation_code').value = '';
             document.getElementById('confirmation_code').value = '';
+
+            // Refresh profile list after successful installation
+            listProfiles();
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Installation failed:%> ' + (data.error || '<%:Unknown error%>');
@@ -629,17 +734,11 @@ function listProfiles() {
                 var cellNickname = row.insertCell(1);
                 var cellState = row.insertCell(2);
 
-                cellIccid.style.padding = '10px';
-                cellIccid.style.border = '1px solid #ddd';
                 cellIccid.style.fontFamily = 'monospace';
                 cellIccid.innerHTML = profile.iccid || '<%:Unknown%>';
 
-                cellNickname.style.padding = '10px';
-                cellNickname.style.border = '1px solid #ddd';
                 cellNickname.innerHTML = profile.nickname || '<%:No name%>';
 
-                cellState.style.padding = '10px';
-                cellState.style.border = '1px solid #ddd';
                 var stateColor = profile.state === 'enabled' ? 'green' :
                                  profile.state === 'disabled' ? 'orange' : 'gray';
                 cellState.innerHTML = '<span style="color: ' + stateColor + '; font-weight: bold;">' +
