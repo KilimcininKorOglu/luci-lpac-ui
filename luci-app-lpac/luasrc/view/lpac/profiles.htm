@@ -424,6 +424,25 @@ var selectedMbimDevice = '/dev/cdc-wdm0';
 var selectedHttpClient = 'curl';
 var installedProfiles = []; // Cache for installed profiles
 
+// Process all pending notifications (GSMA compliance)
+// This is called automatically after profile operations (download, delete, enable, disable)
+function processNotifications(callback) {
+    XHR.post('<%=url("admin/network/lpac/process_notifications")%>', {
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
+    }, function(x, data) {
+        // Silent processing - we don't need to show notification count to user
+        // Just log it for debugging
+        if (data.success && data.count > 0) {
+            console.log('Processed ' + data.count + ' notification(s)');
+        }
+        // Always call callback, even if notifications failed
+        if (callback) callback(data);
+    });
+}
+
 // Load device settings from UCI
 function loadDeviceSettings() {
     XHR.get('<%=url("admin/network/lpac/get_settings")%>', null, function(x, data) {
@@ -609,13 +628,19 @@ function addProfile() {
         progressDiv.style.display = 'none';
 
         if (data.success) {
-            statusDiv.className = 'lpac-status success';
-            statusDiv.innerHTML = '<strong>✓</strong> <%:Profile installed successfully!%>';
-            document.getElementById('activation_code').value = '';
-            document.getElementById('confirmation_code').value = '';
+            // Profile installed - now process notifications (GSMA compliance)
+            statusDiv.className = 'lpac-status info';
+            statusDiv.innerHTML = '<strong>→</strong> <%:Profile installed, processing notifications...%>';
 
-            // Refresh profile list after successful installation
-            listProfiles();
+            processNotifications(function(notifData) {
+                statusDiv.className = 'lpac-status success';
+                statusDiv.innerHTML = '<strong>✓</strong> <%:Profile installed successfully!%>';
+                document.getElementById('activation_code').value = '';
+                document.getElementById('confirmation_code').value = '';
+
+                // Refresh profile list after successful installation
+                listProfiles();
+            });
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Installation failed:%> ' + (data.error || '<%:Unknown error%>');
@@ -657,10 +682,16 @@ function deleteProfile() {
         http_client: selectedHttpClient
     }, function(x, data) {
         if (data.success) {
-            statusDiv.className = 'lpac-status success';
-            statusDiv.innerHTML = '<strong>✓</strong> <%:Profile deleted successfully!%>';
-            // Refresh profile list to update delete dropdown
-            listProfiles();
+            // Profile deleted - now process notifications (GSMA compliance)
+            statusDiv.className = 'lpac-status info';
+            statusDiv.innerHTML = '<strong>→</strong> <%:Profile deleted, processing notifications...%>';
+
+            processNotifications(function(notifData) {
+                statusDiv.className = 'lpac-status success';
+                statusDiv.innerHTML = '<strong>✓</strong> <%:Profile deleted successfully!%>';
+                // Refresh profile list to update delete dropdown
+                listProfiles();
+            });
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Deletion failed:%> ' + (data.error || '<%:Unknown error%>');

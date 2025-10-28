@@ -400,8 +400,70 @@ case "$ACTION" in
         exit 0
         ;;
 
+    notification_list)
+        # List pending notifications
+        OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN notification list 2>&1)
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\", \"notifications\": []}"
+            exit 0
+        fi
+
+        # lpac returns: {"type":"lpa","payload":{"code":0,"message":"success","data":[...]}}
+        # Extract notifications array similar to profile list
+        if echo "$OUTPUT" | grep -q '"code"[[:space:]]*:[[:space:]]*0'; then
+            echo "{"
+            echo "  \"success\": true,"
+            echo "  \"notifications\": $(echo "$OUTPUT" | sed -n 's/.*"data"[[:space:]]*:[[:space:]]*\(\[.*\]\).*/\1/p')"
+            echo "}"
+        else
+            echo "{\"success\": false, \"error\": \"Failed to list notifications\", \"notifications\": []}"
+        fi
+        exit 0
+        ;;
+
+    notification_process_all)
+        # Process all pending notifications with auto-remove (-r flag)
+        OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN notification process -a -r 2>&1)
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\"}"
+            exit 0
+        fi
+
+        # Check if operation succeeded
+        if echo "$OUTPUT" | grep -q '"code"[[:space:]]*:[[:space:]]*0'; then
+            # Count how many notifications were processed
+            NOTIFICATION_COUNT=$(echo "$OUTPUT" | grep -o '"seqNumber"' | wc -l)
+            echo "{"
+            echo "  \"success\": true,"
+            echo "  \"message\": \"Processed and removed $NOTIFICATION_COUNT notification(s)\","
+            echo "  \"count\": $NOTIFICATION_COUNT"
+            echo "}"
+        else
+            # Check if there were no notifications to process
+            if echo "$OUTPUT" | grep -qi "no.*notification" || echo "$OUTPUT" | grep -q '"data"[[:space:]]*:[[:space:]]*\[\]'; then
+                echo "{"
+                echo "  \"success\": true,"
+                echo "  \"message\": \"No pending notifications to process\","
+                echo "  \"count\": 0"
+                echo "}"
+            else
+                # Actual error
+                local error_msg=$(echo "$OUTPUT" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/' | head -1)
+                echo "{"
+                echo "  \"success\": false,"
+                echo "  \"error\": \"${error_msg:-Failed to process notifications}\""
+                echo "}"
+            fi
+        fi
+        exit 0
+        ;;
+
     *)
-        echo "{\"success\": false, \"error\": \"Invalid action: $ACTION. Valid actions: add, delete, enable, disable, list, info, status, nickname\"}"
+        echo "{\"success\": false, \"error\": \"Invalid action: $ACTION. Valid actions: add, delete, enable, disable, list, info, status, nickname, notification_list, notification_process_all\"}"
         exit 1
         ;;
 esac
