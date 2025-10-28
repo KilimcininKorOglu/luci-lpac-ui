@@ -320,3 +320,40 @@ echo -e "${BLUE}Web Access:${NC}"
 echo -e "  http://router-ip/cgi-bin/luci/admin/network/lpac"
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
+
+# Auto-commit version changes to git
+echo ""
+echo -e "${YELLOW}[7/7]${NC} Committing version changes to git..."
+
+# Check if we're in a git repository
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    # Stage the changed files
+    git add "$PROJECT_DIR/Makefile" "$PROJECT_DIR/luasrc/view/lpac/about.htm" 2>/dev/null
+
+    # Check if there are changes to commit
+    if git diff --cached --quiet; then
+        echo -e "  ${BLUE}ℹ${NC} No version changes to commit"
+    else
+        # Create commit with version bump message
+        git commit -m "🔖 chore: bump version to $FULL_VERSION
+
+Auto-generated commit from build script.
+
+Changes:
+- Updated PKG_RELEASE to $PKG_RELEASE in Makefile
+- Updated version display in about.htm to $FULL_VERSION
+- Auto-generated changelog from recent commits"
+
+        if [ $? -eq 0 ]; then
+            echo -e "  ${GREEN}✓${NC} Version changes committed successfully"
+            echo -e "  ${BLUE}Commit:${NC}       $(git log -1 --pretty=format:'%h - %s')"
+        else
+            echo -e "  ${RED}✗${NC} Failed to commit version changes"
+        fi
+    fi
+else
+    echo -e "  ${BLUE}ℹ${NC} Not a git repository, skipping commit"
+fi
+
+echo ""
+echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
