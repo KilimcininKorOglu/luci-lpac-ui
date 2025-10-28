@@ -30,6 +30,7 @@ end
 function index()
 	entry({"admin", "network", "lpac"}, alias("admin", "network", "lpac", "profiles"), _("eSIM (LPAC)"), 60).dependent = false
 	entry({"admin", "network", "lpac", "profiles"}, template("lpac/profiles"), _("Profile Management"), 1)
+	entry({"admin", "network", "lpac", "about"}, template("lpac/about"), _("About"), 2)
 	entry({"admin", "network", "lpac", "add"}, call("action_add_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "delete"}, call("action_delete_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "list"}, call("action_list_profiles"), nil).leaf = true
