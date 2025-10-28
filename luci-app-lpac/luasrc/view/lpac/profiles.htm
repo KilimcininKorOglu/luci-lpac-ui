@@ -708,6 +708,84 @@ function editNickname(iccid, currentNickname) {
     });
 }
 
+// Enable Profile
+function enableProfile(iccid, nickname) {
+    if (!iccid) {
+        alert('<%:Invalid ICCID%>');
+        return;
+    }
+
+    var displayName = nickname ? (nickname + ' (' + iccid + ')') : iccid;
+    if (!confirm('<%:Enable profile:%> ' + displayName + '?')) {
+        return;
+    }
+
+    var statusDiv = document.getElementById('profiles_status');
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Enabling profile, please wait...%>';
+
+    XHR.post('<%=url("admin/network/lpac/enable")%>', {
+        iccid: iccid,
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
+    }, function(x, data) {
+        if (data.success) {
+            statusDiv.className = 'lpac-status info';
+            statusDiv.innerHTML = '<strong>→</strong> <%:Profile enabled, processing notifications...%>';
+
+            processNotifications(function(notifData) {
+                statusDiv.className = 'lpac-status success';
+                statusDiv.innerHTML = '<strong>✓</strong> <%:Profile enabled successfully!%>';
+                listProfiles();
+            });
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Enable failed:%> ' + (data.error || '<%:Unknown error%>');
+        }
+    });
+}
+
+// Disable Profile
+function disableProfile(iccid, nickname) {
+    if (!iccid) {
+        alert('<%:Invalid ICCID%>');
+        return;
+    }
+
+    var displayName = nickname ? (nickname + ' (' + iccid + ')') : iccid;
+    if (!confirm('<%:Disable profile:%> ' + displayName + '?')) {
+        return;
+    }
+
+    var statusDiv = document.getElementById('profiles_status');
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Disabling profile, please wait...%>';
+
+    XHR.post('<%=url("admin/network/lpac/disable")%>', {
+        iccid: iccid,
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
+    }, function(x, data) {
+        if (data.success) {
+            statusDiv.className = 'lpac-status info';
+            statusDiv.innerHTML = '<strong>→</strong> <%:Profile disabled, processing notifications...%>';
+
+            processNotifications(function(notifData) {
+                statusDiv.className = 'lpac-status success';
+                statusDiv.innerHTML = '<strong>✓</strong> <%:Profile disabled successfully!%>';
+                listProfiles();
+            });
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Disable failed:%> ' + (data.error || '<%:Unknown error%>');
+        }
+    });
+}
+
 // Refresh Modem Status
 function refreshStatus() {
     var outputDiv = document.getElementById('status_output');
@@ -781,7 +859,7 @@ function listProfiles() {
                 cellState.innerHTML = '<span style="color: ' + stateColor + '; font-weight: bold;">' +
                                      (state || '<%:Unknown%>').toUpperCase() + '</span>';
 
-                // Actions: Edit and Delete buttons
+                // Actions: Edit, Enable/Disable, and Delete buttons
                 // Edit button
                 var editBtn = document.createElement('button');
                 editBtn.className = 'lpac-button lpac-button-secondary';
@@ -791,6 +869,25 @@ function listProfiles() {
                 editBtn.innerHTML = '✏️ <%:Edit%>';
                 editBtn.onclick = function() { editNickname(profile.iccid, nickname); };
                 cellActions.appendChild(editBtn);
+
+                // Enable/Disable toggle button
+                var toggleBtn = document.createElement('button');
+                toggleBtn.style.padding = '5px 10px';
+                toggleBtn.style.fontSize = '12px';
+                toggleBtn.style.marginRight = '5px';
+
+                if (state === 'enabled') {
+                    // Show disable button for enabled profiles
+                    toggleBtn.className = 'lpac-button lpac-button-secondary';
+                    toggleBtn.innerHTML = '⏸️ <%:Disable%>';
+                    toggleBtn.onclick = function() { disableProfile(profile.iccid, nickname); };
+                } else {
+                    // Show enable button for disabled profiles
+                    toggleBtn.className = 'lpac-button lpac-button-primary';
+                    toggleBtn.innerHTML = '▶️ <%:Enable%>';
+                    toggleBtn.onclick = function() { enableProfile(profile.iccid, nickname); };
+                }
+                cellActions.appendChild(toggleBtn);
 
                 // Delete button
                 var deleteBtn = document.createElement('button');
