@@ -1,6 +1,0 @@
-config settings 'device'
-	option driver 'at'
-	option at_device '/dev/ttyUSB2'
-	option mbim_device '/dev/cdc-wdm0'
-	option qmi_device '/dev/cdc-wdm0'
-	option http_client 'curl'

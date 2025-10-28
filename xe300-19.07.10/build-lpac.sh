@@ -195,6 +195,14 @@ setup_dependencies() {
 
     cd "$SDK_DIR"
 
+    # Create python symlink for OpenWrt 19.07.10 (needs python, not python3)
+    mkdir -p staging_dir/host/bin
+    if [ ! -f "staging_dir/host/bin/python" ]; then
+        ln -sf "$(which python3)" "staging_dir/host/bin/python" || log_warn "Could not create python symlink"
+        export PATH="${SDK_DIR}/staging_dir/host/bin:$PATH"
+        log_info "Created python -> python3 symlink for SDK build"
+    fi
+
     # Prereq bypass (OpenWrt 19.07-22.03 and 23.05+ compatible)
     mkdir -p staging_dir/host host
     touch staging_dir/host/.prereq-build 2>/dev/null || true
@@ -352,6 +360,14 @@ set(ENV{PATH} "${toolchain_dir}/bin:\$ENV{PATH}")
 EOF
 
     cd "$BUILD_DIR"
+
+    # Ensure we use host's CMake (not SDK's old CMake 3.15)
+    export PATH="/usr/bin:${PATH}"
+
+    # Verify CMake version
+    local cmake_bin=$(which cmake)
+    local cmake_ver=$(cmake --version | head -1 | awk '{print $3}')
+    log_info "Using CMake: $cmake_bin (version $cmake_ver)"
 
     # Configure with CMake
     log_info "CMake configuration..."

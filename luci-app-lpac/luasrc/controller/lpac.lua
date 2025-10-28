@@ -189,19 +189,12 @@ function action_list_profiles()
 
 	local output = util.exec(cmd)
 
-	-- Parse JSON output from wrapper
-	local result = json.parse(output)
+	-- Send raw JSON output directly
+	-- Strip any trailing whitespace that might cause parsing issues
+	output = output:gsub("%s+$", "")
 
 	http.prepare_content("application/json")
-	if result then
-		http.write_json(result)
-	else
-		http.write_json({
-			success = false,
-			error = "Failed to parse response",
-			raw_output = output
-		})
-	end
+	http.write(output)
 end
 
 -- Get modem/chip status

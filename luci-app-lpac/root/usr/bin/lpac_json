@@ -12,6 +12,23 @@ QMI_DEVICE="${LPAC_APDU_QMI_DEVICE:-/dev/cdc-wdm0}"
 HTTP_CLIENT="${LPAC_HTTP:-curl}"
 TIMEOUT=90
 
+# Timeout wrapper function for systems without 'timeout' command (OpenWrt 19.07.10)
+run_with_timeout() {
+    local timeout_duration="$1"
+    shift
+
+    # Check if timeout command exists
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$timeout_duration" "$@"
+        return $?
+    fi
+
+    # Fallback: Run without timeout on OpenWrt 19.07.10
+    # Note: This means operations may hang, but lpac usually completes quickly
+    "$@"
+    return $?
+}
+
 # Parse command-line options for device override
 while getopts "d:t:m:q:h:" opt; do
     case "$opt" in
@@ -56,17 +73,35 @@ convert_lpac_json() {
     local lpac_output="$1"
     local action="$2"
 
-    # Extract lpac response fields
-    local code=$(echo "$lpac_output" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
-    local message=$(echo "$lpac_output" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+    # lpac can output multiple JSON lines (progress messages + final result)
+    # Extract the LAST line that contains "type":"lpa" which is the final result
+    local final_line=$(echo "$lpac_output" | grep '"type"[[:space:]]*:[[:space:]]*"lpa"' | tail -1)
+
+    # If no final result found, use the entire output
+    if [ -z "$final_line" ]; then
+        final_line="$lpac_output"
+    fi
+
+    # Extract lpac response fields from the final result line
+    local code=$(echo "$final_line" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
+    local message=$(echo "$final_line" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
 
     # Success if code is 0
     if [ "$code" = "0" ]; then
-        echo "{"
-        echo "  \"success\": true,"
-        echo "  \"message\": \"$([ -n "$message" ] && echo "$message" || echo "Operation completed successfully")\","
-        echo "  \"output\": $(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$/"/' | tr -d '\n')"
-        echo "}"
+        # For download/delete actions, provide clean success message without raw output
+        if [ "$action" = "download" ] || [ "$action" = "delete" ] || [ "$action" = "enable" ] || [ "$action" = "disable" ]; then
+            echo "{"
+            echo "  \"success\": true,"
+            echo "  \"message\": \"$([ -n "$message" ] && echo "$message" || echo "Operation completed successfully")\""
+            echo "}"
+        else
+            # For other actions, include output for debugging
+            echo "{"
+            echo "  \"success\": true,"
+            echo "  \"message\": \"$([ -n "$message" ] && echo "$message" || echo "Operation completed successfully")\","
+            echo "  \"output\": $(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$/"/' | tr -d '\n')"
+            echo "}"
+        fi
     else
         # Extract error details
         local error_msg="$message"
@@ -76,8 +111,7 @@ convert_lpac_json() {
 
         echo "{"
         echo "  \"success\": false,"
-        echo "  \"error\": \"$error_msg\","
-        echo "  \"output\": $(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$/"/' | tr -d '\n')"
+        echo "  \"error\": \"$error_msg\""
         echo "}"
     fi
 }
@@ -88,14 +122,26 @@ extract_profiles() {
 
     # lpac v2.x returns: {"type":"lpa","payload":{"code":0,"message":"success","data":[...]}}
     # Extract code from payload
-    local code=$(echo "$lpac_output" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
+    local code=$(echo "$lpac_output" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9-]*' | head -1 | grep -o '[0-9-]*$')
+
+    # If no code found or code is empty, return raw error
+    if [ -z "$code" ]; then
+        echo "{"
+        echo "  \"success\": false,"
+        echo "  \"profiles\": [],"
+        echo "  \"error\": \"Failed to parse lpac response\","
+        echo "  \"raw_output\": \"$(echo "$lpac_output" | sed 's/"/\\"/g' | tr '\n' ' ')\""
+        echo "}"
+        return
+    fi
 
     if [ "$code" != "0" ]; then
         local message=$(echo "$lpac_output" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
         echo "{"
         echo "  \"success\": false,"
         echo "  \"profiles\": [],"
-        echo "  \"error\": \"${message:-Failed to list profiles}\""
+        echo "  \"error\": \"${message:-Failed to list profiles} (code: $code)\","
+        echo "  \"raw_output\": \"$(echo "$lpac_output" | sed 's/"/\\"/g' | tr '\n' ' ')\""
         echo "}"
         return
     fi
@@ -156,8 +202,8 @@ if [ ! -x "$LPAC_BIN" ]; then
     exit 1
 fi
 
-# Check if device exists
-if [ ! -e "$DEVICE_TO_CHECK" ]; then
+# Check if device exists (skip for qmi_qrtr as it doesn't need a device file)
+if [ -n "$DEVICE_TO_CHECK" ] && [ ! -e "$DEVICE_TO_CHECK" ]; then
     echo "{\"success\": false, \"error\": \"Device not found at $DEVICE_TO_CHECK\"}"
     exit 1
 fi
@@ -193,7 +239,7 @@ case "$ACTION" in
         fi
 
         # Execute with timeout
-        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        OUTPUT=$(eval "run_with_timeout $TIMEOUT $CMD 2>&1")
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
@@ -219,7 +265,7 @@ case "$ACTION" in
         CMD="$LPAC_BIN profile delete '$ICCID'"
 
         # Execute with timeout
-        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        OUTPUT=$(eval "run_with_timeout $TIMEOUT $CMD 2>&1")
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
@@ -241,7 +287,7 @@ case "$ACTION" in
         fi
 
         CMD="$LPAC_BIN profile enable '$ICCID'"
-        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        OUTPUT=$(eval "run_with_timeout $TIMEOUT $CMD 2>&1")
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
@@ -262,7 +308,7 @@ case "$ACTION" in
         fi
 
         CMD="$LPAC_BIN profile disable '$ICCID'"
-        OUTPUT=$(eval "timeout $TIMEOUT $CMD 2>&1")
+        OUTPUT=$(eval "run_with_timeout $TIMEOUT $CMD 2>&1")
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
@@ -276,7 +322,7 @@ case "$ACTION" in
 
     list)
         # List profiles using lpac
-        OUTPUT=$(timeout $TIMEOUT $LPAC_BIN profile list 2>&1)
+        OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN profile list 2>&1)
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
@@ -291,7 +337,7 @@ case "$ACTION" in
 
     info)
         # Get chip info
-        OUTPUT=$(timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
+        OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
@@ -305,7 +351,7 @@ case "$ACTION" in
 
     status)
         # Get chip info as status
-        OUTPUT=$(timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
+        OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
