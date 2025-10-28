@@ -9,11 +9,13 @@ LuCI App LPAC provides a user-friendly web interface for eSIM profile management
 ## Screenshots
 
 ### Dashboard - Profile Management
+
 ![Dashboard](screenshot/dashboard.png)
 
 The main dashboard displays all eSIM profiles with their status, ICCID, provider, and nickname. Each profile has action buttons for editing, enabling/disabling, and deletion.
 
 ### About Page
+
 ![About Page](screenshot/about.png)
 
 The About page shows package information, version details, and recent changelog entries.
