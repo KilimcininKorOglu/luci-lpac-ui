@@ -327,7 +327,7 @@
             </button>
         </div>
 
-        <div id="notifications_status" class="lpac-status"></div>
+        <div id="notifications_status" class="lpac-status" style="display: none;"></div>
 
         <!-- Notifications Table -->
         <div id="notifications_list_container" style="margin-top: 15px; display: none;">
@@ -818,9 +818,10 @@ function listNotifications() {
     var listContainer = document.getElementById('notifications_list_container');
     var tbody = document.getElementById('notifications_tbody');
 
-    // Reset UI
+    // Show loading status
     statusDiv.className = 'lpac-status info';
     statusDiv.innerHTML = '<%:Loading pending notifications...%>';
+    statusDiv.style.display = 'block';
     listContainer.style.display = 'none';
 
     var url = '<%=url("admin/network/lpac/list_notifications")%>?' +
@@ -891,6 +892,7 @@ function manualProcessNotifications() {
 
     statusDiv.className = 'lpac-status info';
     statusDiv.innerHTML = '<%:Processing all notifications, please wait...%>';
+    statusDiv.style.display = 'block';
 
     XHR.post('<%=url("admin/network/lpac/process_notifications")%>', {
         driver: selectedDriver,
