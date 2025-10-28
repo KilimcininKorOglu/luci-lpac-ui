@@ -1010,14 +1010,16 @@ function listProfiles() {
                 }
                 cellActions.appendChild(toggleBtn);
 
-                // Delete button
-                var deleteBtn = document.createElement('button');
-                deleteBtn.className = 'lpac-button lpac-button-danger';
-                deleteBtn.style.padding = '5px 10px';
-                deleteBtn.style.fontSize = '12px';
-                deleteBtn.innerHTML = '🗑️ <%:Delete%>';
-                deleteBtn.onclick = function() { deleteProfile(profile.iccid, nickname); };
-                cellActions.appendChild(deleteBtn);
+                // Delete button - only show for disabled profiles
+                if (state !== 'enabled') {
+                    var deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'lpac-button lpac-button-danger';
+                    deleteBtn.style.padding = '5px 10px';
+                    deleteBtn.style.fontSize = '12px';
+                    deleteBtn.innerHTML = '🗑️ <%:Delete%>';
+                    deleteBtn.onclick = function() { deleteProfile(profile.iccid, nickname); };
+                    cellActions.appendChild(deleteBtn);
+                }
             });
 
             // Show table
