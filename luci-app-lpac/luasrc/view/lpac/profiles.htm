@@ -322,6 +322,7 @@
                         <th><%:ICCID%></th>
                         <th><%:Nickname%></th>
                         <th><%:Status%></th>
+                        <th><%:Actions%></th>
                     </tr>
                 </thead>
                 <tbody id="profiles_tbody">
@@ -672,6 +673,35 @@ function deleteProfile() {
     });
 }
 
+// Edit Nickname
+function editNickname(iccid, currentNickname) {
+    var newNickname = prompt('<%:Enter new nickname for profile:%>\n' + iccid, currentNickname);
+
+    if (newNickname === null) {
+        // User cancelled
+        return;
+    }
+
+    // Trim whitespace
+    newNickname = newNickname.trim();
+
+    XHR.post('<%=url("admin/network/lpac/set_nickname")%>', {
+        iccid: iccid,
+        nickname: newNickname,
+        driver: selectedDriver,
+        at_device: selectedAtDevice,
+        mbim_device: selectedMbimDevice,
+        http_client: selectedHttpClient
+    }, function(x, data) {
+        if (data.success) {
+            // Refresh profile list to show updated nickname
+            listProfiles();
+        } else {
+            alert('<%:Failed to update nickname:%> ' + (data.error || '<%:Unknown error%>'));
+        }
+    });
+}
+
 // Refresh Modem Status
 function refreshStatus() {
     var outputDiv = document.getElementById('status_output');
@@ -733,16 +763,26 @@ function listProfiles() {
                 var cellIccid = row.insertCell(0);
                 var cellNickname = row.insertCell(1);
                 var cellState = row.insertCell(2);
+                var cellActions = row.insertCell(3);
 
                 cellIccid.style.fontFamily = 'monospace';
                 cellIccid.innerHTML = profile.iccid || '<%:Unknown%>';
 
-                cellNickname.innerHTML = profile.nickname || '<%:No name%>';
+                cellNickname.innerHTML = '<span class="nickname-display">' + (profile.nickname || '<%:No name%>') + '</span>';
 
                 var stateColor = profile.state === 'enabled' ? 'green' :
                                  profile.state === 'disabled' ? 'orange' : 'gray';
                 cellState.innerHTML = '<span style="color: ' + stateColor + '; font-weight: bold;">' +
                                      (profile.state || '<%:Unknown%>').toUpperCase() + '</span>';
+
+                // Add edit button
+                var editBtn = document.createElement('button');
+                editBtn.className = 'lpac-button lpac-button-secondary';
+                editBtn.style.padding = '5px 10px';
+                editBtn.style.fontSize = '12px';
+                editBtn.innerHTML = '✏️ <%:Edit%>';
+                editBtn.onclick = function() { editNickname(profile.iccid, profile.nickname || ''); };
+                cellActions.appendChild(editBtn);
 
                 // Add to delete dropdown
                 var option = document.createElement('option');

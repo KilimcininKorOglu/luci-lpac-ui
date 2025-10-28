@@ -37,6 +37,7 @@ function index()
 	entry({"admin", "network", "lpac", "detect_devices"}, call("action_detect_devices"), nil).leaf = true
 	entry({"admin", "network", "lpac", "get_settings"}, call("action_get_settings"), nil).leaf = true
 	entry({"admin", "network", "lpac", "save_settings"}, call("action_save_settings"), nil).leaf = true
+	entry({"admin", "network", "lpac", "set_nickname"}, call("action_set_nickname"), nil).leaf = true
 end
 
 -- Add eSIM Profile
@@ -377,4 +378,62 @@ function action_save_settings()
 		http_client = http_client,
 		message = "Device settings saved to UCI configuration"
 	})
+end
+
+-- Set Profile Nickname
+function action_set_nickname()
+	local http = require "luci.http"
+	local util = require "luci.util"
+	local json = require "luci.jsonc"
+
+	local iccid = http.formvalue("iccid")
+	local nickname = http.formvalue("nickname")
+
+	-- Get device settings from UCI (or use form values as override)
+	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	driver = http.formvalue("driver") or driver
+	at_device = http.formvalue("at_device") or at_device
+	mbim_device = http.formvalue("mbim_device") or mbim_device
+	qmi_device = http.formvalue("qmi_device") or qmi_device
+
+	if not iccid or iccid == "" then
+		http.prepare_content("application/json")
+		http.write_json({
+			success = false,
+			error = "ICCID is required"
+		})
+		return
+	end
+
+	-- Build command with lpac_json wrapper and device options
+	local cmd = string.format("/usr/bin/lpac_json -d %s", util.shellquote(driver))
+
+	-- Add device paths based on driver type
+	if driver == "at" or driver == "at_csim" then
+		cmd = cmd .. string.format(" -t %s", util.shellquote(at_device))
+	elseif driver == "mbim" then
+		cmd = cmd .. string.format(" -m %s", util.shellquote(mbim_device))
+	elseif driver == "qmi" or driver == "uqmi" then
+		cmd = cmd .. string.format(" -q %s", util.shellquote(qmi_device))
+	end
+
+	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
+	cmd = cmd .. string.format(" nickname %s %s", util.shellquote(iccid), util.shellquote(nickname))
+
+	-- Execute command
+	local output = util.exec(cmd .. " 2>&1")
+
+	-- Parse JSON output from wrapper
+	local result = json.parse(output)
+
+	http.prepare_content("application/json")
+	if result then
+		http.write_json(result)
+	else
+		http.write_json({
+			success = false,
+			error = "Failed to parse response",
+			raw_output = output
+		})
+	end
 end

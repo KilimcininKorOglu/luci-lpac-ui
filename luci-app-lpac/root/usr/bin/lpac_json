@@ -88,8 +88,8 @@ convert_lpac_json() {
 
     # Success if code is 0
     if [ "$code" = "0" ]; then
-        # For download/delete actions, provide clean success message without raw output
-        if [ "$action" = "download" ] || [ "$action" = "delete" ] || [ "$action" = "enable" ] || [ "$action" = "disable" ]; then
+        # For download/delete/enable/disable/nickname actions, provide clean success message without raw output
+        if [ "$action" = "download" ] || [ "$action" = "delete" ] || [ "$action" = "enable" ] || [ "$action" = "disable" ] || [ "$action" = "nickname" ]; then
             echo "{"
             echo "  \"success\": true,"
             echo "  \"message\": \"$([ -n "$message" ] && echo "$message" || echo "Operation completed successfully")\""
@@ -349,6 +349,33 @@ case "$ACTION" in
         exit 0
         ;;
 
+    nickname)
+        ICCID="$2"
+        NICKNAME="$3"
+
+        # Validation
+        if [ -z "$ICCID" ]; then
+            echo "{\"success\": false, \"error\": \"ICCID is required\"}"
+            exit 1
+        fi
+
+        # Build lpac command - nickname can be empty to clear it
+        CMD="$LPAC_BIN profile nickname '$ICCID' '$NICKNAME'"
+
+        # Execute with timeout
+        OUTPUT=$(eval "run_with_timeout $TIMEOUT $CMD 2>&1")
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\", \"output\": \"$OUTPUT\"}"
+            exit 0
+        fi
+
+        # Convert lpac JSON to LuCI format
+        convert_lpac_json "$OUTPUT" "nickname"
+        exit 0
+        ;;
+
     status)
         # Get chip info as status
         OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
@@ -364,7 +391,7 @@ case "$ACTION" in
         ;;
 
     *)
-        echo "{\"success\": false, \"error\": \"Invalid action: $ACTION. Valid actions: add, delete, enable, disable, list, info, status\"}"
+        echo "{\"success\": false, \"error\": \"Invalid action: $ACTION. Valid actions: add, delete, enable, disable, list, info, status, nickname\"}"
         exit 1
         ;;
 esac
