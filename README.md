@@ -37,6 +37,7 @@ The About page shows package information, version details, and recent changelog 
 - AT (Standard AT commands)
 - AT_CSIM (AT+CSIM commands)
 - MBIM (Mobile Broadband Interface Model)
+- QMI
 
 ### Architecture
 

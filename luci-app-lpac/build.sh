@@ -198,10 +198,10 @@ Depends: luci-base, luci-compat
 Section: luci
 Architecture: $PKG_ARCH
 Installed-Size: $(du -sb "$DATA_DIR" | cut -f1)
-Maintainer: Kerem <kerem@example.com>
+Maintainer: $PKG_MAINTAINER
 Description: LuCI Support for eSIM Profile Management (LPAC)
  Web interface for managing eSIM profiles on Quectel modems via lpac binary.
- Supports multiple APDU drivers: AT, AT_CSIM, and MBIM.
+ Supports multiple APDU drivers: AT, AT_CSIM, QMI and MBIM.
  Provides ICCID-based profile management: add, delete, enable, disable, list.
  Requires lpac binary and curl/wget for HTTP communication.
  Classic LuCI template-based architecture.
