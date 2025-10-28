@@ -253,7 +253,7 @@
                 <thead>
                     <tr>
                         <th><%:ICCID%></th>
-                        <th><%:Nickname%></th>
+                        <th><%:Alias%></th>
                         <th><%:Status%></th>
                         <th><%:Actions%></th>
                     </tr>
@@ -704,7 +704,7 @@ function deleteProfile(iccid, nickname) {
 
 // Edit Nickname
 function editNickname(iccid, currentNickname) {
-    var newNickname = prompt('<%:Enter new nickname for profile:%>\n' + iccid, currentNickname);
+    var newNickname = prompt('<%:Enter new alias for profile:%>\n' + iccid, currentNickname);
 
     if (newNickname === null) {
         // User cancelled
@@ -971,7 +971,7 @@ function listProfiles() {
 
                 // lpac v2.x uses profileNickname field
                 var nickname = profile.profileNickname || profile.nickname || '';
-                cellNickname.innerHTML = '<span class="nickname-display">' + (nickname || '<%:No name%>') + '</span>';
+                cellNickname.innerHTML = '<span class="nickname-display">' + (nickname || '<%:No alias%>') + '</span>';
 
                 // lpac v2.x uses profileState field (enabled/disabled as strings)
                 var state = profile.profileState || profile.state || 'unknown';
