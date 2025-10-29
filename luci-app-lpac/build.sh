@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright 2025 KilimcininKorOglu
+# https://github.com/KilimcininKorOglu/luci-lpac-ui
+# Licensed under the MIT License
 
 # LuCI App LPAC - IPK Package Builder
 # Builds standalone IPK package without OpenWrt SDK
