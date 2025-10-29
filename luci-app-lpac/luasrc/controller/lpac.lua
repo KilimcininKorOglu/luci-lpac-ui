@@ -1,4 +1,5 @@
--- Copyright 2025 Kerem
+-- Copyright 2025 KilimcininKorOglu
+-- https://github.com/KilimcininKorOglu/luci-lpac-ui
 -- Licensed under the MIT License
 
 module("luci.controller.lpac", package.seeall)
