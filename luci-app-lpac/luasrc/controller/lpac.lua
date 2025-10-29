@@ -45,6 +45,7 @@ function index()
 	entry({"admin", "network", "lpac", "enable"}, call("action_enable_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "disable"}, call("action_disable_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "restart_modem"}, call("action_restart_modem"), nil).leaf = true
+	entry({"admin", "network", "lpac", "clear_lock"}, call("action_clear_lock"), nil).leaf = true
 end
 
 -- Add eSIM Profile
@@ -727,6 +728,33 @@ function action_restart_modem()
 			success = false,
 			error = "Failed to parse response",
 			raw_output = output
+		})
+	end
+end
+
+-- Clear stale lock file manually
+function action_clear_lock()
+	local http = require "luci.http"
+	local util = require "luci.util"
+
+	-- Directly remove lock file
+	local lockfile = "/var/run/lpac_json.lock"
+	local result = util.exec("rm -f " .. lockfile .. " 2>&1")
+	local exit_code = util.exec("test -f " .. lockfile .. " && echo 1 || echo 0")
+
+	http.prepare_content("application/json")
+	if tonumber(exit_code) == 0 then
+		-- Lock file removed successfully
+		util.exec("logger -t lpac_json 'Lock file manually cleared via web UI'")
+		http.write_json({
+			success = true,
+			message = "Lock file cleared successfully. You can now retry your operation."
+		})
+	else
+		-- Lock file still exists (permission issue?)
+		http.write_json({
+			success = false,
+			error = "Failed to remove lock file. Check system permissions."
 		})
 	end
 end

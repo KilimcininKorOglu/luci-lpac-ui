@@ -471,8 +471,11 @@
             <button class="lpac-button lpac-button-secondary" onclick="refreshStatus()" style="margin-right: 10px;">
                 <%:Modem Info%>
             </button>
-            <button class="lpac-button lpac-button-danger" onclick="restartModem()">
+            <button class="lpac-button lpac-button-danger" onclick="restartModem()" style="margin-right: 10px;">
                 <%:Restart Modem%>
+            </button>
+            <button class="lpac-button lpac-button-secondary" onclick="clearLock()" style="background: #ffc107; color: #000;">
+                <%:Clear Lock%>
             </button>
         </div>
 
@@ -883,6 +886,30 @@ function restartModem() {
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to restart modem:%> ' + (data.error || '<%:Unknown error%>');
+        }
+    });
+}
+
+// Clear stale lock file manually
+function clearLock() {
+    var statusDiv = document.getElementById('device_status');
+
+    // Confirm action
+    if (!confirm('<%:Are you sure you want to clear the lock file? Only do this if an operation is stuck.%>')) {
+        return;
+    }
+
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Clearing lock file...%>';
+
+    // Send clear lock command
+    XHR.post('<%=url("admin/network/lpac/clear_lock")%>', {}, function(x, data) {
+        if (data.success) {
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> ' + (data.message || '<%:Lock file cleared successfully%>');
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to clear lock:%> ' + (data.error || '<%:Unknown error%>');
         }
     });
 }
