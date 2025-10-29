@@ -20,6 +20,28 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 
+# Self-check: Fix line endings in build.sh itself if needed
+# This ensures the script can run even if it has Windows line endings
+if command -v dos2unix >/dev/null 2>&1; then
+    # dos2unix available - use it
+    if file "$0" 2>/dev/null | grep -q "CRLF"; then
+        echo -e "${YELLOW}⚠${NC} Build script has Windows line endings, converting..."
+        dos2unix "$0" 2>/dev/null
+        echo -e "${GREEN}✓${NC} Converted build.sh to Unix line endings"
+        echo -e "${BLUE}ℹ${NC} Please re-run the build script"
+        exit 0
+    fi
+else
+    # dos2unix not available - use sed
+    if grep -q $'\r' "$0" 2>/dev/null; then
+        echo -e "${YELLOW}⚠${NC} Build script has Windows line endings, converting..."
+        sed -i 's/\r$//' "$0"
+        echo -e "${GREEN}✓${NC} Converted build.sh to Unix line endings"
+        echo -e "${BLUE}ℹ${NC} Please re-run the build script"
+        exit 0
+    fi
+fi
+
 # Package information
 PKG_NAME="luci-app-lpac"
 PKG_VERSION=$(grep '^PKG_VERSION:=' "$PROJECT_DIR/Makefile" | cut -d'=' -f2)
