@@ -392,13 +392,13 @@
                 </span>
             </div>
 
-            <div class="lpac-form-group" id="mbim_device_group" style="display: none;">
-                <label class="lpac-form-label"><%:MBIM Device%></label>
+            <div class="lpac-form-group" id="mbim_qmi_device_group" style="display: none;">
+                <label class="lpac-form-label" id="mbim_qmi_device_label"><%:MBIM/QMI Device%></label>
                 <select id="mbim_device_select" class="lpac-select" style="width: 100%; max-width: 400px;">
-                    <option value=""><%:-- Select MBIM Device --%></option>
+                    <option value=""><%:-- Select Device --%></option>
                 </select>
-                <span class="lpac-form-hint">
-                    <%:Select /dev/cdc-wdm* device for MBIM driver%>
+                <span class="lpac-form-hint" id="mbim_qmi_device_hint">
+                    <%:Select /dev/cdc-wdm* device for MBIM/QMI driver%>
                 </span>
             </div>
 
@@ -487,16 +487,28 @@ function showDriverWarning(driver) {
 function updateDeviceInputs() {
     var driverSelect = document.getElementById('driver_select');
     var atGroup = document.getElementById('at_device_group');
-    var mbimGroup = document.getElementById('mbim_device_group');
+    var mbimQmiGroup = document.getElementById('mbim_qmi_device_group');
+    var mbimQmiLabel = document.getElementById('mbim_qmi_device_label');
+    var mbimQmiHint = document.getElementById('mbim_qmi_device_hint');
 
     var driver = driverSelect.value;
 
     if (driver === 'at' || driver === 'at_csim') {
         atGroup.style.display = 'block';
-        mbimGroup.style.display = 'none';
+        mbimQmiGroup.style.display = 'none';
     } else if (driver === 'mbim') {
         atGroup.style.display = 'none';
-        mbimGroup.style.display = 'block';
+        mbimQmiGroup.style.display = 'block';
+        mbimQmiLabel.innerHTML = '<%:MBIM Device%>';
+        mbimQmiHint.innerHTML = '<%:Select /dev/cdc-wdm* device for MBIM driver%>';
+    } else if (driver === 'qmi' || driver === 'uqmi') {
+        atGroup.style.display = 'none';
+        mbimQmiGroup.style.display = 'block';
+        mbimQmiLabel.innerHTML = '<%:QMI Device%>';
+        mbimQmiHint.innerHTML = '<%:Select /dev/cdc-wdm* device for QMI driver%>';
+    } else if (driver === 'qmi_qrtr') {
+        atGroup.style.display = 'none';
+        mbimQmiGroup.style.display = 'none';
     }
 }
 
