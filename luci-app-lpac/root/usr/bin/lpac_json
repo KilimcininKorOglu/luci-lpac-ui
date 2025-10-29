@@ -24,8 +24,10 @@ acquire_lock() {
     if [ -f "$LOCKFILE" ]; then
         LOCK_AGE=$(( $(date +%s) - $(stat -c %Y "$LOCKFILE" 2>/dev/null || echo 0) ))
         if [ "$LOCK_AGE" -gt "$LOCK_TIMEOUT" ]; then
-            logger -t lpac_json "Stale lock detected (age: ${LOCK_AGE}s) - killing all lpac_json processes and removing lock"
-            # Kill all lpac_json processes (except current process)
+            logger -t lpac_json "Stale lock detected (age: ${LOCK_AGE}s) - killing all lpac and lpac_json processes"
+            # Kill all lpac binary processes first
+            killall -9 lpac 2>/dev/null
+            # Then kill all lpac_json wrapper processes
             killall -9 lpac_json 2>/dev/null
             # Remove stale lock file
             rm -f "$LOCKFILE" 2>/dev/null
