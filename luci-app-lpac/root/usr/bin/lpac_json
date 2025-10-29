@@ -126,8 +126,9 @@ convert_lpac_json() {
     fi
 
     # Extract lpac response fields from the final result line
-    local code=$(echo "$final_line" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
+    local code=$(echo "$final_line" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9-]*' | head -1 | grep -o '[0-9-]*$')
     local message=$(echo "$final_line" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+    local data=$(echo "$final_line" | grep -o '"data"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
 
     # Success if code is 0
     if [ "$code" = "0" ]; then
@@ -146,15 +147,38 @@ convert_lpac_json() {
             echo "}"
         fi
     else
-        # Extract error details
+        # Extract error details and combine message + data for better context
         local error_msg="$message"
+
+        # If data field exists and is a string, append it to the error message
+        if [ -n "$data" ]; then
+            error_msg="$message: $data"
+        fi
+
         if [ -z "$error_msg" ]; then
             error_msg="Operation failed with code: $code"
         fi
 
+        # Create user-friendly error messages for common lpac errors
+        case "$message" in
+            "es9p_initiate_authentication"|"es9p_authenticate_client")
+                error_msg="$error_msg. This usually means: 1) Activation code is invalid or expired, 2) Activation code was created for a different eUICC EID, 3) Network connectivity issue with SM-DP+ server"
+                ;;
+            "activation_code")
+                error_msg="Invalid activation code format. Expected format: LPA:1\$server\$code"
+                ;;
+            "es10b_retrieve_notification_list")
+                error_msg="Failed to communicate with eUICC. Check if modem is properly connected and supports eSIM"
+                ;;
+            "APDU")
+                error_msg="Failed to communicate with modem. Check device path and driver settings"
+                ;;
+        esac
+
         echo "{"
         echo "  \"success\": false,"
-        echo "  \"error\": \"$error_msg\""
+        echo "  \"error\": \"$error_msg\","
+        echo "  \"error_code\": \"$code\""
         echo "}"
     fi
 }
