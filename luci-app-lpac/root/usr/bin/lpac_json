@@ -16,14 +16,33 @@ TIMEOUT=90
 # Lock file for preventing concurrent access
 LOCKFILE="/var/run/lpac_json.lock"
 LOCKFD=200
+LOCK_TIMEOUT=120  # 2 minutes - stale lock cleanup threshold
 
 # Acquire lock to prevent concurrent lpac operations
 acquire_lock() {
+    # Check if lock file exists and is stale (older than LOCK_TIMEOUT)
+    if [ -f "$LOCKFILE" ]; then
+        LOCK_AGE=$(( $(date +%s) - $(stat -c %Y "$LOCKFILE" 2>/dev/null || echo 0) ))
+        if [ "$LOCK_AGE" -gt "$LOCK_TIMEOUT" ]; then
+            logger -t lpac_json "Removing stale lock file (age: ${LOCK_AGE}s, threshold: ${LOCK_TIMEOUT}s)"
+            rm -f "$LOCKFILE" 2>/dev/null
+        fi
+    fi
+
     eval "exec $LOCKFD>$LOCKFILE"
     if ! flock -n $LOCKFD 2>/dev/null; then
-        echo '{"success": false, "error": "Another lpac operation is in progress. Please wait and try again."}'
+        # Check lock age before giving up
+        if [ -f "$LOCKFILE" ]; then
+            LOCK_AGE=$(( $(date +%s) - $(stat -c %Y "$LOCKFILE" 2>/dev/null || echo 0) ))
+            echo "{\"success\": false, \"error\": \"Another lpac operation is in progress (active for ${LOCK_AGE}s). Please wait and try again.\"}"
+        else
+            echo '{"success": false, "error": "Another lpac operation is in progress. Please wait and try again."}'
+        fi
         exit 1
     fi
+
+    # Update lock file timestamp to track activity
+    touch "$LOCKFILE" 2>/dev/null
 }
 
 # Release lock on exit
