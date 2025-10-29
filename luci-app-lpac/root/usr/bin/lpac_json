@@ -388,29 +388,59 @@ ACTION="$1"
 
 case "$ACTION" in
     add)
-        ACTIVATION_CODE="$2"
-        CONFIRMATION_CODE="$3"
+        # Check if manual mode
+        if [ "$2" = "manual" ]; then
+            # Manual mode: lpac_json add manual <smdp> <matching_id> [confirmation] [imei]
+            SMDP_ADDRESS="$3"
+            MATCHING_ID="$4"
+            CONFIRMATION_CODE="$5"
+            IMEI="$6"
 
-        # Validation
-        if [ -z "$ACTIVATION_CODE" ]; then
-            echo "{\"success\": false, \"error\": \"Activation code is required\"}"
-            exit 1
-        fi
+            # Validation
+            if [ -z "$SMDP_ADDRESS" ]; then
+                echo "{\"success\": false, \"error\": \"SM-DP+ address is required\"}"
+                exit 1
+            fi
 
-        # Build lpac command
-        # lpac profile download -a 'LPA:...' or -s server -m matching-id [-c confirmation]
-        if echo "$ACTIVATION_CODE" | grep -q '^LPA:'; then
-            # QR code format
-            CMD="$LPAC_BIN profile download -a '$ACTIVATION_CODE'"
+            if [ -z "$MATCHING_ID" ]; then
+                echo "{\"success\": false, \"error\": \"Matching ID is required\"}"
+                exit 1
+            fi
+
+            # Build lpac command with separate -s and -m parameters
+            CMD="$LPAC_BIN profile download -s '$SMDP_ADDRESS' -m '$MATCHING_ID'"
         else
-            # Assume it's a matching ID, need server
-            echo "{\"success\": false, \"error\": \"Invalid activation code format. Use QR code (LPA:...) or provide server and matching ID separately\"}"
-            exit 1
+            # QR code mode: lpac_json add <activation_code> [confirmation] [imei]
+            ACTIVATION_CODE="$2"
+            CONFIRMATION_CODE="$3"
+            IMEI="$4"
+
+            # Validation
+            if [ -z "$ACTIVATION_CODE" ]; then
+                echo "{\"success\": false, \"error\": \"Activation code is required\"}"
+                exit 1
+            fi
+
+            # Build lpac command
+            # lpac profile download -a 'LPA:...'
+            if echo "$ACTIVATION_CODE" | grep -q '^LPA:'; then
+                # QR code format
+                CMD="$LPAC_BIN profile download -a '$ACTIVATION_CODE'"
+            else
+                # Assume it's a matching ID, need server
+                echo "{\"success\": false, \"error\": \"Invalid activation code format. Use QR code (LPA:...) or switch to manual mode\"}"
+                exit 1
+            fi
         fi
 
         # Add confirmation code if provided
         if [ -n "$CONFIRMATION_CODE" ]; then
             CMD="$CMD -c '$CONFIRMATION_CODE'"
+        fi
+
+        # Add IMEI if provided
+        if [ -n "$IMEI" ]; then
+            CMD="$CMD -i '$IMEI'"
         fi
 
         # Execute with timeout

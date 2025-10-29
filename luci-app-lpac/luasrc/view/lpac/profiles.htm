@@ -278,16 +278,61 @@
     <div class="lpac-section">
         <h3><%:Add New eSIM Profile%></h3>
 
+        <!-- Input Mode Toggle -->
         <div class="lpac-form-group">
-            <label class="lpac-form-label" for="activation_code"><%:Activation Code%></label>
-            <input type="text"
-                   id="activation_code"
-                   class="lpac-input"
-                   placeholder="LPA:1$smdp.example.com$ACTIVATION_CODE"
-                   autocomplete="off"/>
-            <span class="lpac-form-hint">
-                <%:Format: LPA:1$SM-DP+_ADDRESS$ACTIVATION_CODE%>
-            </span>
+            <label class="lpac-form-label"><%:Input Method%></label>
+            <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="radio" name="input_mode" value="qr" checked onchange="toggleInputMode()" style="margin-right: 5px;">
+                    <span><%:QR Code / Activation Code%></span>
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="radio" name="input_mode" value="manual" onchange="toggleInputMode()" style="margin-right: 5px;">
+                    <span><%:Manual (SM-DP+ + Matching ID)%></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- QR Code / Activation Code Input (default) -->
+        <div id="qr_mode_inputs">
+            <div class="lpac-form-group">
+                <label class="lpac-form-label" for="activation_code"><%:Activation Code%></label>
+                <input type="text"
+                       id="activation_code"
+                       class="lpac-input"
+                       placeholder="LPA:1$smdp.example.com$ACTIVATION_CODE"
+                       autocomplete="off"/>
+                <span class="lpac-form-hint">
+                    <%:Format: LPA:1$SM-DP+_ADDRESS$ACTIVATION_CODE%>
+                </span>
+            </div>
+        </div>
+
+        <!-- Manual SM-DP+ + Matching ID Inputs (hidden by default) -->
+        <div id="manual_mode_inputs" style="display: none;">
+            <div class="lpac-form-group">
+                <label class="lpac-form-label" for="smdp_address"><%:SM-DP+ Server Address%></label>
+                <input type="text"
+                       id="smdp_address"
+                       class="lpac-input"
+                       placeholder="rsp.truphone.com"
+                       autocomplete="off"/>
+                <span class="lpac-form-hint">
+                    <%:SM-DP+ server domain (e.g., rsp.truphone.com)%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group">
+                <label class="lpac-form-label" for="matching_id"><%:Matching ID%></label>
+                <input type="text"
+                       id="matching_id"
+                       class="lpac-input"
+                       placeholder="QR-G-5C-1LS-1W1Z9P7"
+                       autocomplete="off"/>
+                <span class="lpac-form-hint">
+                    <%:Matching ID / AC Token (alphanumeric and dash only)%>
+                </span>
+            </div>
         </div>
 
         <div class="lpac-form-group">
@@ -300,6 +345,20 @@
                    autocomplete="off"/>
             <span class="lpac-form-hint">
                 <%:Enter confirmation code if required by your carrier%>
+            </span>
+        </div>
+
+        <div class="lpac-form-group">
+            <label class="lpac-form-label" for="imei"><%:IMEI%> (<%:optional%>)</label>
+            <input type="text"
+                   id="imei"
+                   class="lpac-input"
+                   style="max-width: 250px;"
+                   placeholder="123456789012345"
+                   maxlength="15"
+                   autocomplete="off"/>
+            <span class="lpac-form-hint">
+                <%:Enter IMEI for push profiles, operator validation, or fraud prevention. Leave empty for standard activation codes.%>
             </span>
         </div>
 
@@ -483,6 +542,21 @@ function showDriverWarning(driver) {
     }
 }
 
+// Toggle between QR code and manual input mode
+function toggleInputMode() {
+    var inputMode = document.querySelector('input[name="input_mode"]:checked').value;
+    var qrModeDiv = document.getElementById('qr_mode_inputs');
+    var manualModeDiv = document.getElementById('manual_mode_inputs');
+
+    if (inputMode === 'qr') {
+        qrModeDiv.style.display = 'block';
+        manualModeDiv.style.display = 'none';
+    } else {
+        qrModeDiv.style.display = 'none';
+        manualModeDiv.style.display = 'block';
+    }
+}
+
 // Update device input fields based on selected driver
 function updateDeviceInputs() {
     var driverSelect = document.getElementById('driver_select');
@@ -628,18 +702,58 @@ function saveDeviceSettings() {
 
 // Add eSIM Profile
 function addProfile() {
-    var activation_code = document.getElementById('activation_code').value.trim();
+    var inputMode = document.querySelector('input[name="input_mode"]:checked').value;
+    var activation_code = '';
+    var smdp_address = '';
+    var matching_id = '';
     var confirmation_code = document.getElementById('confirmation_code').value.trim();
+    var imei = document.getElementById('imei').value.trim();
 
     var statusDiv = document.getElementById('add_status');
     var outputDiv = document.getElementById('add_output');
     var progressDiv = document.getElementById('add_progress');
     var progressBar = document.getElementById('add_progress_bar');
 
-    // Validation
-    if (!activation_code || activation_code.length < 10) {
+    // Get input based on mode
+    if (inputMode === 'qr') {
+        activation_code = document.getElementById('activation_code').value.trim();
+
+        // Validation for QR mode
+        if (!activation_code || activation_code.length < 10) {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<%:Please enter a valid activation code%>';
+            return;
+        }
+    } else {
+        // Manual mode
+        smdp_address = document.getElementById('smdp_address').value.trim();
+        matching_id = document.getElementById('matching_id').value.trim();
+
+        // Validation for manual mode
+        if (!smdp_address || smdp_address.length < 3) {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<%:Please enter SM-DP+ server address%>';
+            return;
+        }
+
+        if (!matching_id || matching_id.length < 3) {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<%:Please enter Matching ID%>';
+            return;
+        }
+
+        // Validate matching ID format (alphanumeric and dash only)
+        if (!/^[a-zA-Z0-9-]+$/.test(matching_id)) {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<%:Matching ID can only contain letters, numbers, and dashes%>';
+            return;
+        }
+    }
+
+    // IMEI validation (if provided)
+    if (imei && (imei.length !== 15 || !/^\d+$/.test(imei))) {
         statusDiv.className = 'lpac-status error';
-        statusDiv.innerHTML = '<%:Please enter a valid activation code%>';
+        statusDiv.innerHTML = '<%:IMEI must be exactly 15 digits%>';
         return;
     }
 
@@ -663,8 +777,12 @@ function addProfile() {
 
     // Make AJAX request with device parameters
     XHR.post('<%=url("admin/network/lpac/add")%>', {
+        input_mode: inputMode,
         activation_code: activation_code,
+        smdp_address: smdp_address,
+        matching_id: matching_id,
         confirmation_code: confirmation_code,
+        imei: imei,
         driver: selectedDriver,
         at_device: selectedAtDevice,
         mbim_device: selectedMbimDevice,
@@ -681,8 +799,13 @@ function addProfile() {
             processNotifications(function(notifData) {
                 statusDiv.className = 'lpac-status success';
                 statusDiv.innerHTML = '<strong>✓</strong> <%:Profile installed successfully!%>';
+
+                // Clear form fields
                 document.getElementById('activation_code').value = '';
+                document.getElementById('smdp_address').value = '';
+                document.getElementById('matching_id').value = '';
                 document.getElementById('confirmation_code').value = '';
+                document.getElementById('imei').value = '';
 
                 // Refresh profile list after successful installation
                 listProfiles();

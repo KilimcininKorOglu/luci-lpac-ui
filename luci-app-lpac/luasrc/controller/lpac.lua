@@ -52,8 +52,12 @@ function action_add_profile()
 	local util = require "luci.util"
 	local json = require "luci.jsonc"
 
+	local input_mode = http.formvalue("input_mode") or "qr"
 	local activation_code = http.formvalue("activation_code")
+	local smdp_address = http.formvalue("smdp_address")
+	local matching_id = http.formvalue("matching_id")
 	local confirmation_code = http.formvalue("confirmation_code")
+	local imei = http.formvalue("imei")
 
 	-- Get device settings from UCI (or use form values as override)
 	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
@@ -62,13 +66,33 @@ function action_add_profile()
 	mbim_device = http.formvalue("mbim_device") or mbim_device
 	qmi_device = http.formvalue("qmi_device") or qmi_device
 
-	if not activation_code or activation_code == "" then
-		http.prepare_content("application/json")
-		http.write_json({
-			success = false,
-			error = "Activation code is required"
-		})
-		return
+	-- Validate based on input mode
+	if input_mode == "manual" then
+		if not smdp_address or smdp_address == "" then
+			http.prepare_content("application/json")
+			http.write_json({
+				success = false,
+				error = "SM-DP+ address is required for manual mode"
+			})
+			return
+		end
+		if not matching_id or matching_id == "" then
+			http.prepare_content("application/json")
+			http.write_json({
+				success = false,
+				error = "Matching ID is required for manual mode"
+			})
+			return
+		end
+	else
+		if not activation_code or activation_code == "" then
+			http.prepare_content("application/json")
+			http.write_json({
+				success = false,
+				error = "Activation code is required"
+			})
+			return
+		end
 	end
 
 	-- Build command with lpac_json wrapper and device options
@@ -85,10 +109,20 @@ function action_add_profile()
 	end
 
 	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
-	cmd = cmd .. string.format(" add %s", util.shellquote(activation_code))
+
+	-- Add profile download parameters based on mode
+	if input_mode == "manual" then
+		cmd = cmd .. string.format(" add manual %s %s", util.shellquote(smdp_address), util.shellquote(matching_id))
+	else
+		cmd = cmd .. string.format(" add %s", util.shellquote(activation_code))
+	end
 
 	if confirmation_code and confirmation_code ~= "" then
 		cmd = cmd .. " " .. util.shellquote(confirmation_code)
+	end
+
+	if imei and imei ~= "" then
+		cmd = cmd .. " " .. util.shellquote(imei)
 	end
 
 	-- Execute command
