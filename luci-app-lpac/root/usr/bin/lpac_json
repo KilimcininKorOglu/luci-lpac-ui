@@ -96,10 +96,24 @@ case "$APDU_DRIVER" in
     mbim)
         export LPAC_APDU_MBIM_DEVICE="$MBIM_DEVICE"
         DEVICE_TO_CHECK="$MBIM_DEVICE"
+
+        # Check if MBIM device is in use by network interface
+        if lsof "$MBIM_DEVICE" 2>/dev/null | grep -q mbim; then
+            logger -t lpac_json "WARNING: MBIM device $MBIM_DEVICE is in use by network interface"
+            echo "{\"success\": false, \"error\": \"MBIM device is currently in use by network interface. To use eSIM management, either: 1) Use AT driver instead (recommended), 2) Temporarily disable the network interface (ifdown wwan0), 3) Switch to AT driver in Settings page\"}"
+            exit 1
+        fi
         ;;
     qmi|uqmi)
         export LPAC_APDU_QMI_DEVICE="$QMI_DEVICE"
         DEVICE_TO_CHECK="$QMI_DEVICE"
+
+        # Check if QMI device is in use by network interface
+        if lsof "$QMI_DEVICE" 2>/dev/null | grep -qE "qmi|uqmi"; then
+            logger -t lpac_json "WARNING: QMI device $QMI_DEVICE is in use by network interface"
+            echo "{\"success\": false, \"error\": \"QMI device is currently in use by network interface. QMI driver cannot be shared between network interface and eSIM management. Solution: 1) Use AT driver instead (recommended - check Settings page), 2) Temporarily disable network interface: 'ifdown wwan0', perform eSIM operation, then 'ifup wwan0', 3) Use a different modem port if available\"}"
+            exit 1
+        fi
         ;;
     qmi_qrtr)
         # QMI QRTR doesn't need a device file - it uses Qualcomm IPC Router

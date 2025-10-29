@@ -239,6 +239,11 @@
     <h2><%:eSIM Profile Management (LPAC)%></h2>
     <p><%:Manage eSIM profiles on Quectel modems using LPA (Local Profile Assistant)%></p>
 
+    <!-- QMI/MBIM Driver Warning -->
+    <div id="driver_warning" class="alert-message warning" style="display:none; margin-bottom: 20px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+        <strong>⚠ Warning:</strong> <span id="driver_warning_text"></span>
+    </div>
+
     <!-- Installed Profiles Section -->
     <div class="lpac-section">
         <h3><%:Installed Profiles%></h3>
@@ -455,8 +460,27 @@ function loadDeviceSettings() {
             selectedAtDevice = data.at_device || '/dev/ttyUSB2';
             selectedMbimDevice = data.mbim_device || '/dev/cdc-wdm0';
             selectedHttpClient = data.http_client || 'curl';
+
+            // Show warning if QMI/MBIM driver is selected
+            showDriverWarning(selectedDriver);
         }
     });
+}
+
+// Show warning for QMI/MBIM drivers about network interface conflict
+function showDriverWarning(driver) {
+    var warningDiv = document.getElementById('driver_warning');
+    var warningText = document.getElementById('driver_warning_text');
+
+    if (driver === 'qmi' || driver === 'uqmi') {
+        warningText.innerHTML = 'You are using QMI driver. <strong>QMI cannot be used simultaneously by network interface and eSIM management.</strong> If you have a network interface using this modem, operations will fail. <strong>Recommendation:</strong> Switch to AT driver in Settings (About page) for seamless operation.';
+        warningDiv.style.display = 'block';
+    } else if (driver === 'mbim') {
+        warningText.innerHTML = 'You are using MBIM driver. <strong>MBIM cannot be used simultaneously by network interface and eSIM management.</strong> If you have a network interface using this modem, operations will fail. <strong>Recommendation:</strong> Switch to AT driver in Settings (About page) for seamless operation.';
+        warningDiv.style.display = 'block';
+    } else {
+        warningDiv.style.display = 'none';
+    }
 }
 
 // Update device input fields based on selected driver
