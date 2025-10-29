@@ -136,7 +136,14 @@ if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
         in_changelog && /<\/ul>/ {print; in_changelog=0; skip=0; next}
         !skip {print}
     ' "$PROJECT_DIR/luasrc/view/lpac/about.htm" > "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp"
-    mv "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
+    # Verify temp file exists and is not empty before moving
+    if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" ] && [ -s "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" ]; then
+        mv "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+    else
+        echo "WARNING: Failed to update changelog in about.htm"
+        rm -f "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp"
+    fi
 fi
 
 if [ $LATEST_BUILD -eq 0 ]; then
