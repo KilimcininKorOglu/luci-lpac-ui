@@ -612,7 +612,13 @@ function saveDeviceSettings() {
                                  '<%:Driver:%> ' + data.driver + '<br>' +
                                  '<%:AT Device:%> ' + data.at_device + '<br>' +
                                  '<%:MBIM Device:%> ' + data.mbim_device + '<br>' +
-                                 '<%:HTTP Client:%> ' + data.http_client;
+                                 '<%:HTTP Client:%> ' + data.http_client + '<br>' +
+                                 '<br><em><%:Page will reload in 2 seconds...%></em>';
+
+            // Reload page after 2 seconds to apply new settings
+            setTimeout(function() {
+                window.location.reload();
+            }, 2000);
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to save settings:%> ' + (data.error || '<%:Unknown error%>');
