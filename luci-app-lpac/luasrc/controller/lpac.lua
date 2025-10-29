@@ -732,23 +732,27 @@ function action_restart_modem()
 	end
 end
 
--- Clear stale lock file manually
+-- Clear stale lock file manually and kill all lpac_json processes
 function action_clear_lock()
 	local http = require "luci.http"
 	local util = require "luci.util"
 
-	-- Directly remove lock file
+	-- First, kill all running lpac_json processes
+	local kill_output = util.exec("killall lpac_json 2>&1; killall -9 lpac_json 2>&1")
+	local killed_count = util.exec("ps | grep -c '[l]pac_json' || echo 0")
+
+	-- Then remove the lock file
 	local lockfile = "/var/run/lpac_json.lock"
-	local result = util.exec("rm -f " .. lockfile .. " 2>&1")
-	local exit_code = util.exec("test -f " .. lockfile .. " && echo 1 || echo 0")
+	util.exec("rm -f " .. lockfile .. " 2>&1")
+	local lock_exists = util.exec("test -f " .. lockfile .. " && echo 1 || echo 0")
 
 	http.prepare_content("application/json")
-	if tonumber(exit_code) == 0 then
+	if tonumber(lock_exists) == 0 then
 		-- Lock file removed successfully
-		util.exec("logger -t lpac_json 'Lock file manually cleared via web UI'")
+		util.exec("logger -t lpac_json 'Lock file manually cleared via web UI - killed all lpac_json processes'")
 		http.write_json({
 			success = true,
-			message = "Lock file cleared successfully. You can now retry your operation."
+			message = "Lock cleared and all lpac_json processes killed. You can now retry your operation."
 		})
 	else
 		-- Lock file still exists (permission issue?)
