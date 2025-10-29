@@ -206,10 +206,14 @@ fi
 
 # Verify all files have Unix line endings
 echo -e "${YELLOW}[4/6]${NC} Verifying file formats..."
-find "$DATA_DIR" -type f \( -name "*.lua" -o -name "*.htm" -o -name "*.sh" \) | while read file; do
-    if file "$file" | grep -q CRLF; then
-        echo -e "  ${RED}✗${NC} Converting: $file (had Windows line endings)"
-        sed -i 's/\r$//' "$file"
+# Check .lua, .htm, .sh files and scripts in /usr/bin/
+find "$DATA_DIR" -type f \( -name "*.lua" -o -name "*.htm" -o -name "*.sh" -o -path "*/usr/bin/*" \) | while read file; do
+    # Skip binary files, only process text/script files
+    if file "$file" | grep -qE "text|script"; then
+        if file "$file" | grep -q CRLF; then
+            echo -e "  ${RED}✗${NC} Converting: $file (had Windows line endings)"
+            sed -i 's/\r$//' "$file"
+        fi
     fi
 done
 echo -e "  ${GREEN}✓${NC} All text files have Unix line endings"
