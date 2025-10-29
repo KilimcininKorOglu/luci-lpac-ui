@@ -6,6 +6,9 @@
 
 <%+header%>
 
+<!-- jsQR library for QR code scanning -->
+<script src="<%=resource%>/jsQR.min.js"></script>
+
 <style>
 /* OpenWrt dark mode compatible styles - using data-bs-theme attribute */
 .lpac-container {
@@ -306,6 +309,51 @@
                     <%:Format: LPA:1$SM-DP+_ADDRESS$ACTIVATION_CODE%>
                 </span>
             </div>
+
+            <!-- QR Code Scanning Options -->
+            <div class="lpac-form-group">
+                <label class="lpac-form-label"><%:Or scan QR code:%></label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <!-- File Upload Button -->
+                    <label class="lpac-button lpac-button-secondary" for="qr_file_input" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                        <span>📁</span>
+                        <span><%:Upload QR Image%></span>
+                    </label>
+                    <input type="file"
+                           id="qr_file_input"
+                           accept="image/*"
+                           style="display: none;"
+                           onchange="decodeQRFromFile(this)"/>
+
+                    <!-- Webcam Scan Button -->
+                    <button type="button"
+                            class="lpac-button lpac-button-secondary"
+                            onclick="startWebcamScan()"
+                            style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span>📷</span>
+                        <span><%:Scan with Camera%></span>
+                    </button>
+                </div>
+                <span class="lpac-form-hint">
+                    <%:Upload a QR code image or use your camera to scan it%>
+                </span>
+            </div>
+
+            <!-- Webcam Video Element (hidden by default) -->
+            <div id="webcam_container" style="display: none; margin-top: 15px;">
+                <video id="webcam_video"
+                       style="width: 100%; max-width: 500px; border: 2px solid #ccc; border-radius: 4px;"
+                       autoplay></video>
+                <canvas id="webcam_canvas" style="display: none;"></canvas>
+                <div style="margin-top: 10px;">
+                    <button type="button"
+                            class="lpac-button lpac-button-secondary"
+                            onclick="stopWebcamScan()">
+                        <%:Stop Camera%>
+                    </button>
+                    <span id="webcam_status" style="margin-left: 10px; color: #666;"></span>
+                </div>
+            </div>
         </div>
 
         <!-- Manual SM-DP+ + Matching ID Inputs (hidden by default) -->
@@ -540,6 +588,113 @@ function showDriverWarning(driver) {
     } else {
         warningDiv.style.display = 'none';
     }
+}
+
+// QR Code Decoding Functions
+var webcamStream = null;
+var webcamScanInterval = null;
+
+// Decode QR code from uploaded file
+function decodeQRFromFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+            if (code && code.data) {
+                document.getElementById('activation_code').value = code.data;
+                alert('✓ QR code successfully decoded!');
+            } else {
+                alert('✗ Could not read QR code. Please try a clearer image.');
+            }
+
+            // Reset file input
+            input.value = '';
+        };
+        img.onerror = function() {
+            alert('✗ Error loading image file.');
+            input.value = '';
+        };
+        img.src = e.target.result;
+    };
+    reader.onerror = function() {
+        alert('✗ Error reading file.');
+        input.value = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Start webcam scanning
+function startWebcamScan() {
+    const video = document.getElementById('webcam_video');
+    const canvas = document.getElementById('webcam_canvas');
+    const container = document.getElementById('webcam_container');
+    const status = document.getElementById('webcam_status');
+
+    container.style.display = 'block';
+    status.textContent = 'Starting camera...';
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+            webcamStream = stream;
+            video.srcObject = stream;
+            status.textContent = 'Scanning... Point camera at QR code';
+
+            // Start scanning loop
+            webcamScanInterval = setInterval(function() {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+                    if (code && code.data) {
+                        document.getElementById('activation_code').value = code.data;
+                        status.textContent = '✓ QR code detected!';
+                        alert('✓ QR code successfully scanned!');
+                        stopWebcamScan();
+                    }
+                }
+            }, 250); // Scan every 250ms
+        })
+        .catch(function(err) {
+            status.textContent = '✗ Camera access denied';
+            alert('✗ Could not access camera: ' + err.message);
+            container.style.display = 'none';
+        });
+}
+
+// Stop webcam scanning
+function stopWebcamScan() {
+    if (webcamScanInterval) {
+        clearInterval(webcamScanInterval);
+        webcamScanInterval = null;
+    }
+
+    if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+    }
+
+    const video = document.getElementById('webcam_video');
+    video.srcObject = null;
+
+    const container = document.getElementById('webcam_container');
+    container.style.display = 'none';
 }
 
 // Toggle between QR code and manual input mode

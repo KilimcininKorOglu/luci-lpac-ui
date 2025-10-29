@@ -190,6 +190,12 @@ echo "  → Wrapper script (lpac_json)"
 cp "$PROJECT_DIR/root/usr/bin/lpac_json" "$DATA_DIR/usr/bin/"
 chmod 755 "$DATA_DIR/usr/bin/lpac_json"
 
+echo "  → Static resources (jsQR library)"
+mkdir -p "$DATA_DIR/www/luci-static/resources"
+if [ -f "$PROJECT_DIR/htdocs/luci-static/resources/jsQR.min.js" ]; then
+    cp "$PROJECT_DIR/htdocs/luci-static/resources/jsQR.min.js" "$DATA_DIR/www/luci-static/resources/"
+fi
+
 # UCI config is now provided by lpac package, not luci-app-lpac
 # echo "  → UCI configuration (lpac)"
 # cp "$PROJECT_DIR/root/etc/config/lpac" "$DATA_DIR/etc/config/"
