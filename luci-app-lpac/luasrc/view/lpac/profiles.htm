@@ -370,15 +370,15 @@
             <div class="lpac-form-group">
                 <label class="lpac-form-label"><%:APDU Driver%></label>
                 <select id="driver_select" class="lpac-select" style="width: 100%; max-width: 400px;" onchange="updateDeviceInputs()">
-                    <option value="at">AT (ETSI TS 127 007) - Recommended for EP06-E</option>
-                    <option value="at_csim">AT_CSIM (Faster, may not work on all modems)</option>
+                    <option value="at">AT (Standard) - Most Compatible, Works on All Modems</option>
+                    <option value="at_csim">AT_CSIM (3x Faster) - Requires Modern Modem Support</option>
                     <option value="mbim">MBIM (USB Mobile Broadband Interface)</option>
                     <option value="qmi">QMI (Qualcomm MSM Interface)</option>
-                    <option value="qmi_qrtr">QMI QRTR (QMI over QRTR)</option>
-                    <option value="uqmi">uQMI (OpenWrt QMI command line tool)</option>
+                    <option value="qmi_qrtr">QMI_QRTR (QMI over QRTR - For Embedded Modems)</option>
+                    <option value="uqmi">uQMI (OpenWrt QMI Tool - Alternative to QMI)</option>
                 </select>
                 <span class="lpac-form-hint">
-                    <%:Select APDU driver based on your modem type%>
+                    <%:AT: Use multi-step APDU (slow, reliable). AT_CSIM: Use direct APDU (fast, may fail on old modems). MBIM/QMI: Cannot share with network interface. QMI_QRTR: For built-in Qualcomm modems (no device file needed).%>
                 </span>
             </div>
 
