@@ -100,7 +100,7 @@ case "$APDU_DRIVER" in
         # Check if MBIM device is in use by network interface
         if lsof "$MBIM_DEVICE" 2>/dev/null | grep -q mbim; then
             logger -t lpac_json "WARNING: MBIM device $MBIM_DEVICE is in use by network interface"
-            echo "{\"success\": false, \"error\": \"MBIM device is currently in use by network interface. To use eSIM management, either: 1) Use AT driver instead (recommended), 2) Temporarily disable the network interface (ifdown wwan0), 3) Switch to AT driver in Settings page\"}"
+            echo "{\"success\": false, \"error\": \"MBIM device is currently in use by network interface. To use eSIM management: 1) Switch to AT driver (recommended - use 'Scan for Devices' in 'Modem Device & Status' section), 2) Temporarily disable network interface (ifdown wwan0), or 3) Use a different modem port if available\"}"
             exit 1
         fi
         ;;
@@ -111,7 +111,7 @@ case "$APDU_DRIVER" in
         # Check if QMI device is in use by network interface
         if lsof "$QMI_DEVICE" 2>/dev/null | grep -qE "qmi|uqmi"; then
             logger -t lpac_json "WARNING: QMI device $QMI_DEVICE is in use by network interface"
-            echo "{\"success\": false, \"error\": \"QMI device is currently in use by network interface. QMI driver cannot be shared between network interface and eSIM management. Solution: 1) Use AT driver instead (recommended - check Settings page), 2) Temporarily disable network interface: 'ifdown wwan0', perform eSIM operation, then 'ifup wwan0', 3) Use a different modem port if available\"}"
+            echo "{\"success\": false, \"error\": \"QMI device is currently in use by network interface. QMI driver cannot be shared between network interface and eSIM management. Solution: 1) Switch to AT driver (recommended - use 'Scan for Devices' in 'Modem Device & Status' section), 2) Temporarily disable network interface: 'ifdown wwan0', perform eSIM operation, then 'ifup wwan0', or 3) Use a different modem port if available\"}"
             exit 1
         fi
         ;;
