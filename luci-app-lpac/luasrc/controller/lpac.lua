@@ -44,6 +44,7 @@ function index()
 	entry({"admin", "network", "lpac", "list_notifications"}, call("action_list_notifications"), nil).leaf = true
 	entry({"admin", "network", "lpac", "enable"}, call("action_enable_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "disable"}, call("action_disable_profile"), nil).leaf = true
+	entry({"admin", "network", "lpac", "restart_modem"}, call("action_restart_modem"), nil).leaf = true
 end
 
 -- Add eSIM Profile
@@ -665,6 +666,52 @@ function action_list_notifications()
 
 	cmd = cmd .. string.format(" -h %s", util.shellquote(http_client))
 	cmd = cmd .. " notification_list"
+
+	-- Execute command
+	local output = util.exec(cmd .. " 2>&1")
+
+	-- Parse JSON output from wrapper
+	local result = json.parse(output)
+
+	http.prepare_content("application/json")
+	if result then
+		http.write_json(result)
+	else
+		http.write_json({
+			success = false,
+			error = "Failed to parse response",
+			raw_output = output
+		})
+	end
+end
+
+-- Restart Modem (AT+CFUN soft reset)
+function action_restart_modem()
+	local http = require "luci.http"
+	local util = require "luci.util"
+	local json = require "luci.jsonc"
+
+	-- Get form parameters
+	local driver = http.formvalue("driver")
+	local at_device = http.formvalue("at_device")
+	local mbim_device = http.formvalue("mbim_device")
+
+	-- Validate driver
+	if not driver or driver == "" then
+		http.prepare_content("application/json")
+		http.write_json({
+			success = false,
+			error = "Driver parameter is required"
+		})
+		return
+	end
+
+	-- Build lpac_json command
+	local cmd = string.format("/usr/bin/lpac_json restart_modem %s %s %s",
+		util.shellquote(driver),
+		util.shellquote(at_device or "/dev/ttyUSB2"),
+		util.shellquote(mbim_device or "/dev/cdc-wdm0")
+	)
 
 	-- Execute command
 	local output = util.exec(cmd .. " 2>&1")

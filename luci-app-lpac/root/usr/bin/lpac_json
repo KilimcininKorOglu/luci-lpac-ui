@@ -667,8 +667,66 @@ case "$ACTION" in
         exit 0
         ;;
 
+    restart_modem)
+        # Modem restart using AT+CFUN commands
+        # Usage: lpac_json restart_modem <driver> <at_device> <mbim_device>
+        DRIVER="$2"
+        AT_DEVICE="$3"
+        MBIM_DEVICE="$4"
+
+        # Determine device path based on driver
+        if [ "$DRIVER" = "mbim" ] || [ "$DRIVER" = "qmi" ] || [ "$DRIVER" = "qmi_qrtr" ] || [ "$DRIVER" = "uqmi" ]; then
+            DEVICE="$MBIM_DEVICE"
+        else
+            # AT or AT_CSIM
+            DEVICE="$AT_DEVICE"
+        fi
+
+        # For non-AT drivers, we can't send AT commands directly
+        if [ "$DRIVER" != "at" ] && [ "$DRIVER" != "at_csim" ]; then
+            echo "{"
+            echo "  \"success\": false,"
+            echo "  \"error\": \"Modem restart via AT commands only supports AT/AT_CSIM drivers. Current driver: $DRIVER\""
+            echo "}"
+            exit 0
+        fi
+
+        # Validate device exists
+        if [ ! -e "$DEVICE" ]; then
+            echo "{"
+            echo "  \"success\": false,"
+            echo "  \"error\": \"Device not found: $DEVICE\""
+            echo "}"
+            exit 0
+        fi
+
+        # Send AT+CFUN=0 (disable radio)
+        logger -t lpac_json "Restarting modem on $DEVICE: AT+CFUN=0"
+        echo -e "AT+CFUN=0\r" > "$DEVICE" 2>/dev/null
+        sleep 2
+
+        # Send AT+CFUN=1 (enable radio)
+        logger -t lpac_json "Restarting modem on $DEVICE: AT+CFUN=1"
+        echo -e "AT+CFUN=1\r" > "$DEVICE" 2>/dev/null
+        sleep 3
+
+        # Wait for modem to stabilize
+        logger -t lpac_json "Waiting for modem to stabilize (8 seconds)..."
+        sleep 8
+
+        # Verify modem is responding
+        echo -e "AT\r" > "$DEVICE" 2>/dev/null
+        sleep 1
+
+        echo "{"
+        echo "  \"success\": true,"
+        echo "  \"message\": \"Modem restarted successfully using AT+CFUN=0/1 soft reset\""
+        echo "}"
+        exit 0
+        ;;
+
     *)
-        echo "{\"success\": false, \"error\": \"Invalid action: $ACTION. Valid actions: add, delete, enable, disable, list, info, status, nickname, notification_list, notification_process_all\"}"
+        echo "{\"success\": false, \"error\": \"Invalid action: $ACTION. Valid actions: add, delete, enable, disable, list, info, status, nickname, notification_list, notification_process_all, restart_modem\"}"
         exit 1
         ;;
 esac
