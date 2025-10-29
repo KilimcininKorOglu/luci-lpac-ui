@@ -474,6 +474,9 @@
             <button class="lpac-button lpac-button-danger" onclick="restartModem()" style="margin-right: 10px;">
                 <%:Restart Modem%>
             </button>
+            <button class="lpac-button lpac-button-primary" onclick="reconnectNetwork()" style="margin-right: 10px; background: #28a745;">
+                <%:Reconnect Network%>
+            </button>
             <button class="lpac-button lpac-button-secondary" onclick="clearLock()" style="background: #ffc107; color: #000;">
                 <%:Clear Lock%>
             </button>
@@ -886,6 +889,28 @@ function restartModem() {
         } else {
             statusDiv.className = 'lpac-status error';
             statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to restart modem:%> ' + (data.error || '<%:Unknown error%>');
+        }
+    });
+}
+
+// Reconnect network interface (restart QMI/WWAN)
+function reconnectNetwork() {
+    var statusDiv = document.getElementById('device_status');
+
+    if (!confirm('<%:Reconnect network interface? This will temporarily disconnect internet.%>')) {
+        return;
+    }
+
+    statusDiv.className = 'lpac-status info';
+    statusDiv.innerHTML = '<%:Reconnecting network interface, please wait 20-30 seconds...%>';
+
+    XHR.post('<%=url("admin/network/lpac/reconnect_network")%>', {}, function(x, data) {
+        if (data.success) {
+            statusDiv.className = 'lpac-status success';
+            statusDiv.innerHTML = '<strong>✓</strong> ' + (data.message || '<%:Network reconnected successfully%>');
+        } else {
+            statusDiv.className = 'lpac-status error';
+            statusDiv.innerHTML = '<strong>✗</strong> <%:Failed to reconnect network:%> ' + (data.error || '<%:Unknown error%>');
         }
     });
 }

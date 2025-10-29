@@ -45,6 +45,7 @@ function index()
 	entry({"admin", "network", "lpac", "enable"}, call("action_enable_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "disable"}, call("action_disable_profile"), nil).leaf = true
 	entry({"admin", "network", "lpac", "restart_modem"}, call("action_restart_modem"), nil).leaf = true
+	entry({"admin", "network", "lpac", "reconnect_network"}, call("action_reconnect_network"), nil).leaf = true
 	entry({"admin", "network", "lpac", "clear_lock"}, call("action_clear_lock"), nil).leaf = true
 end
 
@@ -728,6 +729,43 @@ function action_restart_modem()
 			success = false,
 			error = "Failed to parse response",
 			raw_output = output
+		})
+	end
+end
+
+-- Reconnect network interface (restart QMI/WWAN after profile change)
+function action_reconnect_network()
+	local http = require "luci.http"
+	local util = require "luci.util"
+	local uci = require "luci.model.uci".cursor()
+
+	-- Find cellular/QMI interfaces and restart them
+	local reconnected = {}
+	uci:foreach("network", "interface", function(s)
+		local proto = s.proto or ""
+		-- Check if interface uses QMI, WWAN, or cellular protocols
+		if proto == "qmi" or proto == "ncm" or proto == "mbim" or proto == "3g" or proto == "wwan" then
+			local iface = s[".name"]
+			util.exec("logger -t lpac 'Reconnecting network interface: " .. iface .. " (proto: " .. proto .. ")'")
+			-- Execute ifdown and ifup
+			util.exec("ifdown " .. iface .. " 2>&1")
+			util.exec("sleep 2")
+			util.exec("ifup " .. iface .. " 2>&1")
+			table.insert(reconnected, iface)
+		end
+	end)
+
+	http.prepare_content("application/json")
+	if #reconnected > 0 then
+		util.exec("logger -t lpac 'Successfully reconnected interfaces: " .. table.concat(reconnected, ", ") .. "'")
+		http.write_json({
+			success = true,
+			message = "Reconnected interfaces: " .. table.concat(reconnected, ", ") .. ". Wait 20-30s for connection."
+		})
+	else
+		http.write_json({
+			success = false,
+			error = "No cellular/QMI interfaces found. Check your network configuration."
 		})
 	end
 end
