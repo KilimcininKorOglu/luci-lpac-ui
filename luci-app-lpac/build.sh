@@ -240,6 +240,31 @@ cat > "$CONTROL_DIR/postinst" << 'EOF'
 # Clear LuCI cache after installation
 [ -d /tmp/luci-modulecache ] && rm -rf /tmp/luci-modulecache/* 2>/dev/null
 [ -d /tmp/luci-indexcache ] && rm -rf /tmp/luci-indexcache/* 2>/dev/null
+
+# Clean up old UCI config format (if exists)
+# Old format used: lpac.global, lpac.at, lpac.uqmi
+# New format uses only: lpac.device
+if [ -f /etc/config/lpac ]; then
+    # Check if old sections exist and remove them
+    uci -q delete lpac.global 2>/dev/null
+    uci -q delete lpac.at 2>/dev/null
+    uci -q delete lpac.uqmi 2>/dev/null
+    uci -q delete lpac.mbim 2>/dev/null
+    uci -q delete lpac.qmi 2>/dev/null
+
+    # Ensure device section exists with defaults
+    if ! uci -q get lpac.device >/dev/null; then
+        uci set lpac.device=settings
+        uci set lpac.device.driver='at'
+        uci set lpac.device.at_device='/dev/ttyUSB2'
+        uci set lpac.device.mbim_device='/dev/cdc-wdm0'
+        uci set lpac.device.qmi_device='/dev/cdc-wdm0'
+        uci set lpac.device.http_client='curl'
+    fi
+
+    uci commit lpac 2>/dev/null
+fi
+
 exit 0
 EOF
 chmod 755 "$CONTROL_DIR/postinst"
