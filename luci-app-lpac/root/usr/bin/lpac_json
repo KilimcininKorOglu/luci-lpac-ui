@@ -73,13 +73,19 @@ run_with_timeout() {
     local timeout_duration="$1"
     shift
 
-    # Check if timeout command exists
+    # Check if timeout command exists (coreutils)
     if command -v timeout >/dev/null 2>&1; then
         timeout "$timeout_duration" "$@"
         return $?
     fi
 
-    # Fallback using perl (usually available on OpenWrt)
+    # Fallback: Use busybox timeout if available (OpenWrt usually has this)
+    if busybox timeout 1 true 2>/dev/null; then
+        busybox timeout "$timeout_duration" "$@"
+        return $?
+    fi
+
+    # Fallback using perl (some OpenWrt versions have perl)
     if command -v perl >/dev/null 2>&1; then
         perl -e '
             $SIG{ALRM} = sub { kill 9, $pid; exit 124; };
@@ -96,10 +102,25 @@ run_with_timeout() {
         return $?
     fi
 
-    # Last resort: Run without timeout and log warning
-    logger -t lpac_json "WARNING: No timeout mechanism available, operation may hang indefinitely"
-    "$@"
-    return $?
+    # Pure shell fallback (works everywhere but less precise)
+    (
+        "$@" &
+        local cmd_pid=$!
+        (
+            sleep "$timeout_duration"
+            kill -9 $cmd_pid 2>/dev/null
+        ) &
+        local killer_pid=$!
+        wait $cmd_pid
+        local exit_code=$?
+        kill -9 $killer_pid 2>/dev/null
+        wait $killer_pid 2>/dev/null
+        exit $exit_code
+    )
+    local result=$?
+    # If killed by our timeout, return 124 (standard timeout exit code)
+    [ $result -eq 137 ] || [ $result -eq 143 ] && return 124
+    return $result
 }
 
 # Parse command-line options for device override
