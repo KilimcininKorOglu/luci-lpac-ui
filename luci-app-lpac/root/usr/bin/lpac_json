@@ -645,12 +645,13 @@ case "$ACTION" in
         ;;
 
     status)
-        # Get chip info as status
-        OUTPUT=$(run_with_timeout $TIMEOUT $LPAC_BIN chip info 2>&1)
+        # Get chip info as status (shorter timeout for status checks)
+        STATUS_TIMEOUT=30
+        OUTPUT=$(run_with_timeout $STATUS_TIMEOUT $LPAC_BIN chip info 2>&1)
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
-            echo "{\"success\": false, \"error\": \"Operation timed out after ${TIMEOUT}s\"}"
+            echo "{\"success\": false, \"error\": \"Operation timed out after ${STATUS_TIMEOUT}s. Modem may not be responding on ${AT_DEVICE}\"}"
             exit 0
         fi
 
