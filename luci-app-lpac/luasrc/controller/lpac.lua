@@ -12,11 +12,13 @@ local function get_device_settings()
 	local mbim_device = uci:get("lpac", "device", "mbim_device") or "/dev/cdc-wdm0"
 	local qmi_device = uci:get("lpac", "device", "qmi_device") or "/dev/cdc-wdm0"
 	local http_client = uci:get("lpac", "device", "http_client") or "curl"
-	return driver, at_device, mbim_device, qmi_device, http_client
+	local driver_home = uci:get("lpac", "device", "driver_home") or "/usr/lib/lpac/driver"
+	local custom_isd_r_aid = uci:get("lpac", "device", "custom_isd_r_aid") or ""
+	return driver, at_device, mbim_device, qmi_device, http_client, driver_home, custom_isd_r_aid
 end
 
 -- Helper function to save device settings to UCI
-local function save_device_settings(driver, at_device, mbim_device, qmi_device, http_client)
+local function save_device_settings(driver, at_device, mbim_device, qmi_device, http_client, driver_home, custom_isd_r_aid)
 	local uci = require "luci.model.uci".cursor()
 	uci:set("lpac", "device", "settings")
 	uci:set("lpac", "device", "driver", driver or "at")
@@ -24,6 +26,12 @@ local function save_device_settings(driver, at_device, mbim_device, qmi_device, 
 	uci:set("lpac", "device", "mbim_device", mbim_device or "/dev/cdc-wdm0")
 	uci:set("lpac", "device", "qmi_device", qmi_device or "/dev/cdc-wdm0")
 	uci:set("lpac", "device", "http_client", http_client or "curl")
+	uci:set("lpac", "device", "driver_home", driver_home or "/usr/lib/lpac/driver")
+	if custom_isd_r_aid and custom_isd_r_aid ~= "" then
+		uci:set("lpac", "device", "custom_isd_r_aid", custom_isd_r_aid)
+	else
+		uci:delete("lpac", "device", "custom_isd_r_aid")
+	end
 	uci:commit("lpac")
 	return true
 end
@@ -210,14 +218,20 @@ function action_list_profiles()
 	local json = require "luci.jsonc"
 
 	-- Get device settings from UCI (or use form values as override)
-	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	local driver, at_device, mbim_device, qmi_device, http_client, driver_home, custom_isd_r_aid = get_device_settings()
 	driver = http.formvalue("driver") or driver
 	at_device = http.formvalue("at_device") or at_device
 	mbim_device = http.formvalue("mbim_device") or mbim_device
 	qmi_device = http.formvalue("qmi_device") or qmi_device
 
+	-- Build command with environment variables
+	local env_vars = string.format("LPAC_DRIVER_HOME=%s ", util.shellquote(driver_home))
+	if custom_isd_r_aid and custom_isd_r_aid ~= "" then
+		env_vars = env_vars .. string.format("CUSTOM_ISD_R_AID=%s ", util.shellquote(custom_isd_r_aid))
+	end
+
 	-- Build command with device options
-	local cmd = string.format("/usr/bin/lpac_json -d %s", util.shellquote(driver))
+	local cmd = string.format("%s/usr/bin/lpac_json -d %s", env_vars, util.shellquote(driver))
 
 	-- Add device paths based on driver type
 	if driver == "at" or driver == "at_csim" then
@@ -367,7 +381,7 @@ end
 function action_get_settings()
 	local http = require "luci.http"
 
-	local driver, at_device, mbim_device, qmi_device, http_client = get_device_settings()
+	local driver, at_device, mbim_device, qmi_device, http_client, driver_home, custom_isd_r_aid = get_device_settings()
 
 	http.prepare_content("application/json")
 	http.write_json({
@@ -376,7 +390,9 @@ function action_get_settings()
 		at_device = at_device,
 		mbim_device = mbim_device,
 		qmi_device = qmi_device,
-		http_client = http_client
+		http_client = http_client,
+		driver_home = driver_home,
+		custom_isd_r_aid = custom_isd_r_aid
 	})
 end
 
@@ -389,6 +405,8 @@ function action_save_settings()
 	local mbim_device = http.formvalue("mbim_device")
 	local qmi_device = http.formvalue("qmi_device")
 	local http_client = http.formvalue("http_client")
+	local driver_home = http.formvalue("driver_home")
+	local custom_isd_r_aid = http.formvalue("custom_isd_r_aid")
 
 	if not driver or driver == "" then
 		http.prepare_content("application/json")
@@ -409,7 +427,7 @@ function action_save_settings()
 		return
 	end
 
-	local success = save_device_settings(driver, at_device, mbim_device, qmi_device, http_client)
+	local success = save_device_settings(driver, at_device, mbim_device, qmi_device, http_client, driver_home, custom_isd_r_aid)
 
 	http.prepare_content("application/json")
 	http.write_json({

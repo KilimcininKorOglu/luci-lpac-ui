@@ -111,9 +111,14 @@ done
 shift $((OPTIND-1))
 
 # Set environment variables for lpac
-export LPAC_DRIVER_HOME="/usr/lib/lpac/driver"
+export LPAC_DRIVER_HOME="${LPAC_DRIVER_HOME:-/usr/lib/lpac/driver}"
 export LPAC_APDU="$APDU_DRIVER"
 export LPAC_HTTP="$HTTP_CLIENT"
+
+# Set custom ISD-R AID if provided
+if [ -n "$CUSTOM_ISD_R_AID" ]; then
+    export EUICC_CUSTOM_ISD_R_AID="$CUSTOM_ISD_R_AID"
+fi
 
 # Workaround for mbedTLS SSL certificate verification issues on OpenWrt
 # When curl is compiled with mbedTLS (common on OpenWrt), it may fail to verify
