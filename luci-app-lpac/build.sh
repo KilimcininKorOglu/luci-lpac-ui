@@ -246,28 +246,75 @@ cat > "$CONTROL_DIR/postinst" << 'EOF'
 [ -d /tmp/luci-modulecache ] && rm -rf /tmp/luci-modulecache/* 2>/dev/null
 [ -d /tmp/luci-indexcache ] && rm -rf /tmp/luci-indexcache/* 2>/dev/null
 
-# Clean up old UCI config format (if exists)
-# Old format used: lpac.global, lpac.at, lpac.uqmi
-# New format uses only: lpac.device
+# UCI format migration: OLD format (lpac.device.*) → NEW format (lpac.global.*, lpac.at.*, etc.)
+# This matches lpac 2.3.0+ expectations
 if [ -f /etc/config/lpac ]; then
-    # Check if old sections exist and remove them
-    uci -q delete lpac.global 2>/dev/null
-    uci -q delete lpac.at 2>/dev/null
-    uci -q delete lpac.uqmi 2>/dev/null
-    uci -q delete lpac.mbim 2>/dev/null
-    uci -q delete lpac.qmi 2>/dev/null
+    # Check if old 'device' section exists and migrate to new format
+    if uci -q get lpac.device >/dev/null 2>&1; then
+        # Migrate old format to new format
+        OLD_DRIVER=$(uci -q get lpac.device.driver 2>/dev/null || echo "at")
+        OLD_AT_DEV=$(uci -q get lpac.device.at_device 2>/dev/null || echo "/dev/ttyUSB2")
+        OLD_MBIM_DEV=$(uci -q get lpac.device.mbim_device 2>/dev/null || echo "/dev/cdc-wdm0")
+        OLD_QMI_DEV=$(uci -q get lpac.device.qmi_device 2>/dev/null || echo "/dev/cdc-wdm0")
+        OLD_HTTP=$(uci -q get lpac.device.http_client 2>/dev/null || echo "curl")
 
-    # Ensure device section exists with defaults
-    if ! uci -q get lpac.device >/dev/null; then
-        uci set lpac.device=settings
-        uci set lpac.device.driver='at'
-        uci set lpac.device.at_device='/dev/ttyUSB2'
-        uci set lpac.device.mbim_device='/dev/cdc-wdm0'
-        uci set lpac.device.qmi_device='/dev/cdc-wdm0'
-        uci set lpac.device.http_client='curl'
+        # Create new format sections
+        uci -q delete lpac.global 2>/dev/null
+        uci set lpac.global=global
+        uci set lpac.global.apdu_backend="$OLD_DRIVER"
+        uci set lpac.global.http_backend="$OLD_HTTP"
+        uci set lpac.global.apdu_debug='0'
+        uci set lpac.global.http_debug='0'
+
+        uci -q delete lpac.at 2>/dev/null
+        uci set lpac.at=at
+        uci set lpac.at.device="$OLD_AT_DEV"
+        uci set lpac.at.debug='0'
+
+        uci -q delete lpac.uqmi 2>/dev/null
+        uci set lpac.uqmi=uqmi
+        uci set lpac.uqmi.device="$OLD_QMI_DEV"
+        uci set lpac.uqmi.debug='0'
+
+        uci -q delete lpac.mbim 2>/dev/null
+        uci set lpac.mbim=mbim
+        uci set lpac.mbim.device="$OLD_MBIM_DEV"
+        uci set lpac.mbim.proxy='1'
+
+        # Remove old device section
+        uci -q delete lpac.device 2>/dev/null
+
+        uci commit lpac 2>/dev/null
+    else
+        # No old format, ensure new format exists with defaults
+        if ! uci -q get lpac.global >/dev/null 2>&1; then
+            uci set lpac.global=global
+            uci set lpac.global.apdu_backend='at'
+            uci set lpac.global.http_backend='curl'
+            uci set lpac.global.apdu_debug='0'
+            uci set lpac.global.http_debug='0'
+        fi
+
+        if ! uci -q get lpac.at >/dev/null 2>&1; then
+            uci set lpac.at=at
+            uci set lpac.at.device='/dev/ttyUSB2'
+            uci set lpac.at.debug='0'
+        fi
+
+        if ! uci -q get lpac.uqmi >/dev/null 2>&1; then
+            uci set lpac.uqmi=uqmi
+            uci set lpac.uqmi.device='/dev/cdc-wdm0'
+            uci set lpac.uqmi.debug='0'
+        fi
+
+        if ! uci -q get lpac.mbim >/dev/null 2>&1; then
+            uci set lpac.mbim=mbim
+            uci set lpac.mbim.device='/dev/cdc-wdm0'
+            uci set lpac.mbim.proxy='1'
+        fi
+
+        uci commit lpac 2>/dev/null
     fi
-
-    uci commit lpac 2>/dev/null
 fi
 
 exit 0
