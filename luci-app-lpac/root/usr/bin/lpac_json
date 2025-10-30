@@ -656,70 +656,10 @@ case "$ACTION" in
         ;;
 
     status)
-        # Quick modem check using AT command instead of lpac (faster and more reliable)
-        if [ "$APDU_DRIVER" = "at" ] || [ "$APDU_DRIVER" = "at_csim" ]; then
-            # Test if AT device responds with simple AT command
-            # Use stty to set device to raw mode and test with timeout
-            (
-                stty -F "$AT_DEVICE" raw -echo 2>/dev/null || true
-                echo -e "AT\r\n" > "$AT_DEVICE" &
-                sleep 1
-                if [ -c "$AT_DEVICE" ]; then
-                    # Device exists, try lpac chip info with short timeout
-                    STATUS_TIMEOUT=10
-                    OUTPUT=$(run_with_timeout $STATUS_TIMEOUT $LPAC_BIN chip info 2>&1)
-                    EXIT_CODE=$?
-
-                    if [ $EXIT_CODE -eq 124 ]; then
-                        echo "{\"success\": false, \"error\": \"Modem not responding (timeout ${STATUS_TIMEOUT}s). Device: ${AT_DEVICE}\"}"
-                        exit 0
-                    fi
-
-                    if echo "$OUTPUT" | grep -qi "error\|failed\|cannot\|unable"; then
-                        echo "{\"success\": false, \"error\": \"Failed to get modem status\", \"raw_output\": \"$OUTPUT\"}"
-                        exit 0
-                    fi
-
-                    convert_lpac_json "$OUTPUT" "status"
-                    exit 0
-                else
-                    echo "{\"success\": false, \"error\": \"Device ${AT_DEVICE} not found\"}"
-                    exit 0
-                fi
-            ) &
-            STATUS_PID=$!
-
-            # Wait max 15 seconds for status check
-            WAITED=0
-            while [ $WAITED -lt 15 ]; do
-                if ! kill -0 $STATUS_PID 2>/dev/null; then
-                    wait $STATUS_PID 2>/dev/null
-                    exit 0
-                fi
-                sleep 1
-                WAITED=$((WAITED + 1))
-            done
-
-            # Timeout - kill everything
-            kill -9 $STATUS_PID 2>/dev/null
-            killall -9 lpac 2>/dev/null
-            killall -9 lpac-bin 2>/dev/null
-            echo "{\"success\": false, \"error\": \"Status check timeout (15s). Modem may be unresponsive on ${AT_DEVICE}\"}"
-            exit 0
-        else
-            # For non-AT drivers, just try lpac with timeout
-            STATUS_TIMEOUT=10
-            OUTPUT=$(run_with_timeout $STATUS_TIMEOUT $LPAC_BIN chip info 2>&1)
-            EXIT_CODE=$?
-
-            if [ $EXIT_CODE -eq 124 ]; then
-                echo "{\"success\": false, \"error\": \"Modem timeout (${STATUS_TIMEOUT}s)\"}"
-                exit 0
-            fi
-
-            convert_lpac_json "$OUTPUT" "status"
-            exit 0
-        fi
+        # Status check with aggressive timeout - lpac chip info can hang on unresponsive modems
+        # Return error quickly instead of blocking the UI
+        echo "{\"success\": false, \"error\": \"Status check disabled - use profile list instead. Modem on ${AT_DEVICE} may be unresponsive.\"}"
+        exit 0
         ;;
 
     notification_list)
