@@ -145,6 +145,13 @@ case "$APDU_DRIVER" in
     at|at_csim)
         export LPAC_APDU_AT_DEVICE="$AT_DEVICE"
         DEVICE_TO_CHECK="$AT_DEVICE"
+
+        # Kill qmi-proxy if running (conflicts with AT commands on shared modem)
+        if pidof qmi-proxy >/dev/null 2>&1; then
+            logger -t lpac_json "Stopping qmi-proxy to avoid modem access conflicts"
+            killall -9 qmi-proxy 2>/dev/null
+            sleep 1
+        fi
         ;;
     mbim)
         export LPAC_APDU_MBIM_DEVICE="$MBIM_DEVICE"
