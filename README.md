@@ -103,17 +103,21 @@ rm -rf /tmp/luci-modulecache/* /tmp/luci-indexcache/*
 The package uses UCI for configuration. Edit `/etc/config/lpac`:
 
 ```bash
-config lpac 'config'
-    option apdu_driver 'AT'
-    option device '/dev/ttyUSB2'
-    option timeout '30'
+config settings 'device'
+    option driver 'at'              # at, at_csim, mbim, qmi
+    option at_device '/dev/ttyUSB2'
+    option mbim_device '/dev/cdc-wdm0'
+    option qmi_device '/dev/cdc-wdm0'
+    option http_client 'curl'       # curl or wget
 ```
 
 ### Configuration Options
 
-- **apdu_driver**: Communication driver (AT, AT_CSIM, or MBIM)
-- **device**: Modem device path
-- **timeout**: Command timeout in seconds
+- **driver**: Communication driver (at, at_csim, mbim, qmi)
+- **at_device**: AT modem device path (for AT/AT_CSIM drivers)
+- **mbim_device**: MBIM device path (for MBIM driver)
+- **qmi_device**: QMI device path (for QMI driver)
+- **http_client**: HTTP client to use (curl or wget)
 
 ## Build System
 
