@@ -5,33 +5,65 @@
 module("luci.controller.lpac", package.seeall)
 
 -- Helper function to get device settings from UCI
+-- Uses new lpac UCI format: lpac.global.*, lpac.at.*, lpac.mbim.*, lpac.uqmi.*
 local function get_device_settings()
 	local uci = require "luci.model.uci".cursor()
-	local driver = uci:get("lpac", "device", "driver") or "at"
-	local at_device = uci:get("lpac", "device", "at_device") or "/dev/ttyUSB2"
-	local mbim_device = uci:get("lpac", "device", "mbim_device") or "/dev/cdc-wdm0"
-	local qmi_device = uci:get("lpac", "device", "qmi_device") or "/dev/cdc-wdm0"
-	local http_client = uci:get("lpac", "device", "http_client") or "curl"
-	local driver_home = uci:get("lpac", "device", "driver_home") or "/usr/lib/lpac/driver"
-	local custom_isd_r_aid = uci:get("lpac", "device", "custom_isd_r_aid") or ""
+
+	-- New UCI format (lpac 2.3.0+)
+	local driver = uci:get("lpac", "global", "apdu_backend") or "at"
+	local at_device = uci:get("lpac", "at", "device") or "/dev/ttyUSB2"
+	local mbim_device = uci:get("lpac", "mbim", "device") or "/dev/cdc-wdm0"
+	local qmi_device = uci:get("lpac", "uqmi", "device") or "/dev/cdc-wdm0"
+	local http_client = uci:get("lpac", "global", "http_backend") or "curl"
+	local driver_home = "/usr/lib/lpac/driver"  -- Fixed path in new format
+	local custom_isd_r_aid = uci:get("lpac", "global", "custom_isd_r_aid") or ""
+
 	return driver, at_device, mbim_device, qmi_device, http_client, driver_home, custom_isd_r_aid
 end
 
 -- Helper function to save device settings to UCI
+-- Uses new lpac UCI format: lpac.global.*, lpac.at.*, lpac.mbim.*, lpac.uqmi.*
 local function save_device_settings(driver, at_device, mbim_device, qmi_device, http_client, driver_home, custom_isd_r_aid)
 	local uci = require "luci.model.uci".cursor()
-	uci:set("lpac", "device", "settings")
-	uci:set("lpac", "device", "driver", driver or "at")
-	uci:set("lpac", "device", "at_device", at_device or "/dev/ttyUSB2")
-	uci:set("lpac", "device", "mbim_device", mbim_device or "/dev/cdc-wdm0")
-	uci:set("lpac", "device", "qmi_device", qmi_device or "/dev/cdc-wdm0")
-	uci:set("lpac", "device", "http_client", http_client or "curl")
-	uci:set("lpac", "device", "driver_home", driver_home or "/usr/lib/lpac/driver")
-	if custom_isd_r_aid and custom_isd_r_aid ~= "" then
-		uci:set("lpac", "device", "custom_isd_r_aid", custom_isd_r_aid)
-	else
-		uci:delete("lpac", "device", "custom_isd_r_aid")
+
+	-- Ensure global section exists
+	if not uci:get("lpac", "global") then
+		uci:set("lpac", "global", "global")
 	end
+
+	-- Save global settings
+	uci:set("lpac", "global", "apdu_backend", driver or "at")
+	uci:set("lpac", "global", "http_backend", http_client or "curl")
+	uci:set("lpac", "global", "apdu_debug", "0")
+	uci:set("lpac", "global", "http_debug", "0")
+
+	if custom_isd_r_aid and custom_isd_r_aid ~= "" then
+		uci:set("lpac", "global", "custom_isd_r_aid", custom_isd_r_aid)
+	else
+		uci:set("lpac", "global", "custom_isd_r_aid", "A0000005591010FFFFFFFF8900000100")
+	end
+
+	-- Ensure at section exists
+	if not uci:get("lpac", "at") then
+		uci:set("lpac", "at", "at")
+	end
+	uci:set("lpac", "at", "device", at_device or "/dev/ttyUSB2")
+	uci:set("lpac", "at", "debug", "0")
+
+	-- Ensure uqmi section exists
+	if not uci:get("lpac", "uqmi") then
+		uci:set("lpac", "uqmi", "uqmi")
+	end
+	uci:set("lpac", "uqmi", "device", qmi_device or "/dev/cdc-wdm0")
+	uci:set("lpac", "uqmi", "debug", "0")
+
+	-- Ensure mbim section exists
+	if not uci:get("lpac", "mbim") then
+		uci:set("lpac", "mbim", "mbim")
+	end
+	uci:set("lpac", "mbim", "device", mbim_device or "/dev/cdc-wdm0")
+	uci:set("lpac", "mbim", "proxy", "1")
+
 	uci:commit("lpac")
 	return true
 end

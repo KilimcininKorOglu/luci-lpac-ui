@@ -127,6 +127,10 @@ if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
     # Update developer name
     sed -i "s/<td class=\"cbi-value-field\">Kilimcinin Kör Oğlu<\/td>/<td class=\"cbi-value-field\">$DEVELOPER_NAME<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
 
+    # Changelog update disabled due to WSL/Windows filesystem sed/awk issues
+    # Manual changelog updates in about.htm if needed
+    CHANGELOG_UPDATE_DISABLED=true
+    if [ "$CHANGELOG_UPDATE_DISABLED" = "false" ]; then
     # Update changelog items with recent commits
     CHANGELOG_ITEMS=$(generate_changelog)
     # Replace the changelog items section (between <ul> and </ul>)
@@ -144,6 +148,7 @@ if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
         echo "WARNING: Failed to update changelog in about.htm"
         rm -f "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp"
     fi
+    fi  # End of CHANGELOG_UPDATE_DISABLED check
 fi
 
 if [ $LATEST_BUILD -eq 0 ]; then
