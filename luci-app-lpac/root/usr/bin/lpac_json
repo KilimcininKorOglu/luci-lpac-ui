@@ -70,50 +70,47 @@ acquire_lock
 
 # Timeout wrapper function for systems without 'timeout' command (OpenWrt 19.07.10)
 run_with_timeout() {
-    local timeout_duration="$1"
+    TIMEOUT_DURATION="$1"
     shift
+
+    # Check if busybox timeout exists (most common on OpenWrt)
+    if busybox timeout 1 true 2>/dev/null; then
+        busybox timeout "$TIMEOUT_DURATION" "$@"
+        return $?
+    fi
 
     # Check if timeout command exists (coreutils)
     if command -v timeout >/dev/null 2>&1; then
-        timeout "$timeout_duration" "$@"
+        timeout "$TIMEOUT_DURATION" "$@"
         return $?
     fi
 
-    # Fallback: Use busybox timeout if available (OpenWrt usually has this)
-    if busybox timeout 1 true 2>/dev/null; then
-        busybox timeout "$timeout_duration" "$@"
-        return $?
-    fi
-
-    # Simple and reliable shell-only timeout (works on any POSIX shell)
-    # Run command in background and kill if timeout expires
+    # Pure POSIX shell timeout for BusyBox ash
     "$@" &
-    local cmd_pid=$!
+    CMD_PID=$!
 
-    # Start timeout killer in background
+    # Killer process
     (
-        sleep "$timeout_duration"
-        # Kill command if still running
-        if kill -0 $cmd_pid 2>/dev/null; then
-            kill -9 $cmd_pid 2>/dev/null
-        fi
+        sleep "$TIMEOUT_DURATION"
+        kill -9 $CMD_PID 2>/dev/null
+        exit 0
     ) &
-    local killer_pid=$!
+    KILLER_PID=$!
 
-    # Wait for command to finish
-    wait $cmd_pid 2>/dev/null
-    local cmd_exit=$?
+    # Wait for command
+    wait $CMD_PID 2>/dev/null
+    CMD_EXIT=$?
 
-    # Kill the killer if command finished before timeout
-    kill -9 $killer_pid 2>/dev/null
-    wait $killer_pid 2>/dev/null
+    # Cleanup killer
+    kill -9 $KILLER_PID 2>/dev/null
+    wait $KILLER_PID 2>/dev/null
 
-    # Check if command was killed (exit code 137 = killed by SIGKILL)
-    if [ $cmd_exit -eq 137 ]; then
-        return 124  # Standard timeout exit code
+    # Return 124 if killed by timeout (exit 137 or 143)
+    if [ $CMD_EXIT -eq 137 ] || [ $CMD_EXIT -eq 143 ]; then
+        return 124
     fi
 
-    return $cmd_exit
+    return $CMD_EXIT
 }
 
 # Parse command-line options for device override
