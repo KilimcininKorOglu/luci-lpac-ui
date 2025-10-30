@@ -830,6 +830,9 @@ function action_clear_lock()
 	-- First, kill all running lpac binary processes
 	util.exec("killall -9 lpac 2>&1")
 
+	-- Second, kill all running lpac binary processes
+	util.exec("killall -9 lpac-bin 2>&1")
+
 	-- Then kill all lpac_json wrapper processes
 	util.exec("killall lpac_json 2>&1; killall -9 lpac_json 2>&1")
 
@@ -841,10 +844,10 @@ function action_clear_lock()
 	http.prepare_content("application/json")
 	if tonumber(lock_exists) == 0 then
 		-- Lock file removed successfully
-		util.exec("logger -t lpac_json 'Lock file manually cleared via web UI - killed all lpac and lpac_json processes'")
+		util.exec("logger -t lpac_json 'Lock file manually cleared via web UI - killed all lpac, lpac-bin and lpac_json processes'")
 		http.write_json({
 			success = true,
-			message = "Lock cleared and all lpac/lpac_json processes killed. You can now retry your operation."
+			message = "Lock cleared and all lpac/lpac-bin/lpac_json processes killed. You can now retry your operation."
 		})
 	else
 		-- Lock file still exists (permission issue?)

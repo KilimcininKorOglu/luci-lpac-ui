@@ -29,6 +29,8 @@ acquire_lock() {
             killall -9 lpac 2>/dev/null
             # Then kill all lpac_json wrapper processes
             killall -9 lpac_json 2>/dev/null
+            # Finally, kill all lpac-bin processes
+            killall -9 lpac-bin 2>/dev/null
             # Remove stale lock file
             rm -f "$LOCKFILE" 2>/dev/null
             # Small delay to ensure processes are terminated
