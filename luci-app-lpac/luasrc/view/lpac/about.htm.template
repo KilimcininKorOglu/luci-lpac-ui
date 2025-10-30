@@ -54,7 +54,7 @@ __CHANGELOG__
 
 <fieldset class="cbi-section">
     <legend><%:Copyright%></legend>
-    <p>© 2025 Kilimcinin Kör Oğlu. <%:All rights reserved.%></p>
+    <p>© __YEAR__ Kilimcinin Kör Oğlu. <%:All rights reserved.%></p>
 </fieldset>
 
 <%+footer%>

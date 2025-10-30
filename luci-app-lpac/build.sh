@@ -118,11 +118,15 @@ if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm.template" ]; then
     # Generate changelog
     CHANGELOG_ITEMS=$(generate_changelog)
 
+    # Get current year for copyright
+    CURRENT_YEAR=$(date +%Y)
+
     # Simple sed replacements - no temp files needed!
     sed -i "s/__PKG_NAME__/$PKG_NAME/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
     sed -i "s/__PKG_VERSION__/$FULL_VERSION/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
     sed -i "s/__PKG_LICENSE__/$PKG_LICENSE/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
     sed -i "s/__PKG_DEVELOPER__/$DEVELOPER_NAME/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+    sed -i "s/__YEAR__/$CURRENT_YEAR/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
 
     # Replace changelog placeholder (multiline)
     # Escape special characters for sed
