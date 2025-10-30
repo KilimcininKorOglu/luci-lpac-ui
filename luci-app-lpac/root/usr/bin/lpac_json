@@ -114,6 +114,12 @@ shift $((OPTIND-1))
 export LPAC_APDU="$APDU_DRIVER"
 export LPAC_HTTP="$HTTP_CLIENT"
 
+# Workaround for mbedTLS SSL certificate verification issues on OpenWrt
+# When curl is compiled with mbedTLS (common on OpenWrt), it may fail to verify
+# SM-DP+ server certificates even with ca-bundle installed. Enabling HTTP debug
+# mode appears to work around this issue.
+export LIBEUICC_DEBUG_HTTP=1
+
 case "$APDU_DRIVER" in
     at|at_csim)
         export LPAC_APDU_AT_DEVICE="$AT_DEVICE"
@@ -166,9 +172,19 @@ convert_lpac_json() {
     fi
 
     # Extract lpac response fields from the final result line
+    # lpac v2.x format: {"type":"lpa","payload":{"code":...,"message":"...","data":"..."}}
     local code=$(echo "$final_line" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9-]*' | head -1 | grep -o '[0-9-]*$')
     local message=$(echo "$final_line" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+
+    # Extract data field - handle both string and object formats
+    # Try string format first: "data":"..."
     local data=$(echo "$final_line" | grep -o '"data"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+
+    # If data is empty, try to extract full data content (for debugging)
+    if [ -z "$data" ]; then
+        # Extract everything between "data": and next }
+        data=$(echo "$final_line" | sed -n 's/.*"data"[[:space:]]*:[[:space:]]*\([^}]*\).*/\1/p' | sed 's/[,"]$//')
+    fi
 
     # Success if code is 0
     if [ "$code" = "0" ]; then
