@@ -334,7 +334,8 @@ convert_lpac_json() {
         echo "{"
         echo "  \"success\": false,"
         echo "  \"error\": \"$error_msg\","
-        echo "  \"error_code\": \"$code\""
+        echo "  \"error_code\": \"$code\","
+        echo "  \"raw_output\": \"$(echo "$lpac_output" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')\""
         echo "}"
     fi
 }
