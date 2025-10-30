@@ -14,19 +14,19 @@ Licensed under the MIT License
     <table class="cbi-section-table" style="width:100%">
         <tr class="cbi-section-table-row">
             <td class="cbi-value-field" style="width:30%"><strong><%:Package Name%></strong></td>
-            <td class="cbi-value-field">luci-app-lpac</td>
+            <td class="cbi-value-field">__PKG_NAME__</td>
         </tr>
         <tr class="cbi-section-table-row">
             <td class="cbi-value-field"><strong><%:Version%></strong></td>
-            <td class="cbi-value-field">1.0.1-69</td>
+            <td class="cbi-value-field">__PKG_VERSION__</td>
         </tr>
         <tr class="cbi-section-table-row">
             <td class="cbi-value-field"><strong><%:License%></strong></td>
-            <td class="cbi-value-field">MIT</td>
+            <td class="cbi-value-field">__PKG_LICENSE__</td>
         </tr>
         <tr class="cbi-section-table-row">
             <td class="cbi-value-field"><strong><%:Developer%></strong></td>
-            <td class="cbi-value-field">Kilimcinin Kör Oğlu</td>
+            <td class="cbi-value-field">__PKG_DEVELOPER__</td>
         </tr>
     </table>
 </fieldset>
@@ -46,12 +46,9 @@ Licensed under the MIT License
 </fieldset>
 
 <fieldset class="cbi-section">
-    <legend><%:What's New in v1.0.1-69%></legend>
+    <legend><%:What's New in v__PKG_VERSION__%></legend>
     <ul>
-        <li><%:Add raw_output to error responses for troubleshooting%></li>
-        <li><%:Ensure profile list loads on page initialization%></li>
-        <li><%:Improve compatibility warning and workaround details%></li>
-        <li><%:Add compatibility warning for lpac binary version%></li>
+__CHANGELOG__
     </ul>
 </fieldset>
 

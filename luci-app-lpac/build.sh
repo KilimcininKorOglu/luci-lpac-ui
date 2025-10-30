@@ -110,8 +110,11 @@ generate_changelog() {
     echo -e "$changelog_items"
 }
 
-# Update about.htm with package information from Makefile (placeholder-based)
-if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
+# Update about.htm with package information from Makefile (template-based)
+if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm.template" ]; then
+    # Copy template to about.htm
+    cp "$PROJECT_DIR/luasrc/view/lpac/about.htm.template" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
     # Generate changelog
     CHANGELOG_ITEMS=$(generate_changelog)
 
