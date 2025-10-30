@@ -656,9 +656,35 @@ case "$ACTION" in
         ;;
 
     status)
-        # Status check with aggressive timeout - lpac chip info can hang on unresponsive modems
-        # Return error quickly instead of blocking the UI
-        echo "{\"success\": false, \"error\": \"Status check disabled - use profile list instead. Modem on ${AT_DEVICE} may be unresponsive.\"}"
+        # Get chip info as status with file-based timeout (reliable on all shells)
+        STATUS_TIMEOUT=10
+        TEMP_OUTPUT="/tmp/lpac_status_$$"
+
+        # Run lpac in background, output to temp file
+        $LPAC_BIN chip info > "$TEMP_OUTPUT" 2>&1 &
+        LPAC_PID=$!
+
+        # Wait with timeout using counter
+        COUNTER=0
+        while [ $COUNTER -lt $STATUS_TIMEOUT ]; do
+            if ! kill -0 $LPAC_PID 2>/dev/null; then
+                # Process finished, read output
+                OUTPUT=$(cat "$TEMP_OUTPUT" 2>/dev/null)
+                rm -f "$TEMP_OUTPUT"
+                convert_lpac_json "$OUTPUT" "status"
+                exit 0
+            fi
+            sleep 1
+            COUNTER=$((COUNTER + 1))
+        done
+
+        # Timeout reached - kill lpac
+        kill -9 $LPAC_PID 2>/dev/null
+        killall -9 lpac 2>/dev/null
+        killall -9 lpac-bin 2>/dev/null
+        rm -f "$TEMP_OUTPUT"
+
+        echo "{\"success\": false, \"error\": \"Modem not responding (timeout ${STATUS_TIMEOUT}s). Check device: ${AT_DEVICE}\"}"
         exit 0
         ;;
 
