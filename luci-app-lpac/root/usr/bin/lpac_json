@@ -220,41 +220,41 @@ convert_lpac_json() {
             # ES9P Authentication Errors (SM-DP+ Communication)
             "es9p_initiate_authentication"|"es9p_authenticate_client")
                 if echo "$data" | grep -qi "MatchingID is refused"; then
-                    error_msg="$error_msg. The activation code was rejected by SM-DP+ server. Possible reasons: 1) Activation code is invalid, expired, or already used, 2) Activation code was created for a different eUICC (EID mismatch), 3) Activation code has exceeded maximum download attempts"
+                    error_msg="Activation code rejected - This code is for a different device (EID mismatch). Request a new code from your eSIM provider"
                 elif echo "$data" | grep -qi "EID"; then
-                    error_msg="$error_msg. EID mismatch detected. The activation code was created for a different eUICC. Please request a new activation code for your device's EID"
+                    error_msg="EID mismatch - Activation code is for a different device. Request a new code for your modem"
                 elif echo "$data" | grep -qi "insufficient.*memory\|not.*enough.*space"; then
-                    error_msg="$error_msg. Not enough memory on eUICC. Delete unused profiles to free up space"
+                    error_msg="Not enough memory on SIM card - Delete unused profiles to free up space"
                 elif echo "$data" | grep -qi "expired\|timeout"; then
-                    error_msg="$error_msg. Download order has expired or timed out. Request a new activation code from your eSIM provider"
+                    error_msg="Activation code expired - Request a new code from your eSIM provider"
                 elif echo "$data" | grep -qi "Confirmation.*Code"; then
-                    error_msg="$error_msg. Confirmation code is required, invalid, or exceeded maximum retry attempts"
+                    error_msg="Confirmation code required or incorrect - Check with your eSIM provider"
                 else
-                    error_msg="$error_msg. This usually means: 1) Activation code is invalid or expired, 2) Activation code was created for a different eUICC EID, 3) Network connectivity issue with SM-DP+ server"
+                    error_msg="Connection failed - Check activation code or network connection"
                 fi
                 ;;
 
             # ES9P Get Profile Package Error
             "es9p_get_bound_profile_package")
-                error_msg="$error_msg. Failed to download profile package from SM-DP+ server. Check your internet connection and try again"
+                error_msg="Download failed - Check your internet connection"
                 ;;
 
             # Activation Code Format Errors
             "activation_code")
                 if [ "$data" = "invalid" ]; then
-                    error_msg="Invalid activation code format. Expected format: LPA:1\$server\$code (must start with 'LPA:1\$')"
+                    error_msg="Invalid code format - Must start with 'LPA:1\$'"
                 else
                     error_msg="Activation code error: $data"
                 fi
                 ;;
 
             "matching_id")
-                error_msg="$error_msg. Matching ID can only contain letters, numbers, and dashes"
+                error_msg="Invalid Matching ID - Use only letters, numbers, and dashes"
                 ;;
 
             "confirmation_code")
                 if [ "$data" = "required" ]; then
-                    error_msg="Confirmation code is required for this activation code but was not provided"
+                    error_msg="Confirmation code required - This code needs a PIN"
                 else
                     error_msg="Confirmation code error: $data"
                 fi
@@ -262,66 +262,66 @@ convert_lpac_json() {
 
             "smdp")
                 if [ "$data" = "empty" ]; then
-                    error_msg="SM-DP+ server address is missing and no default SM-DP+ is configured on eUICC"
+                    error_msg="Server address missing - Enter SM-DP+ address manually"
                 else
-                    error_msg="SM-DP+ server error: $data"
+                    error_msg="Server error: $data"
                 fi
                 ;;
 
             # ES10B eUICC Local Operation Errors
             "es10b_get_euicc_challenge_and_info")
-                error_msg="$error_msg. Failed to communicate with eUICC. Check if modem is properly connected and supports eSIM"
+                error_msg="Modem communication failed - Check connection and eSIM support"
                 ;;
 
             "es10b_authenticate_server")
-                error_msg="$error_msg. Server authentication failed. The SM-DP+ server certificate is invalid or not trusted by eUICC"
+                error_msg="Server authentication failed - Server certificate not trusted"
                 ;;
 
             "es10b_prepare_download")
                 if echo "$data" | grep -qi "Confirmation.*Code"; then
-                    error_msg="$error_msg. Confirmation code is incorrect or has been rejected"
+                    error_msg="Incorrect confirmation code - Check PIN with provider"
                 else
-                    error_msg="$error_msg. eUICC is not ready for download. Possible reasons: 1) Confirmation code incorrect, 2) Not enough memory, 3) eUICC locked"
+                    error_msg="Download preparation failed - Check confirmation code or memory"
                 fi
                 ;;
 
             "es10b_load_bound_profile_package")
                 # Parse BPP error details
                 if echo "$data" | grep -qi "iccid_already_exists"; then
-                    error_msg="$error_msg. A profile with the same ICCID already exists on eUICC. Delete the old profile first"
+                    error_msg="Profile already exists - Delete old profile first"
                 elif echo "$data" | grep -qi "insufficient_memory"; then
-                    error_msg="$error_msg. Not enough memory on eUICC to install this profile. Delete unused profiles to free up space"
+                    error_msg="Not enough memory - Delete unused profiles"
                 elif echo "$data" | grep -qi "interruption"; then
-                    error_msg="$error_msg. Profile installation was interrupted. This may be due to power loss or modem reset. Try again"
+                    error_msg="Installation interrupted - Try again"
                 elif echo "$data" | grep -qi "invalid_signature"; then
-                    error_msg="$error_msg. Profile package signature is invalid. The profile may be corrupted or tampered with"
+                    error_msg="Invalid signature - Profile may be corrupted"
                 else
-                    error_msg="$error_msg. Failed to install profile package on eUICC"
+                    error_msg="Installation failed"
                 fi
                 ;;
 
             "es8p_meatadata_parse"|"es8p_metadata_parse")
-                error_msg="$error_msg. Failed to parse profile metadata. The profile package may be corrupted"
+                error_msg="Profile data corrupted - Cannot read profile information"
                 ;;
 
             # ES10A Configuration Errors
             "es10a_get_euicc_configured_addresses")
-                error_msg="$error_msg. Failed to read eUICC configuration. Check modem connection and eUICC status"
+                error_msg="Cannot read SIM configuration - Check modem connection"
                 ;;
 
             # ES10B Notification Errors
             "es10b_retrieve_notification_list")
-                error_msg="$error_msg. Failed to retrieve notification list from eUICC. Check if modem is properly connected and supports eSIM"
+                error_msg="Cannot retrieve notifications - Check modem connection"
                 ;;
 
             # APDU Communication Errors
             "APDU")
-                error_msg="$error_msg. Failed to communicate with modem. Check device path (e.g., /dev/ttyUSB2, /dev/cdc-wdm0) and driver settings (AT, MBIM, QMI)"
+                error_msg="Modem communication error - Check device path and driver settings"
                 ;;
 
             # Cancellation
             "cancelled")
-                error_msg="Operation was cancelled by user"
+                error_msg="Operation cancelled"
                 ;;
         esac
 
