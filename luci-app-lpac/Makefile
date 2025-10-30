@@ -11,7 +11,7 @@ LUCI_PKGARCH:=all
 
 PKG_NAME:=luci-app-lpac
 PKG_VERSION:=1.0.1
-PKG_RELEASE:=78
+PKG_RELEASE:=79
 PKG_LICENSE:=MIT
 PKG_MAINTAINER:=Kilimcinin Kör Oğlu <k@keremgok.tr>
 

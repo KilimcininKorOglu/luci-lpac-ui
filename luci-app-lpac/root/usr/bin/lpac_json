@@ -85,42 +85,35 @@ run_with_timeout() {
         return $?
     fi
 
-    # Fallback using perl (some OpenWrt versions have perl)
-    if command -v perl >/dev/null 2>&1; then
-        perl -e '
-            $SIG{ALRM} = sub { kill 9, $pid; exit 124; };
-            alarm shift @ARGV;
-            $pid = fork();
-            if ($pid == 0) {
-                exec @ARGV;
-                exit 1;
-            }
-            waitpid($pid, 0);
-            alarm 0;
-            exit($? >> 8);
-        ' "$timeout_duration" "$@"
-        return $?
+    # Simple and reliable shell-only timeout (works on any POSIX shell)
+    # Run command in background and kill if timeout expires
+    "$@" &
+    local cmd_pid=$!
+
+    # Start timeout killer in background
+    (
+        sleep "$timeout_duration"
+        # Kill command if still running
+        if kill -0 $cmd_pid 2>/dev/null; then
+            kill -9 $cmd_pid 2>/dev/null
+        fi
+    ) &
+    local killer_pid=$!
+
+    # Wait for command to finish
+    wait $cmd_pid 2>/dev/null
+    local cmd_exit=$?
+
+    # Kill the killer if command finished before timeout
+    kill -9 $killer_pid 2>/dev/null
+    wait $killer_pid 2>/dev/null
+
+    # Check if command was killed (exit code 137 = killed by SIGKILL)
+    if [ $cmd_exit -eq 137 ]; then
+        return 124  # Standard timeout exit code
     fi
 
-    # Pure shell fallback (works everywhere but less precise)
-    (
-        "$@" &
-        local cmd_pid=$!
-        (
-            sleep "$timeout_duration"
-            kill -9 $cmd_pid 2>/dev/null
-        ) &
-        local killer_pid=$!
-        wait $cmd_pid
-        local exit_code=$?
-        kill -9 $killer_pid 2>/dev/null
-        wait $killer_pid 2>/dev/null
-        exit $exit_code
-    )
-    local result=$?
-    # If killed by our timeout, return 124 (standard timeout exit code)
-    [ $result -eq 137 ] || [ $result -eq 143 ] && return 124
-    return $result
+    return $cmd_exit
 }
 
 # Parse command-line options for device override
