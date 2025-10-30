@@ -110,45 +110,21 @@ generate_changelog() {
     echo -e "$changelog_items"
 }
 
-# Update about.htm with package information from Makefile
+# Update about.htm with package information from Makefile (placeholder-based)
 if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm" ]; then
-    # Update version number
-    sed -i "s/<td class=\"cbi-value-field\">1\.0\.1-[0-9]*<\/td>/<td class=\"cbi-value-field\">$FULL_VERSION<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
-
-    # Update changelog version
-    sed -i "s/<legend><%:What's New in v1\.0\.1-[0-9]*%><\/legend>/<legend><%:What's New in v$FULL_VERSION%><\/legend>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
-
-    # Update package name
-    sed -i "s/<td class=\"cbi-value-field\">luci-app-lpac<\/td>/<td class=\"cbi-value-field\">$PKG_NAME<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
-
-    # Update license
-    sed -i "s/<td class=\"cbi-value-field\">MIT License<\/td>/<td class=\"cbi-value-field\">$PKG_LICENSE<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
-
-    # Update developer name
-    sed -i "s/<td class=\"cbi-value-field\">Kilimcinin Kör Oğlu<\/td>/<td class=\"cbi-value-field\">$DEVELOPER_NAME<\/td>/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
-
-    # Changelog update disabled due to WSL/Windows filesystem sed/awk issues
-    # Manual changelog updates in about.htm if needed
-    CHANGELOG_UPDATE_DISABLED=true
-    if [ "$CHANGELOG_UPDATE_DISABLED" = "false" ]; then
-    # Update changelog items with recent commits
+    # Generate changelog
     CHANGELOG_ITEMS=$(generate_changelog)
-    # Replace the changelog items section (between <ul> and </ul>)
-    awk -v changelog="$CHANGELOG_ITEMS" '
-        /<legend><%:What.*New in v/ {print; in_changelog=1; next}
-        in_changelog && /<ul>/ {print; print changelog; skip=1; next}
-        in_changelog && /<\/ul>/ {print; in_changelog=0; skip=0; next}
-        !skip {print}
-    ' "$PROJECT_DIR/luasrc/view/lpac/about.htm" > "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp"
 
-    # Verify temp file exists and is not empty before moving
-    if [ -f "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" ] && [ -s "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" ]; then
-        mv "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
-    else
-        echo "WARNING: Failed to update changelog in about.htm"
-        rm -f "$PROJECT_DIR/luasrc/view/lpac/about.htm.tmp"
-    fi
-    fi  # End of CHANGELOG_UPDATE_DISABLED check
+    # Simple sed replacements - no temp files needed!
+    sed -i "s/__PKG_NAME__/$PKG_NAME/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+    sed -i "s/__PKG_VERSION__/$FULL_VERSION/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+    sed -i "s/__PKG_LICENSE__/$PKG_LICENSE/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+    sed -i "s/__PKG_DEVELOPER__/$DEVELOPER_NAME/g" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
+
+    # Replace changelog placeholder (multiline)
+    # Escape special characters for sed
+    CHANGELOG_ESCAPED=$(echo "$CHANGELOG_ITEMS" | sed 's/[&/\]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+    sed -i "s/__CHANGELOG__/$CHANGELOG_ESCAPED/" "$PROJECT_DIR/luasrc/view/lpac/about.htm"
 fi
 
 if [ $LATEST_BUILD -eq 0 ]; then
