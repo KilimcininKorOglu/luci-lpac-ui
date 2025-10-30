@@ -645,13 +645,19 @@ case "$ACTION" in
         ;;
 
     status)
-        # Get chip info as status (shorter timeout for status checks)
-        STATUS_TIMEOUT=30
+        # Get chip info as status (short timeout - status check should be fast)
+        STATUS_TIMEOUT=10
         OUTPUT=$(run_with_timeout $STATUS_TIMEOUT $LPAC_BIN chip info 2>&1)
         EXIT_CODE=$?
 
         if [ $EXIT_CODE -eq 124 ]; then
-            echo "{\"success\": false, \"error\": \"Operation timed out after ${STATUS_TIMEOUT}s. Modem may not be responding on ${AT_DEVICE}\"}"
+            echo "{\"success\": false, \"error\": \"Modem not responding (timeout after ${STATUS_TIMEOUT}s). Check device path: ${AT_DEVICE}. Try restarting modem or clearing lock.\"}"
+            exit 0
+        fi
+
+        # Check if output contains errors
+        if echo "$OUTPUT" | grep -qi "error\|failed\|cannot\|unable"; then
+            echo "{\"success\": false, \"error\": \"Failed to get modem status\", \"raw_output\": \"$OUTPUT\"}"
             exit 0
         fi
 
