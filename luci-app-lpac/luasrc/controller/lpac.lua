@@ -827,17 +827,18 @@ function action_clear_lock()
 	local http = require "luci.http"
 	local util = require "luci.util"
 
-	-- Kill all lpac-related processes using multiple methods
-	-- Method 1: killall with both names
-	util.exec("killall -9 lpac 2>&1")
-	util.exec("killall -9 lpac-bin 2>&1")
-	util.exec("killall lpac_json 2>&1; killall -9 lpac_json 2>&1")
+	-- Kill all lpac-related processes (OpenWrt busybox compatible)
+	-- Method 1: killall with process names
+	util.exec("killall -9 lpac 2>/dev/null")
+	util.exec("killall -9 lpac-bin 2>/dev/null")
+	util.exec("killall -9 lpac_json 2>/dev/null")
 
-	-- Method 2: pkill for pattern matching (catches processes with lpac in name)
-	util.exec("pkill -9 -f lpac 2>&1")
+	-- Method 2: Find and kill by PID using ps + grep + kill
+	-- This works with busybox ps and doesn't need xargs -r
+	util.exec("for pid in $(ps | grep -E 'lpac|lpac-bin|lpac_json' | grep -v grep | awk '{print $1}'); do kill -9 $pid 2>/dev/null; done")
 
-	-- Method 3: Find and kill any remaining processes by searching /proc
-	util.exec("ps aux | grep -E '[l]pac|[l]pac-bin|[l]pac_json' | awk '{print $2}' | xargs -r kill -9 2>&1")
+	-- Method 3: Sleep briefly to ensure kills complete
+	util.exec("sleep 1")
 
 	-- Remove the lock file
 	local lockfile = "/var/run/lpac_json.lock"
