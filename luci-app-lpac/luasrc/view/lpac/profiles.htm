@@ -530,6 +530,22 @@
             </div>
 
             <div class="lpac-form-group">
+                <label class="lpac-form-label"><%:Driver Home Directory%></label>
+                <input type="text" id="driver_home_input" class="lpac-input" placeholder="/usr/lib/lpac/driver" style="width: 100%; max-width: 400px;" />
+                <span class="lpac-form-hint">
+                    <%:Directory containing APDU/HTTP driver libraries (leave empty for default)%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group">
+                <label class="lpac-form-label"><%:Custom ISD-R AID%> <span style="color: #999;">(<%:Advanced%>)</span></label>
+                <input type="text" id="custom_isd_r_aid_input" class="lpac-input" placeholder="A0000005591010FFFFFFFF8900000100" style="width: 100%; max-width: 400px;" />
+                <span class="lpac-form-hint">
+                    <%:Custom ISD-R Application Identifier (leave empty for default). Only change if you know what you're doing.%>
+                </span>
+            </div>
+
+            <div class="lpac-form-group">
                 <button class="lpac-button lpac-button-primary" onclick="saveDeviceSettings()">
                     <%:Save Device Settings%>
                 </button>
@@ -576,6 +592,16 @@ function loadDeviceSettings() {
             selectedAtDevice = data.at_device || '/dev/ttyUSB2';
             selectedMbimDevice = data.mbim_device || '/dev/cdc-wdm0';
             selectedHttpClient = data.http_client || 'curl';
+
+            // Populate advanced settings fields
+            var driverHomeInput = document.getElementById('driver_home_input');
+            var customAidInput = document.getElementById('custom_isd_r_aid_input');
+            if (driverHomeInput) {
+                driverHomeInput.value = data.driver_home || '/usr/lib/lpac/driver';
+            }
+            if (customAidInput) {
+                customAidInput.value = data.custom_isd_r_aid || '';
+            }
 
             // Show warning if QMI/MBIM driver is selected
             showDriverWarning(selectedDriver);
@@ -827,12 +853,16 @@ function saveDeviceSettings() {
     var atSelect = document.getElementById('at_device_select');
     var mbimSelect = document.getElementById('mbim_device_select');
     var httpSelect = document.getElementById('http_client_select');
+    var driverHomeInput = document.getElementById('driver_home_input');
+    var customAidInput = document.getElementById('custom_isd_r_aid_input');
     var statusDiv = document.getElementById('device_status');
 
     selectedDriver = driverSelect.value || 'at';
     selectedAtDevice = atSelect.value || '/dev/ttyUSB2';
     selectedMbimDevice = mbimSelect.value || '/dev/cdc-wdm0';
     selectedHttpClient = httpSelect.value || 'curl';
+    var driverHome = driverHomeInput ? (driverHomeInput.value || '/usr/lib/lpac/driver') : '/usr/lib/lpac/driver';
+    var customAid = customAidInput ? customAidInput.value : '';
 
     statusDiv.className = 'lpac-status info';
     statusDiv.innerHTML = '<%:Saving device settings to UCI...%>';
@@ -842,7 +872,9 @@ function saveDeviceSettings() {
         driver: selectedDriver,
         at_device: selectedAtDevice,
         mbim_device: selectedMbimDevice,
-        http_client: selectedHttpClient
+        http_client: selectedHttpClient,
+        driver_home: driverHome,
+        custom_isd_r_aid: customAid
     }, function(x, data) {
         if (data.success) {
             statusDiv.className = 'lpac-status success';
@@ -851,6 +883,8 @@ function saveDeviceSettings() {
                                  '<%:AT Device:%> ' + data.at_device + '<br>' +
                                  '<%:MBIM Device:%> ' + data.mbim_device + '<br>' +
                                  '<%:HTTP Client:%> ' + data.http_client + '<br>' +
+                                 '<%:Driver Home:%> ' + data.driver_home + '<br>' +
+                                 (data.custom_isd_r_aid ? '<%:Custom ISD-R AID:%> ' + data.custom_isd_r_aid + '<br>' : '') +
                                  '<br><em><%:Page will reload in 2 seconds...%></em>';
 
             // Reload page after 2 seconds to apply new settings
