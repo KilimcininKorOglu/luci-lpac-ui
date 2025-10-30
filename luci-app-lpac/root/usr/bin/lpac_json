@@ -111,6 +111,7 @@ done
 shift $((OPTIND-1))
 
 # Set environment variables for lpac
+export LPAC_DRIVER_HOME="/usr/lib/lpac/driver"
 export LPAC_APDU="$APDU_DRIVER"
 export LPAC_HTTP="$HTTP_CLIENT"
 
