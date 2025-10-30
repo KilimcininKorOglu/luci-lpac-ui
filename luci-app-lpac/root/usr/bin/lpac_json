@@ -128,7 +128,7 @@ fi
 # When curl is compiled with mbedTLS (common on OpenWrt), it may fail to verify
 # SM-DP+ server certificates even with ca-bundle installed. Enabling HTTP debug
 # mode appears to work around this issue.
-export LIBEUICC_DEBUG_HTTP=1
+export LPAC_HTTP_DEBUG=1
 
 case "$APDU_DRIVER" in
     at|at_csim)
