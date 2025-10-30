@@ -585,7 +585,7 @@ function processNotifications(callback) {
 }
 
 // Load device settings from UCI
-function loadDeviceSettings() {
+function loadDeviceSettings(callback) {
     XHR.get('<%=url("admin/network/lpac/get_settings")%>', null, function(x, data) {
         if (data.success) {
             selectedDriver = data.driver || 'at';
@@ -605,6 +605,11 @@ function loadDeviceSettings() {
 
             // Show warning if QMI/MBIM driver is selected
             showDriverWarning(selectedDriver);
+
+            // Call callback function if provided (e.g., to load profiles after settings are loaded)
+            if (callback && typeof callback === 'function') {
+                callback();
+            }
         }
     });
 }
@@ -1500,14 +1505,14 @@ function listProfiles() {
 
 // Auto-refresh status on page load
 window.addEventListener('load', function() {
-    // Load device settings from UCI first
-    loadDeviceSettings();
+    // Load device settings from UCI first, then load profiles after settings are ready
+    loadDeviceSettings(function() {
+        // Auto-refresh profile list after device settings are loaded
+        listProfiles();
 
-    // Auto-refresh profile list on page load
-    listProfiles();
-
-    // Auto-load pending notifications on page load - DISABLED (notifications UI commented out)
-    // listNotifications();
+        // Auto-load pending notifications on page load - DISABLED (notifications UI commented out)
+        // listNotifications();
+    });
 });
 </script>
 
