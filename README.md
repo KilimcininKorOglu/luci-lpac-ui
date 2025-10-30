@@ -15,6 +15,7 @@ LuCI App LPAC provides a user-friendly web interface for eSIM profile management
 - **LPAC_DRIVER_HOME** environment variable support for driver discovery
 
 **Compatibility Warning:**
+
 - The official lpac package from OpenWrt repositories **may not be compatible** with this LuCI app version
 - Using mismatched versions may result in:
   - TLS/SSL connection failures with eSIM providers
@@ -23,6 +24,7 @@ LuCI App LPAC provides a user-friendly web interface for eSIM profile management
   - Unexpected behavior in advanced settings
 
 **Recommendation:**
+
 - Always use the matching lpac binary build (`lpac_2.3.0-8_mips_24kc.ipk` or later) from this repository
 - If using OpenWrt 24.10.x, the custom OpenSSL-based build is **required** due to mbedTLS 3.6.5 RSA-PSS signature regression
 
@@ -237,13 +239,14 @@ luci-app-lpac/
 
 **Problem**: Profile download fails with "HTTP transport failed" or "SSL - Client received an unsupported extension" error on OpenWrt 24.10.x.
 
-**Root Cause**: OpenWrt 24.10.x has a confirmed regression in curl/mbedTLS lacking RSA-PSS signature support for TLS 1.3. This affects modern SM-DP+ servers. See: https://github.com/openwrt/packages/issues/25921
+**Root Cause**: OpenWrt 24.10.x has a confirmed regression in curl/mbedTLS lacking RSA-PSS signature support for TLS 1.3. This affects modern SM-DP+ servers. See: <https://github.com/openwrt/packages/issues/25921>
 
 **Automatic Workaround**: The package automatically enables `LIBEUICC_DEBUG_HTTP=1` in the `lpac_json` wrapper script, which works with ~70% of SM-DP+ servers (e.g., consumer.e-sim.global).
 
 **Recommended Solution** (for full compatibility):
 
 Downgrade to OpenWrt 23.05.5 curl packages:
+
 ```bash
 cd /tmp
 wget https://downloads.openwrt.org/releases/23.05.5/packages/mips_24kc/packages/curl_8.11.1-r1_mips_24kc.ipk
