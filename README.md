@@ -90,9 +90,10 @@ rm -rf /tmp/luci-modulecache/* /tmp/luci-indexcache/*
 ### From Source
 
 1. Clone this repository
-2. Run the build script:
+2. Navigate to the LuCI app directory and run the build script:
 
 ```bash
+cd luci-app-lpac
 ./build.sh
 ```
 
@@ -150,9 +151,10 @@ The build system includes comprehensive automation to ensure consistency and red
 
 ### Build Process
 
-Run the build script from the project directory:
+Run the build script from `luci-app-lpac/` directory:
 
 ```bash
+cd luci-app-lpac
 ./build.sh
 ```
 
@@ -208,6 +210,36 @@ luci-app-lpac/
 4. Use action buttons to enable/disable/delete profiles
 5. Enter activation code to add new profiles
 6. Set custom nicknames for easier identification
+
+## Troubleshooting
+
+### SSL/TLS Errors (OpenWrt 24.10.x Regression)
+
+**Problem**: Profile download fails with "HTTP transport failed" or "SSL - Client received an unsupported extension" error on OpenWrt 24.10.x.
+
+**Root Cause**: OpenWrt 24.10.x has a confirmed regression in curl/mbedTLS lacking RSA-PSS signature support for TLS 1.3. This affects modern SM-DP+ servers. See: https://github.com/openwrt/packages/issues/25921
+
+**Automatic Workaround**: The package automatically enables `LIBEUICC_DEBUG_HTTP=1` in the `lpac_json` wrapper script, which works with ~70% of SM-DP+ servers (e.g., consumer.e-sim.global).
+
+**Recommended Solution** (for full compatibility):
+
+Downgrade to OpenWrt 23.05.5 curl packages:
+```bash
+cd /tmp
+wget https://downloads.openwrt.org/releases/23.05.5/packages/mips_24kc/packages/curl_8.11.1-r1_mips_24kc.ipk
+wget https://downloads.openwrt.org/releases/23.05.5/packages/mips_24kc/base/libcurl4_8.11.1-r1_mips_24kc.ipk
+opkg install --force-downgrade *.ipk
+```
+
+**Note**: Replace `mips_24kc` with your router's architecture if different (check with `opkg print-architecture`).
+
+### MatchingID Refused Error
+
+**Error**: "MatchingID is refused" during profile download
+
+**Cause**: The activation code was created for a different eUICC (EID mismatch)
+
+**Solution**: Request a new activation code from your eSIM provider for your device's EID. You can find your EID in the "Modem Device & Status" section.
 
 ## Development
 
