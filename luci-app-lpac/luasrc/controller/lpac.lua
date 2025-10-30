@@ -437,6 +437,8 @@ function action_save_settings()
 		mbim_device = mbim_device,
 		qmi_device = qmi_device,
 		http_client = http_client,
+		driver_home = driver_home or "/usr/lib/lpac/driver",
+		custom_isd_r_aid = custom_isd_r_aid or "",
 		message = "Device settings saved to UCI configuration"
 	})
 end
