@@ -1,5 +1,7 @@
 # LuCI App LPAC
 
+## Repo moved to https://github.com/KilimcininKorOglu/luci-app-hermes-euicc
+
 A LuCI web interface for managing eSIM profiles on OpenWrt routers with Quectel modems.
 
 ## Overview
